@@ -62,7 +62,7 @@ const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle
     "Click on the '?' button or press C for a hint.\n"
     "\n"
     "Press R to restart or ESC to quit.\n"
-    "Choose \"advanced\" in the settings for a more difficult game.\n"
+    "Choose \"advanced\" in the settings for a more difficult game (really hard).\n"
     "\n"
     "DEBUG KEYS: S: show solution. T: switch tiles to bmp\'s loaded from APPDIR/icons.\n"
     "Note: advanced game generation may take a while for large boards.";
@@ -100,7 +100,7 @@ void mouse_drop(Board *b, int mx, int my);
 TiledBlock* settings_block(void);
 void update_settings_block(Game *g, Board *b);
 TiledBlock *get_TiledBlock_at(Board *b, int x, int y);
-void show_clue(Game *g, Board *b);
+void show_hint(Game *g, Board *b);
 
 // debug: show solution
 void switch_solve_puzzle(Game *g, Board *b){
@@ -125,6 +125,7 @@ void show_about(Board *b){
 void draw_stuff(Board *b){
     static float time = -1;
     float t;
+    int x, y;
     
     al_clear_to_color(b->bg_color);
     if(b->show_settings){
@@ -152,7 +153,8 @@ void draw_stuff(Board *b){
     if(b->show_help){
         show_help(b);
     } else if(b->dragging){ // redraw tile to get it on top
-        draw_TiledBlock(b->dragging, b->dragging->parent->x, b->dragging->parent->y);
+        get_TiledBlock_offset(b->dragging->parent, &x, &y);
+        draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
     }
 
 	al_flip_display();
@@ -440,7 +442,7 @@ RESTART:
                             b.show_help= b.show_help == 0 ? 1 : 0;
                             break;
 						case ALLEGRO_KEY_C:
-							show_clue(&g, &b);
+							show_hint(&g, &b);
 							break;
 
                     }
@@ -600,30 +602,9 @@ void update_board(Game *g, Board *b){
     }
 }
 
-void mouse_grab(Board *b, int mx, int my){
-    int i;
-    if(get_TiledBlock_tile(&b->hclue, mx, my, &i)>1){
-        if(b->hclue.b[i]->bmp){
-            b->dragging = b->hclue.b[i];
-        }
-    } else if(get_TiledBlock_tile(&b->vclue, mx, my, &i)>1){
-        if(b->vclue.b[i]->bmp){
-            b->dragging = b->vclue.b[i];
-        }
-    }
-    if(b->dragging){
-        b->dragging_ox = b->dragging->x;
-        b->dragging_oy = b->dragging->y;
-        b->dragging_cx = b->dragging->x  - mx+5;
-        b->dragging_cy = b->dragging->y - my+5;
-        b->dragging->x = mx + b->dragging_cx;
-        b->dragging->y = my + b->dragging_cy;
-    }
-};
-
 void swap_clues(Board *b, TiledBlock *c1, TiledBlock *c2){
     SWAP(c1->bmp, c2->bmp);
-
+    
     if(c1->index>=0)
         b->clue_tiledblock[c1->index] = c2;
     if(c2->index>=0)
@@ -632,24 +613,48 @@ void swap_clues(Board *b, TiledBlock *c1, TiledBlock *c2){
     SWAP(c1->hidden, c2->hidden);
 };
 
-void mouse_drop(Board *b, int mx, int my){
-    int i;
+TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
+    if(b->show_settings){
+        return get_TiledBlock(&b->s, x, y);
+    } else if(b->show_help)
+        return &b->all;
+    else
+        return get_TiledBlock(&b->all, x, y);
+}
+
+void mouse_grab(Board *b, int mx, int my){
+    b->dragging = get_TiledBlock_at(b, mx, my);
+    if(b->dragging && b->dragging->bmp){
+        if( (b->dragging->type == TB_HCLUE_TILE) || (b->dragging->type == TB_VCLUE_TILE) ){
+            b->dragging_ox = b->dragging->x;
+            b->dragging_oy = b->dragging->y;
+            b->dragging_cx = b->dragging->x  - mx+5;
+            b->dragging_cy = b->dragging->y - my+5;
+            b->dragging->x = mx + b->dragging_cx;
+            b->dragging->y = my + b->dragging_cy;
+            if(!sound_mute) play_sound(SOUND_UNHIDE_TILE);
+            return;
+        }
+    }
     
-    if(b->dragging == NULL) return;
+    b->dragging = NULL;
+    return;
+};
+
+
+
+void mouse_drop(Board *b, int mx, int my){
+    TiledBlock *t;
+    
+    if(!b->dragging) return;
     b->dragging->x = b->dragging_ox;
     b->dragging->y = b->dragging_oy;
-    
-    if(b->dragging->parent == &b->vclue){
-        if(get_TiledBlock_tile(&b->vclue, mx, my, &i)>1){
-            swap_clues(b, b->vclue.b[i], b->dragging); // fix this, either swap pointer to pointer or swap struct
-            if(b->highlight == b->dragging) b->highlight = b->vclue.b[i];
-
-        }
-    } else if (b->dragging->parent == &b->hclue){
-        if(get_TiledBlock_tile(&b->hclue, mx, my, &i)>1){ //xxx todo: use "get_tiledblock_ptr"
-            swap_clues(b, b->hclue.b[i], b->dragging);  // fix this too
-            if(b->highlight == b->dragging) b->highlight = b->hclue.b[i];
-        }
+ 
+    t = get_TiledBlock_at(b, mx, my);
+    if(t->type == b->dragging->type){
+        swap_clues(b, b->dragging, t);
+        if(b->highlight == b->dragging) b->highlight = t;
+        if(!sound_mute) play_sound(SOUND_HIDE_TILE);
     }
     b->dragging = NULL;
     return;
@@ -679,7 +684,7 @@ void check_settings(Game *g, Board *b){
     }
 }
 
-void show_clue(Game *g, Board *b){
+void show_hint(Game *g, Board *b){
     if(!check_panel_correctness(g)){
         show_info_text(b, "Something is wrong. An item was ruled out incorrectly.");
     }
@@ -698,14 +703,6 @@ void show_clue(Game *g, Board *b){
     }
 }
 
-TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
-    if(b->show_settings){
-        return get_TiledBlock(&b->s, x, y);
-    } else if(b->show_help)
-        return &b->all;
-    else
-        return get_TiledBlock(&b->all, x, y);
-}
 
 void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     int i,j,k;
@@ -725,10 +722,11 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
         b->rule_out=NULL;
     }
     
+    t = get_TiledBlock_at(b, mx, my);
+    if (!t) return;
+    
     if(b->show_settings){ // handle settings panel
-        t = get_TiledBlock(&b->s, mx, my);
-		if (!t) return;
-        if(t->type == TB_SETTINGS_OK){
+	   if(t->type == TB_SETTINGS_OK){
             b->show_settings=2;
             check_settings(g, b);
         } else if(t->type == TB_SETTINGS_CANCEL){
@@ -769,8 +767,6 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
         show_info_text(b, "Press R to start a new puzzle.");
     }
     
-    t = get_TiledBlock(&b->all, mx, my);
-	if (!t) return;
     switch(t->type){ // which board component was clicked
         case TB_PANEL_TILE:
             if(game_state != GAME_PLAYING) break;
@@ -821,7 +817,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             
         case TB_BUTTON_CLUE: // time panel
             if(game_state != GAME_PLAYING) break;
-            show_clue(g,b);
+            show_hint(g,b);
             break;
         case TB_BUTTON_SETTINGS:
             update_settings_block(g, b);
@@ -830,6 +826,9 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     
         case TB_BUTTON_HELP:
             b->show_help=1;
+            break;
+            
+        default:
             break;
     }
 }

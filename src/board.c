@@ -415,9 +415,9 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
     b->time_panel.b[0]->bmp = &b->time_bmp;
     
     for(i=0; i<3; i++){ // buttons
-        b->time_panel.b[i+1]->h = 24;
-        b->time_panel.b[i+1]->w = 24;
-        b->time_panel.b[i+1]->y = (b->time_panel.h/2-24)/2 + b->time_panel.h/2;
+        b->time_panel.b[i+1]->h = 18;
+        b->time_panel.b[i+1]->w = 18;
+        b->time_panel.b[i+1]->y = (b->time_panel.h/2-18)/2 + b->time_panel.h/2;
         b->time_panel.b[i+1]->x = (i+1)*(b->time_panel.w/4) - 8;
         b->time_panel.b[i+1]->margin = 0;
         b->time_panel.b[i+1]->bg_color = NULL_COLOR;
@@ -504,6 +504,7 @@ void create_settings_block(Board *b){
     b->s.x = (b->xsize - b->s.w)/2; // change to b->all
     b->s.y = (b->ysize - b->s.h)/2;
     b->s.margin=0;
+    b->s.type = TB_SETTINGS;
     
     for(i=0;i<b->s.sb; i++){
         b->s.b[i]=new_TiledBlock();
