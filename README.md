@@ -14,7 +14,7 @@ You need Allegro 5 (>= 5.1.9) and cmake.
 
 For Mac OS X (tested with Xcode 5):
 
-	cd watson-0.79
+	cd watson
 	mkdir build
 	cd build
 	cmake -G Xcode ..
@@ -24,7 +24,7 @@ The app bundle will be in the "Release" folder.
 
 For windows (tested in Visual Studio 2015)
 
-	cd watson-0.79
+	cd watson
 	mkdir build
 	cd build
 	cmake -G "Visual Studio 14 2015" -DAlleg_ROOT="\path\to\allegro\libs" 
