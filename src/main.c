@@ -371,7 +371,7 @@ RESTART:
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
     
-    show_info_text(&b, "Click on clue for info. Press H for help, C for a clue, S for settings, R to start new game.");
+    show_info_text(&b, "Click on clue for info. Press H for help, S for settings, R to start new game. Click on '?' for a hint at any time.");
 
     while(noexit)
     {
@@ -693,7 +693,7 @@ void show_clue(Game *g, Board *b){
         strcat(hint, " So we can rule out the blinking tile.");
         show_info_text(b, hint);
         } else {
-            show_info_text(b, "No clue available.");
+            show_info_text(b, "No hint available.");
         }
     }
 }
