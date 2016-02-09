@@ -1,6 +1,6 @@
 #Watson, a puzzle game
 
-Watson is a clone of “Sherlock”, an old game by Evertt Kaser which is itself based on the a classic puzzle known as ["Zebra puzzle"](https://en.wikipedia.org/wiki/Zebra_Puzzle) or “Einstein's riddle”.
+Watson is a clone of “Sherlock”, an old game by Everett Kaser which is itself based on the a classic puzzle known as ["Zebra puzzle"](https://en.wikipedia.org/wiki/Zebra_Puzzle) or “Einstein's riddle”.
 
 Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from #allegro in Freenode for all the tips and advice.
    
