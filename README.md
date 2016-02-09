@@ -1,4 +1,4 @@
-Watson, a puzzle game by Koro
+Watson, a puzzle game
 
 Watson is a clone of “Sherlock”, an old game by Evertt Kaser which is itself based on the a classic puzzle known as "Zebra puzzle" or “Einstein's riddle”.
 
