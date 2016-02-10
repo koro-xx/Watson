@@ -10,6 +10,9 @@
  by Koro (1/2016)
 
  Todo:
+ - refresh ON DEMAND
+ - add undo
+ - fix help text window
  - Mouse click: delay for drag is too long (what's the right way to handle drag/click?)
  - g->tile[i][j] should have been a bitfield, but it probably doesn't matter now...
  - add additional clue type
@@ -110,9 +113,9 @@ void switch_solve_puzzle(Game *g, Board *b){
 }
 
 void show_help(Board *b){
-    al_draw_filled_rectangle((b->xsize-740)/2, (b->ysize-384)/2, (b->xsize+740)/2, (b->ysize+384)/2, WINDOW_BG_COLOR);
-    al_draw_rectangle((b->xsize-740)/2, (b->ysize-384)/2, (b->xsize+740)/2, (b->ysize+384)/2, WHITE_COLOR, 3);
-    al_draw_multiline_text(default_font, WHITE_COLOR, (b->xsize-700)/2, (b->ysize-340)/2, 700, 16, ALLEGRO_ALIGN_LEFT, HELP_TEXT);
+    al_draw_filled_rectangle((b->xsize-800)/2, (b->ysize-384)/2, (b->xsize+800)/2, (b->ysize+384)/2, WINDOW_BG_COLOR);
+    al_draw_rectangle((b->xsize-800)/2, (b->ysize-384)/2, (b->xsize+800)/2, (b->ysize+384)/2, WHITE_COLOR, 3);
+    al_draw_multiline_text(default_font, WHITE_COLOR, (b->xsize-770)/2, (b->ysize-340)/2, 770, 16, ALLEGRO_ALIGN_LEFT, HELP_TEXT);
 }
 
 void show_about(Board *b){
@@ -127,7 +130,7 @@ void draw_stuff(Board *b){
     static float time = -1;
     float t;
     int x, y;
-    
+     
     al_clear_to_color(b->bg_color);
     if(b->show_settings){
         draw_TiledBlock(&b->s, 0,0);
@@ -760,6 +763,9 @@ void show_hint(Game *g, Board *b){
     }
 }
 
+void save_state(Game *g){
+    // add undo function here
+}
 
 void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     int i,j,k;
@@ -827,6 +833,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     switch(t->type){ // which board component was clicked
         case TB_PANEL_TILE:
             if(game_state != GAME_PLAYING) break;
+            save_state(g);
             k = t->index; j=t->parent->index; i = t->parent->parent->index;
             if(mclick==2){
                 if(g->tile[i][j][k]){ // hide tile
@@ -848,6 +855,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             break;
 
         case TB_PANEL_BLOCK:
+            save_state(g);
             if(game_state != GAME_PLAYING) break;
             if ((mclick==2) && (g->guess[t->parent->index][t->index]>=0)){
                 // we found guessed block - unguess it

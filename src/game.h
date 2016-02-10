@@ -44,17 +44,17 @@ typedef struct Clue{
 } Clue;
 
 typedef struct Game {
-    int guess[9][9]; // guessed value for [col][block]
-    int puzzle[9][9]; // [col][clock] = [tile]
-    int tile[9][9][9]; // [col][block][tile]
+    int guess[8][8]; // guessed value for [col][block]
+    int puzzle[8][8]; // [col][clock] = [tile]
+    int tile[8][8][8]; // [col][block][tile]
     Clue clue[MAX_CLUES];
     int clue_n;
     int n; // number of columns
     int h; // column height
     double time;
     int guessed;
-    int tile_col[9][9]; // column where puzzle tile [row][tile] is located (in solution);
-    int where[9][9];
+    int tile_col[8][8]; // column where puzzle tile [row][tile] is located (in solution);
+    int where[8][8];
     int advanced;
 } Game;
 

@@ -46,7 +46,7 @@ int filter_clues(Game *g);
 
 void create_puzzle(Game *g){
     int i, j;
-    int p[9];
+    int p[8];
     
     g->guessed=0;
     for(i=0; i<9;i++){
@@ -355,8 +355,8 @@ int check_solution(Game *g){
 
 // save a backup copy of game data if type==0, restore the data if type==1
 void switch_game(Game *g, int type){
-    static int tile[9][9][9];
-    static int guess[9][9];
+    static int tile[8][8][8];
+    static int guess[8][8];
     static int guessed;
     
     if(type == 0){

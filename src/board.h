@@ -36,10 +36,10 @@ typedef struct Board {
     int show_help;
     int show_settings;
     ALLEGRO_COLOR bg_color;
-    ALLEGRO_BITMAP *panel_tile_bmp[9][9];
-    ALLEGRO_BITMAP *guess_bmp[9][9];
-    ALLEGRO_BITMAP *clue_unit_bmp[9][9];
-    ALLEGRO_BITMAP *symbol_bmp[9];
+    ALLEGRO_BITMAP *panel_tile_bmp[8][8];
+    ALLEGRO_BITMAP *guess_bmp[8][8];
+    ALLEGRO_BITMAP *clue_unit_bmp[8][8];
+    ALLEGRO_BITMAP *symbol_bmp[8];
     ALLEGRO_BITMAP **clue_bmp;
     ALLEGRO_BITMAP *button_bmp[3];
     ALLEGRO_BITMAP *time_bmp;
