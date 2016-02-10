@@ -62,8 +62,8 @@ const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle
     "There are vertical and horizontal clues. Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
     "Click on the '?' button or press C for a hint.\n"
     "\n"
-    "Press R to restart or ESC to quit.\n"
-    "Choose \"advanced\" in the settings for a more difficult game (really hard).\n"
+    "Press R to restart or ESC to quit. You can resize the window or press F to go fullscreen.\n"
+    "Choose \"advanced\" in the settings for a more difficult game (really hard - not recommended).\n"
     "\n"
     "DEBUG KEYS: S: show solution. T: switch tiles to bmp\'s loaded from APPDIR/icons.\n"
     "Note: advanced game generation may take a while for large boards.";

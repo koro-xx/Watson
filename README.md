@@ -49,4 +49,4 @@ For Linux:
 - Add extra settings to configure the number of revealed blocks and tune other aspects of puzzle generation.
 - Add 'undo' button.
 - Fix button dimenisons.
-
+- Fix CMakeLists.txt to include windows icon.
