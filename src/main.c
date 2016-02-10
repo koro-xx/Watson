@@ -11,7 +11,7 @@
 
  Todo:
  - refresh ON DEMAND
- - add undo
+ - add undo button
  - fix help text window
  - Mouse click: delay for drag is too long (what's the right way to handle drag/click?)
  - g->tile[i][j] should have been a bitfield, but it probably doesn't matter now...
@@ -81,6 +81,15 @@ const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
     "\n"
     "The \"advanced\" mode generates (much) harder puzzles, to the point of being almost impossible, so it needs to be tuned.";
 
+
+struct Panel_State{
+    int tile[8][8][8];
+    struct Panel_State *parent;
+};
+
+struct Panel_State *undo = NULL;
+
+
 const char *CLUE_TEXT[NUMBER_OF_RELATIONS] = {
     [NEXT_TO] = "The two items are in adjacent columns, on either side.",
     [NOT_NEXT_TO] = "The two items are not in adjacent columns",
@@ -105,6 +114,10 @@ TiledBlock* settings_block(void);
 void update_settings_block(Game *g, Board *b);
 TiledBlock *get_TiledBlock_at(Board *b, int x, int y);
 void show_hint(Game *g, Board *b);
+void update_guessed(Game *g);
+void execute_undo(Game *g);
+void save_state(Game *g);
+void destroy_undo();
 
 // debug: show solution
 void switch_solve_puzzle(Game *g, Board *b){
@@ -130,7 +143,7 @@ void draw_stuff(Board *b){
     static float time = -1;
     float t;
     int x, y;
-     
+    
     al_clear_to_color(b->bg_color);
     if(b->show_settings){
         draw_TiledBlock(&b->s, 0,0);
@@ -226,6 +239,7 @@ void win_or_lose(Game *g, Board *b){
 void destroy_everything(Board *b){
     destroy_board(b);
     destroy_sound();
+    destroy_undo();
 }
 
 int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
@@ -343,6 +357,7 @@ RESTART:
     if(b.restart){
         al_set_target_backbuffer(display);
         destroy_board(&b);
+        destroy_undo();
         if (event_queue) al_destroy_event_queue(event_queue);
         if (timer) al_destroy_timer(timer);
         if (timer_second) al_destroy_timer(timer_second);
@@ -356,7 +371,8 @@ RESTART:
     g.n = new_n; g.h=new_h; // temporarily only works for 6
     b.n = new_n; b.h=new_h;
     g.advanced = new_advanced; // use "what if" depth 1
-    
+
+    draw_generating_puzzle(&g, &b);
     create_game_with_clues(&g);
 
     if(create_board(&g, &b, 1)){
@@ -496,13 +512,9 @@ RESTART:
                             }
                             al_flush_event_queue(event_queue);
                             break;
-                        case ALLEGRO_KEY_Q:
-                            noexit=0;
-                            break;
-                        case ALLEGRO_KEY_K:
-                            al_draw_rectangle(1,1,100,100,WHITE_COLOR, 10);
-                            al_flip_display();
-                            wait_for_input();
+                        case ALLEGRO_KEY_U:
+                            execute_undo(&g);
+                            update_board(&g, &b);
                             al_flush_event_queue(event_queue);
                             break;
                     }
@@ -639,6 +651,31 @@ RESTART:
     return(0);
 }
 
+void update_guessed(Game *g){
+    int i,j,k, count, val;
+    
+    g->guessed=0;
+    
+    for(i=0; i<g->n; i++){
+        for(j=0; j<g->h; j++){
+            count=0;
+            val = -1;
+            for(k=0; k<g->n; k++){
+                if(g->tile[i][j][k]){
+                    count++;
+                    val = k;
+                    if(count>1) break;
+                }
+            }
+            if(count == 1){
+                g->guess[i][j] = val;
+                g->guessed++;
+            } else
+                g->guess[i][j] = -1;
+        }
+    }
+}
+
 void update_board(Game *g, Board *b){
     int i,j,k;
     
@@ -763,8 +800,34 @@ void show_hint(Game *g, Board *b){
     }
 }
 
+void destroy_undo(){
+    struct Panel_State *foo;
+    
+    while(undo){
+        foo = undo->parent;
+        free(undo);
+        undo = foo;
+    }
+}
+
+void execute_undo(Game *g){
+    struct Panel_State *undo_old;
+    
+    if(!undo) return;
+    memcpy(&g->tile, &undo->tile, sizeof(g->tile));
+    undo_old = undo->parent;
+    free(undo);
+    undo = undo_old;
+    update_guessed(g);
+}
+
 void save_state(Game *g){
-    // add undo function here
+    struct Panel_State *foo;
+    
+    foo = malloc(sizeof(*foo));
+    foo->parent = undo;
+    undo = foo;
+    memcpy(&undo->tile, &g->tile, sizeof(undo->tile));
 }
 
 void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
@@ -833,9 +896,9 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     switch(t->type){ // which board component was clicked
         case TB_PANEL_TILE:
             if(game_state != GAME_PLAYING) break;
-            save_state(g);
             k = t->index; j=t->parent->index; i = t->parent->parent->index;
             if(mclick==2){
+                save_state(g);
                 if(g->tile[i][j][k]){ // hide tile
                     hide_tile_and_check(g, i, j, k);
                     if (!sound_mute) play_sound(SOUND_HIDE_TILE);
@@ -847,6 +910,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
                 }
             } else if (mclick==1){
                 if(g->tile[i][j][k]){
+                    save_state(g);
                     guess_tile(g, i, j, k);
                     if (!sound_mute) play_sound(SOUND_GUESS_TILE);
                 }
@@ -855,10 +919,10 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             break;
 
         case TB_PANEL_BLOCK:
-            save_state(g);
             if(game_state != GAME_PLAYING) break;
             if ((mclick==2) && (g->guess[t->parent->index][t->index]>=0)){
                 // we found guessed block - unguess it
+                save_state(g);
                 unguess_tile(g, t->parent->index, t->index);
                 if (!sound_mute) play_sound(SOUND_UNHIDE_TILE);
             }

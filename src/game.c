@@ -360,8 +360,8 @@ void switch_game(Game *g, int type){
     static int guessed;
     
     if(type == 0){
-        memcpy(tile, g->tile, sizeof(g->tile));
-        memcpy(guess, g->guess, sizeof(g->guess));
+        memcpy(&tile, &g->tile, sizeof(g->tile));
+        memcpy(&guess, &g->guess, sizeof(g->guess));
         guessed = g->guessed;
     }
     SWAP(g->tile, tile);
