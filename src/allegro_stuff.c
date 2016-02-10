@@ -61,6 +61,23 @@ void get_desktop_resolution(int adapter, int *w, int *h)
     *h = info.y2 - info.y1;
 };
 
+// get best fullscreen resolution
+void get_highest_resolution(int *w, int *h){
+    ALLEGRO_DISPLAY_MODE disp_data;
+    
+    *w = 0;
+    *h = 0;
+    for(int i=0; i<al_get_num_display_modes(); i++){
+        al_get_display_mode(i, &disp_data);
+        if(*w < disp_data.width)
+            *w = disp_data.width;
+    }
+
+    if((*w == disp_data.width) && (*h < disp_data.height)){
+        *h = disp_data.height;
+    }
+}
+
 // quick helpful thingy
 void wait_for_keypress()
 {

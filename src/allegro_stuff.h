@@ -25,9 +25,16 @@ int init_allegro(void);
 
 // adapter = 0 for first desktop
 void get_desktop_resolution(int adapter, int *w, int *h);
-void wait_for_keypress(void);
+
+// get best fullscreen resolution
+void get_highest_resolution(int *w, int *h);
+
+    void wait_for_keypress(void);
 // wait for keypress or mouse click:
 void wait_for_input(void);
+
+
+
 
 // variables
 extern ALLEGRO_FONT *default_font;

@@ -35,6 +35,7 @@
 #include "bitmaps.h"
 #include "dialog.h"
 
+
 #define FPS 30
 
 // defaults:
@@ -43,13 +44,14 @@ int new_h=6;
 int new_advanced = 0;
 int sound_mute = 0;
 
-//debug
 float RESIZE_DELAY = 0.04;
 float BLINK_DELAY = .3; float BLINK_TIME = .5;
 float CLICK_DELAY = 0.2;
 int swap_mouse_buttons=0;
 
 GAME_STATE game_state;
+int desktop_xsize, desktop_ysize;
+int fullscreen;
 
 const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the bard.\n"
     "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning.\n"
@@ -223,6 +225,47 @@ void destroy_everything(Board *b){
     destroy_sound();
 }
 
+void toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
+    ALLEGRO_DISPLAY *newdisp;
+    ALLEGRO_DISPLAY_MODE disp_data;
+    float display_factor;
+
+    get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
+    
+    if(!fullscreen){
+        al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+        display_factor = 1;
+    } else {
+        al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
+        display_factor = 0.9;
+    }
+    
+    newdisp = al_create_display(desktop_xsize*display_factor, desktop_ysize*display_factor);
+    if(!newdisp){
+        fprintf(stderr, "Error switching fullscreen mode.\n");
+        return;
+    }
+    
+    SWITCH(fullscreen);
+    destroy_board(b);
+    al_destroy_display(*display);
+    *display = newdisp;
+    al_set_target_backbuffer(*display);
+    b->max_xsize = desktop_xsize*display_factor;
+    b->max_ysize = desktop_ysize*display_factor;
+    create_board(g, b, fullscreen ? 2 : 1);
+    al_set_target_backbuffer(*display);
+    if(!fullscreen){
+        al_resize_display(*display, b->xsize, b->ysize);
+        al_set_window_position(*display, (desktop_xsize-b->xsize)/2, (desktop_ysize-b->ysize)/2);
+        al_acknowledge_resize(*display);
+        al_set_target_backbuffer(*display);
+    }
+    update_board(g, b);
+    al_convert_bitmaps();
+
+}
+
 int main(int argc, char **argv){
     Game g = {0};
     Board b = {0};
@@ -232,11 +275,10 @@ int main(int argc, char **argv){
     ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_DISPLAY_MODE disp_data;
     double time_foo, dt, last_draw, resize_time, mouse_button_time;
-    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, fullscreen, request_exit;
+    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit;
     int mouse_x, mouse_y, mouse_cx, mouse_cy;
 	float max_display_factor;
     TiledBlock *tb = NULL;
-    int desktop_xsize, desktop_ysize;
     char str[500];
     
     // seed random number generator. comment out for debug
@@ -244,7 +286,7 @@ int main(int argc, char **argv){
 
     if (init_allegro()) return -1;	
 
-
+    
 #ifndef _WIN32
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
@@ -255,19 +297,17 @@ int main(int argc, char **argv){
     
     // use vsync if available
     al_set_new_display_option(ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST);
-	
+
+    get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
+
 	if (fullscreen) {
-		al_get_display_mode(al_get_num_display_modes() - 1, &disp_data);
-		desktop_xsize = disp_data.width; desktop_ysize = disp_data.height;
-		al_set_new_display_flags(ALLEGRO_FULLSCREEN);
-		max_display_factor = 1;
+        al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+        display = al_create_display(desktop_xsize, desktop_ysize);
 	} else {
-		get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
 		al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
-		max_display_factor = 0.9;
+        display = al_create_display(800,600);
 	}
     
-    display=al_create_display(800,600); //(desktop_xsize*max_display_factor, desktop_ysize*max_display_factor);
     if(!display) {
         fprintf(stderr, "Failed to create display!\n");
         return -1;
@@ -284,28 +324,32 @@ int main(int argc, char **argv){
     b.type_of_tiles = 0; // use font tiles by default
 
 RESTART:
+    get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
+  
+	if (!fullscreen) {
+        max_display_factor = 0.9;
+    } else
+        max_display_factor = 1;
+
     if(b.restart){
         al_set_target_backbuffer(display);
         destroy_board(&b);
         if (event_queue) al_destroy_event_queue(event_queue);
         if (timer) al_destroy_timer(timer);
         if (timer_second) al_destroy_timer(timer_second);
-	    b.restart=0;
-		al_set_target_backbuffer(display);
-	}
+        b.restart=0;
+        al_set_target_backbuffer(display);
+    }
     
+    b.max_xsize = desktop_xsize*max_display_factor;
+    b.max_ysize = desktop_ysize*max_display_factor; // change this later to something adequate
+
     g.n = new_n; g.h=new_h; // temporarily only works for 6
     b.n = new_n; b.h=new_h;
     g.advanced = new_advanced; // use "what if" depth 1
     
     create_game_with_clues(&g);
-    
-	if (!fullscreen) {
-		get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
-		b.max_xsize = desktop_xsize*max_display_factor;
-		b.max_ysize = desktop_ysize*max_display_factor; // change this later to something adequate
-	}
-    
+
     if(create_board(&g, &b, 1)){
         fprintf(stderr, "Failed to create game board.\n");
         return -1;
@@ -437,7 +481,19 @@ RESTART:
 						case ALLEGRO_KEY_C:
 							show_hint(&g, &b);
 							break;
-
+                        case ALLEGRO_KEY_F:
+                            toggle_fullscreen(&g, &b, &display);
+                            al_flush_event_queue(event_queue);
+                            break;
+                        case ALLEGRO_KEY_Q:
+                            noexit=0;
+                            break;
+                        case ALLEGRO_KEY_K:
+                            al_draw_rectangle(1,1,100,100,WHITE_COLOR, 10);
+                            al_flip_display();
+                            wait_for_input();
+                            al_flush_event_queue(event_queue);
+                            break;
                     }
                     break;
                 case ALLEGRO_EVENT_KEY_DOWN:

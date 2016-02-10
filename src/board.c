@@ -86,7 +86,8 @@ void destroy_board_clue_blocks(Board *b){
 }
 
 //xxx todo: better board generation. Fix tile size first, then compute everything?
-int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
+// mode: 1 = create, 0 = update, 2 = create fullscreen
+int create_board(Game *g, Board *b, int mode){
     int i,j,k;
     int column_w, column_h, block_w, block_h, block_space;
     int hclue_tile_w, hclue_tile_h, vclue_tile_w, vclue_tile_h;
@@ -95,7 +96,7 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
     
     b->clue_unit_space = CLUE_UNIT_SPACE;
     
-    if(mode==1){
+    if(mode){
         b->clue_bmp = malloc(g->clue_n*sizeof(*b->clue_bmp));
         b->clue_tiledblock = malloc(g->clue_n*sizeof(*b->clue_tiledblock));
     }
@@ -150,9 +151,9 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
     b->panel.h = column_h;
     
     // panel columns
-    if(mode == 1) b->panel.b = malloc(b->n*sizeof(struct TiledBlock *));
+    if(mode) b->panel.b = malloc(b->n*sizeof(struct TiledBlock *));
     for(i=0; i<b->n; i++){
-        if(mode == 1){
+        if(mode){
             b->panel.b[i] = malloc(sizeof(struct TiledBlock));
             b->panel.b[i]->bg_color = PANEL_COLUMN_BG_COLOR;
             b->panel.b[i]->bd_color = PANEL_COLUMN_BD_COLOR;
@@ -174,7 +175,7 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
         
         // panel blocks
         for(j=0; j<b->h ; j++){
-            if(mode == 1) {
+            if(mode) {
                 b->panel.b[i]->b[j] = malloc(sizeof(struct TiledBlock));
                 b->panel.b[i]->b[j]->bd_color = NULL_COLOR;
                 b->panel.b[i]->b[j]->bg_color = NULL_COLOR;
@@ -195,7 +196,7 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
             
             // panel tiles
             for(k=0; k<b->n; k++){
-                if(mode==1){
+                if(mode){
                     b->panel.b[i]->b[j]->b[k] = malloc(sizeof(struct TiledBlock));
                     b->panel.b[i]->b[j]->b[k]->bd_color = PANEL_TILE_BD_COLOR;
                     b->panel.b[i]->b[j]->b[k]->bg_color = NULL_COLOR;
@@ -247,7 +248,7 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
     b->hclue.hidden=0;
     
     // count number of vclues and hclues
-    if(mode == 1){
+    if(mode){
         b->vclue_n=0; b->hclue_n=0;
         for(i=0;i<g->clue_n;i++){
             if(is_vclue(g->clue[i].rel))
@@ -391,7 +392,7 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
     b->time_panel.hidden = 0;
     b->time_panel.bmp = NULL;
 
-    if(mode==1){ // if board is being created
+    if(mode){ // if board is being created
         b->time_panel.b = malloc(4*sizeof(struct Tiledblock *));
         for(i=0;i<4;i++)
             b->time_panel.b[i] = malloc(sizeof(struct TiledBlock));
@@ -437,7 +438,7 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
 
     // collect TiledBlocks into an array for convenience
     // and create settings block
-    if(mode == 1){ // only if board is being created
+    if(mode){ // only if board is being created
         create_settings_block(b);
         b->all.x = 0;
         b->all.y = 0;
@@ -468,12 +469,12 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
 	b->s.x = (b->xsize - b->s.w) / 2;
 	b->s.y = (b->ysize - b->s.h) / 2;
 
-    if(mode == 0){
+    if(mode != 1){ // only for update or fullscreen
         b->all.x = (b->max_xsize - b->xsize)/2;
         b->all.y = (b->max_ysize - b->ysize)/2;
     }
     
-    if(mode == 1)
+    if(mode)
         if(init_bitmaps(b)) return -1;
     
     return update_bitmaps(g, b);
