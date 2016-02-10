@@ -439,97 +439,95 @@ RESTART:
 
     while(noexit)
     {
-        while(!al_event_queue_is_empty(event_queue)){
-            al_wait_for_event(event_queue, &ev);
+        al_wait_for_event(event_queue, &ev);
             
-            switch(ev.type){
-                case ALLEGRO_EVENT_TIMER:
-                    if(ev.timer.source==timer) redraw=1;
-                    else if (ev.timer.source==timer_second) second_tick=1;
-                    break;
-                case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                    mouse_button_down = ev.mouse.button;
-                    mouse_button_time = al_get_time();
-                    mouse_cx = ev.mouse.x;
-                    mouse_cy = ev.mouse.y;
-                    tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
-                    break;
-                case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-                    if(mouse_drag==2){
-                        mouse_drag=3;
-                    } else { //xxx todo: check tile on button_down, compare on button_up, click if same
-                        if(tb == get_TiledBlock_at(&b, mouse_x, mouse_y))
-                            mouse_click = mouse_button_down;
-                    }
-                    mouse_button_down=0;
-                    break;
-                case ALLEGRO_EVENT_MOUSE_AXES:
-                    mouse_x = ev.mouse.x;
-                    mouse_y = ev.mouse.y;
-                    mouse_move=1;
-                    break;
-                case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                    request_exit=1;
-                    break;
-                case ALLEGRO_EVENT_KEY_CHAR:
-                    keypress=1;
-                    switch(ev.keyboard.keycode){
-                        case ALLEGRO_KEY_ESCAPE:
-                            if(b.show_settings)
-                                b.show_settings=0;
-                            else if(b.show_help)
-                                b.show_help = 0;
-                            else
-                                request_exit=1;
-                            break;
-                        case ALLEGRO_KEY_R:
-                            b.restart=1;
-                            break;
-                        case ALLEGRO_KEY_S: // debug: show solution
-                            switch_solve_puzzle(&g, &b);
-                            break;
-                        case ALLEGRO_KEY_T:
-                            if(switch_tiles(&g, &b, display)){
-                                fprintf(stderr, "Error switching tiles.\n");
-                                return -1;
-                            }
-                            al_flush_event_queue(event_queue);
-                            break;
-                        case ALLEGRO_KEY_SPACE:
-                            mouse_click=2;
-                            mouse_cx = mouse_x;
-                            mouse_cy = mouse_y;
-                            break;
-                        case ALLEGRO_KEY_H:
-                            b.show_help= b.show_help == 0 ? 1 : 0;
-                            break;
-						case ALLEGRO_KEY_C:
-							show_hint(&g, &b);
-							break;
-                        case ALLEGRO_KEY_F:
-                            if(toggle_fullscreen(&g, &b, &display)){
-                                al_register_event_source(event_queue, al_get_display_event_source(display));
-                            }
-                            al_flush_event_queue(event_queue);
-                            break;
-                        case ALLEGRO_KEY_U:
-                            execute_undo(&g);
-                            update_board(&g, &b);
-                            al_flush_event_queue(event_queue);
-                            break;
-                    }
-                    break;
-                case ALLEGRO_EVENT_KEY_DOWN:
-                case ALLEGRO_EVENT_KEY_UP:
-                case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
-                case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
-                    break;
-                case ALLEGRO_EVENT_DISPLAY_RESIZE:
-					if (fullscreen) break;
-                    al_acknowledge_resize(display);
-                    resizing=1; resize_time=al_get_time();
-                    break;
-            }
+        switch(ev.type){
+            case ALLEGRO_EVENT_TIMER:
+                if(ev.timer.source==timer) redraw=1;
+                else if (ev.timer.source==timer_second) second_tick=1;
+                break;
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                mouse_button_down = ev.mouse.button;
+                mouse_button_time = al_get_time();
+                mouse_cx = ev.mouse.x;
+                mouse_cy = ev.mouse.y;
+                tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
+                break;
+            case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+                if(mouse_drag==2){
+                    mouse_drag=3;
+                } else { //xxx todo: check tile on button_down, compare on button_up, click if same
+                    if(tb == get_TiledBlock_at(&b, mouse_x, mouse_y))
+                        mouse_click = mouse_button_down;
+                }
+                mouse_button_down=0;
+                break;
+            case ALLEGRO_EVENT_MOUSE_AXES:
+                mouse_x = ev.mouse.x;
+                mouse_y = ev.mouse.y;
+                mouse_move=1;
+                break;
+            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                request_exit=1;
+                break;
+            case ALLEGRO_EVENT_KEY_CHAR:
+                keypress=1;
+                switch(ev.keyboard.keycode){
+                    case ALLEGRO_KEY_ESCAPE:
+                        if(b.show_settings)
+                            b.show_settings=0;
+                        else if(b.show_help)
+                            b.show_help = 0;
+                        else
+                            request_exit=1;
+                        break;
+                    case ALLEGRO_KEY_R:
+                        b.restart=1;
+                        break;
+                    case ALLEGRO_KEY_S: // debug: show solution
+                        switch_solve_puzzle(&g, &b);
+                        break;
+                    case ALLEGRO_KEY_T:
+                        if(switch_tiles(&g, &b, display)){
+                            fprintf(stderr, "Error switching tiles.\n");
+                            return -1;
+                        }
+                        al_flush_event_queue(event_queue);
+                        break;
+                    case ALLEGRO_KEY_SPACE:
+                        mouse_click=2;
+                        mouse_cx = mouse_x;
+                        mouse_cy = mouse_y;
+                        break;
+                    case ALLEGRO_KEY_H:
+                        b.show_help= b.show_help == 0 ? 1 : 0;
+                        break;
+                    case ALLEGRO_KEY_C:
+                        show_hint(&g, &b);
+                        break;
+                    case ALLEGRO_KEY_F:
+                        if(toggle_fullscreen(&g, &b, &display)){
+                            al_register_event_source(event_queue, al_get_display_event_source(display));
+                        }
+                        al_flush_event_queue(event_queue);
+                        break;
+                    case ALLEGRO_KEY_U:
+                        execute_undo(&g);
+                        update_board(&g, &b);
+                        al_flush_event_queue(event_queue);
+                        break;
+                }
+                break;
+            case ALLEGRO_EVENT_KEY_DOWN:
+            case ALLEGRO_EVENT_KEY_UP:
+            case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
+            case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
+                break;
+            case ALLEGRO_EVENT_DISPLAY_RESIZE:
+                if (fullscreen) break;
+                al_acknowledge_resize(display);
+                resizing=1; resize_time=al_get_time();
+                break;
         }
         
         if(resizing){
