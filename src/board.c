@@ -473,6 +473,9 @@ int create_board(Game *g, Board *b, int mode){// mode: 1 = create, 0 = update
         b->all.y = (b->max_ysize - b->ysize)/2;
     }
     
+    if(mode == 1)
+        if(init_bitmaps(b)) return -1;
+    
     return update_bitmaps(g, b);
 }
 

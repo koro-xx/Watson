@@ -20,6 +20,12 @@ if (APPLE)
 	find_library(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
 	find_library(APPKIT_FRAMEWORK AppKit)
 	find_library(APPLICATIONSERVICES_FRAMEWORK ApplicationServices)
+	# NOTE: Don't include the path in MACOSX_BUNDLE_ICON_FILE -- this is
+	# the property added to Info.plist
+	set(MACOSX_BUNDLE_ICON_FILE app_icon.icns)
+
+	# And this part tells CMake where to find and install the file itself
+	set(APP_ICON ${CMAKE_SOURCE_DIR}/src/app_icon.icns)
 endif (APPLE)
 
 set(SOURCES
@@ -47,9 +53,10 @@ set(RESOURCES
 	"src/fonts"
 	"src/icons"
 	"src/sounds"
+	"src/app_icon.icns"
 )
 
-add_executable(watson MACOSX_BUNDLE WIN32 ${SOURCES} ${HEADERS} ${RESOURCES})
+add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCES})
 
 target_link_libraries(watson
   ${LINK_LIBRARIES}

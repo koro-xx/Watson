@@ -281,6 +281,8 @@ int main(int argc, char **argv){
     al_flip_display();
     wait_for_input();
 
+    b.type_of_tiles = 0; // use font tiles by default
+
 RESTART:
     if(b.restart){
         al_set_target_backbuffer(display);
@@ -292,12 +294,10 @@ RESTART:
 		al_set_target_backbuffer(display);
 	}
     
-    b.type_of_tiles = 0; // use font tiles
     g.n = new_n; g.h=new_h; // temporarily only works for 6
     b.n = new_n; b.h=new_h;
     g.advanced = new_advanced; // use "what if" depth 1
     
-    draw_generating_puzzle(&g,&b);
     create_game_with_clues(&g);
     
 	if (!fullscreen) {
@@ -318,13 +318,7 @@ RESTART:
         al_acknowledge_resize(display);
         al_set_target_backbuffer(display);
     }
-    
-    if(init_bitmaps(&b)){
-        fprintf(stderr, "Error initializing fonts or bitmaps.\n");
-        return -1;
-    }
-
-	
+    	
 	al_convert_bitmaps(); // turn bitmaps to memory bitmaps after resize (bug in allegro doesn't autoconvert)
 
     
