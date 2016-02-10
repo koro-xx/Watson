@@ -1,7 +1,7 @@
-#define PRE_VERSION "0.79"
-#define PRE_DATE "2016-02-08"
+#define PRE_VERSION "0.79.2"
+#define PRE_DATE "2016-02-10"
 #ifdef _WIN32
-    #define _CRT_SECURE_NO_WARNINGS
+    #¹!1define _CRT_SECURE_NO_WARNINGS
 #endif
 
 /*
@@ -10,7 +10,7 @@
  by Koro (1/2016)
 
  Todo:
- - refresh ON DEMAND
+ - refresh ON DEMAND (fix 100% cpu usage!)
  - add undo button
  - fix help text window
  - Mouse click: delay for drag is too long (what's the right way to handle drag/click?)
@@ -244,7 +244,6 @@ void destroy_everything(Board *b){
 
 int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
     ALLEGRO_DISPLAY *newdisp;
-    ALLEGRO_DISPLAY_MODE disp_data;
     float display_factor;
 
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
@@ -296,7 +295,6 @@ int main(int argc, char **argv){
     ALLEGRO_TIMER *timer = NULL, *timer_second = NULL;
     ALLEGRO_EVENT_QUEUE *event_queue = NULL;
     ALLEGRO_DISPLAY *display = NULL;
-	ALLEGRO_DISPLAY_MODE disp_data;
     double time_foo, dt, last_draw, resize_time, mouse_button_time;
     int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit;
     int mouse_x, mouse_y, mouse_cx, mouse_cy;
@@ -370,7 +368,7 @@ RESTART:
 
     g.n = new_n; g.h=new_h; // temporarily only works for 6
     b.n = new_n; b.h=new_h;
-    g.advanced = new_advanced; // use "what if" depth 1
+    g.advanced = new_advanced; // use "what if" depth 1?
 
     draw_generating_puzzle(&g, &b);
     create_game_with_clues(&g);

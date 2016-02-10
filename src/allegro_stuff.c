@@ -6,7 +6,7 @@
 #include <allegro5/allegro_color.h>
 #include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
-// test
+
 ALLEGRO_FONT *default_font = NULL;
 char DEFAULT_FONT_FILE[]="fonts/fixed_font.tga";
 

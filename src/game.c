@@ -49,7 +49,7 @@ void create_puzzle(Game *g){
     int p[8];
     
     g->guessed=0;
-    for(i=0; i<9;i++){
+    for(i=0; i<8;i++){
         p[i]=i;
     }
     
@@ -360,8 +360,8 @@ void switch_game(Game *g, int type){
     static int guessed;
     
     if(type == 0){
-        memcpy(&tile, &g->tile, sizeof(g->tile));
-        memcpy(&guess, &g->guess, sizeof(g->guess));
+        memcpy(&tile, &g->tile, sizeof(tile));
+        memcpy(&guess, &g->guess, sizeof(guess));
         guessed = g->guessed;
     }
     SWAP(g->tile, tile);
