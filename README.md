@@ -5,7 +5,10 @@ Watson is a clone of “Sherlock”, an old game by Everett Kaser which is itsel
 Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from #allegro in Freenode for all the tips and advice.
    
 The tile set is rendered from TTF fonts obtained from www.fontlibrary.org. There is also an option to load custom tiles (presing 'T', which should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles in .png format. These won't look as nice as the fonts due to the anti-aliasing. The icons included here were downloaded from www.icons8.com. The sounds are from www.freesound.org.
- 
+<p align="center">
+<img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-1.png" width="400" />  <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-2.png" width="400"/>
+</p>
+
 ##How to play
 
 The board is partitioned into an n x h grid of blocks of same-type items (letters, symbols, greek letters, etc). The goal is to figure out which item goes in each block. Each item should appear exactly once. The game provides clues in two panes (right pane has horizontal clues, bottom pane has vertical clues. Each clue tells you something about the relative position of items in the solution. Depending on the configuration of the main panel, a clue may help you discard some item from a given block. For instance, if a vertical clue tells you that the column of the 'F' letter is between the columns of the symbol '?' and the number '3', this tells you that 'F' can't be in the first or in the last column. If another (vertical) clue tells you that the letter 'F' is in the same column as the greek letter alpha, then you can rule out alpha from the same columns where you ruled out 'F'.
