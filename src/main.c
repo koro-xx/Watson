@@ -225,7 +225,7 @@ void destroy_everything(Board *b){
     destroy_sound();
 }
 
-void toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
+int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
     ALLEGRO_DISPLAY *newdisp;
     ALLEGRO_DISPLAY_MODE disp_data;
     float display_factor;
@@ -239,31 +239,37 @@ void toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
         display_factor = 0.9;
     }
-    
+  
+
     newdisp = al_create_display(desktop_xsize*display_factor, desktop_ysize*display_factor);
     if(!newdisp){
         fprintf(stderr, "Error switching fullscreen mode.\n");
-        return;
+        return 0;
     }
     
     SWITCH(fullscreen);
     destroy_board(b);
+
     al_destroy_display(*display);
+
     *display = newdisp;
     al_set_target_backbuffer(*display);
     b->max_xsize = desktop_xsize*display_factor;
     b->max_ysize = desktop_ysize*display_factor;
+ 
     create_board(g, b, fullscreen ? 2 : 1);
     al_set_target_backbuffer(*display);
+
     if(!fullscreen){
         al_resize_display(*display, b->xsize, b->ysize);
         al_set_window_position(*display, (desktop_xsize-b->xsize)/2, (desktop_ysize-b->ysize)/2);
         al_acknowledge_resize(*display);
         al_set_target_backbuffer(*display);
     }
+    
     update_board(g, b);
     al_convert_bitmaps();
-
+    return 1;
 }
 
 int main(int argc, char **argv){
@@ -482,7 +488,9 @@ RESTART:
 							show_hint(&g, &b);
 							break;
                         case ALLEGRO_KEY_F:
-                            toggle_fullscreen(&g, &b, &display);
+                            if(toggle_fullscreen(&g, &b, &display)){
+                                al_register_event_source(event_queue, al_get_display_event_source(display));
+                            }
                             al_flush_event_queue(event_queue);
                             break;
                         case ALLEGRO_KEY_Q:
