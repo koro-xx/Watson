@@ -45,8 +45,7 @@ int sound_mute = 0;
 
 //debug
 float RESIZE_DELAY = 0.04;
-float BLINK_DELAY = .3;
-float BLINK_TIME = .5;
+float BLINK_DELAY = .3; float BLINK_TIME = .5;
 float CLICK_DELAY = 0.2;
 int swap_mouse_buttons=0;
 
@@ -73,9 +72,9 @@ const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
     "\n"
     "Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from Freenode #allegro for all the tips and advice.\n"
     "\n"
-    "The tile set is rendered from TTF fonts obtained from public repositories. There is also an option to load custom tiles, which should be stored in APPDIR1/icons into 8 separate folders, each with 8 square tiles in .png format. Of course, these won't look as nice as the fonts due to the anti-aliasing.\n"
+    "The tile set is rendered from TTF fonts obtained from fontlibrary.org. Pressing the game will switch to custom tiles, which sould be stored in <appdir>/icons into 8 separate folders numbered 0 to 7, each with 8 square tiles in .png format. Of course, these won't look as nice as the fonts due to the anti-aliasing. The tiles provided here were downloaded from www.icons8.com.\n"
     "\n"
-    "The \"advanced\" mode generates puzzles which should be harder, but I don't know how well it works (or if they really are harder; more testing is needed.";
+    "The \"advanced\" mode generates (much) harder puzzles, to the point of being almost impossible, so it needs to be tuned.";
 
 const char *CLUE_TEXT[NUMBER_OF_RELATIONS] = {
     [NEXT_TO] = "The two items are in adjacent columns, on either side.",

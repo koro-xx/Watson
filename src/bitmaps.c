@@ -40,6 +40,7 @@ char *CLUE_BG_COLOR[8]={
     "FFB6C1",
     "9ACD32"
 };
+
 //    "800080",
 char *CLUE_FG_COLOR[8]={
     "FFFFFF",
@@ -51,6 +52,30 @@ char *CLUE_FG_COLOR[8]={
     "000000",
     "000000",
 };
+
+char *CLUE_BG_COLOR_BMP[8]={
+    "777777",
+    "555555",
+    "777777",
+    "555555",
+    "777777",
+    "555555",
+    "777777",
+    "555555"
+};
+
+
+//char *CLUE_BG_COLOR_BMP[8]={
+//    "888888",
+//    "333333",
+//    "888888",
+//    "333333",
+//    "888888",
+//    "333333",
+//    "888888",
+//    "333333"
+//};
+
 
 char *CLUE_CODE[8][8] = {
     {"A", "B", "C", "D", "E", "F", "G", "H"},
@@ -472,17 +497,34 @@ int update_bitmaps(Game *g, Board *b){
             
             // guessed bitmaps
             al_set_target_bitmap(b->guess_bmp[i][j]);
-            al_clear_to_color(NULL_COLOR);
+            al_clear_to_color(al_color_html(CLUE_BG_COLOR_BMP[i]));
+            if(TILE_SHADOWS)
+                draw_shadow(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h,2);
+            else
+                al_draw_rectangle(.5,.5,b->panel.b[0]->b[0]->w-.5, b->panel.b[0]->b[0]->h-.5, TILE_GENERAL_BD_COLOR,1);
+            
             al_draw_scaled_bitmap(basic_bmp[i][j], 0, 0, al_get_bitmap_width(basic_bmp[i][j]), al_get_bitmap_height(basic_bmp[i][j]), (b->panel.b[0]->b[0]->w-s)/2, (b->panel.b[0]->b[0]->h-s)/2, s, s, 0);
             
             // panel bitmaps
             al_set_target_bitmap(b->panel_tile_bmp[i][j]);
-            al_clear_to_color(NULL_COLOR);
+            al_clear_to_color(al_color_html(CLUE_BG_COLOR_BMP[i]));
+            if(TILE_SHADOWS)
+                draw_shadow(b->panel_tile_size, b->panel_tile_size,1);
+            else
+                al_draw_rectangle(.5,.5,b->panel_tile_size-.5,b->panel_tile_size-.5, TILE_GENERAL_BD_COLOR,1);
+            
+            
+            
             al_draw_scaled_bitmap(basic_bmp[i][j], 0, 0, al_get_bitmap_width(basic_bmp[i][j]), al_get_bitmap_height(basic_bmp[i][j]), 0, 0, b->panel_tile_size, b->panel_tile_size,0);
             
             // clue unit tile bitmaps
             al_set_target_bitmap(b->clue_unit_bmp[i][j]);
-            al_clear_to_color(NULL_COLOR);
+            al_clear_to_color(al_color_html(CLUE_BG_COLOR_BMP[i]));
+            if(TILE_SHADOWS)
+                draw_shadow(b->clue_unit_size,b->clue_unit_size,2);
+            else
+                al_draw_rectangle(.5,.5,b->clue_unit_size-.5, b->clue_unit_size-.5, TILE_GENERAL_BD_COLOR,1);
+
             al_draw_scaled_bitmap(basic_bmp[i][j], 0, 0, al_get_bitmap_width(basic_bmp[i][j]), al_get_bitmap_height(basic_bmp[i][j]), 0, 0, b->clue_unit_size, b->clue_unit_size,0);
         }
     }
