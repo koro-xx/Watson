@@ -64,10 +64,11 @@ void get_desktop_resolution(int adapter, int *w, int *h)
 // get best fullscreen resolution
 void get_highest_resolution(int *w, int *h){
     ALLEGRO_DISPLAY_MODE disp_data;
-    
+    int i;
+
     *w = 0;
     *h = 0;
-    for(int i=0; i<al_get_num_display_modes(); i++){
+    for(i=0; i<al_get_num_display_modes(); i++){
         al_get_display_mode(i, &disp_data);
         if(*w < disp_data.width)
             *w = disp_data.width;

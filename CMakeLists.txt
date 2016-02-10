@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Alleg REQUIRED)
 
 if (UNIX)
-	SET(LINK_LIBRARIES, ${LINK_LIBRARIES} "m")
+	SET(LINK_LIBRARIES ${LINK_LIBRARIES} "m")
 endif(UNIX)
 	
 if (APPLE)
