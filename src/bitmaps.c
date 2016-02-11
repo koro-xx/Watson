@@ -4,6 +4,7 @@
 #include <allegro5/allegro_color.h>
 #include <allegro5/allegro_primitives.h>
 #include "allegro_stuff.h"
+#include "dialog.h"
 
 typedef enum SYMBOL{
     SYM_FORBIDDEN,
@@ -432,13 +433,48 @@ int make_clue_bitmaps(Game *g, Board *b){
 void show_info_text(Board *b, const char* msg){
     ALLEGRO_FONT *font;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
+    ALLEGRO_FONT *bmp_font;
+    int garbage_unicode_range[2] = {0xA78D, 0xA78D}; //A78D..A7FA
+    char str[1000];
+    ALLEGRO_USTR *ustr;
+    int i;
+    
+    
+//    ndestroy_bitmap(b->info_text_bmp);
+//    b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
+//    al_set_target_bitmap(b->info_text_bmp);
+//    al_clear_to_color(b->info_panel.bg_color);
+  
+    al_set_target_backbuffer(al_get_current_display());
+    al_clear_to_color(NULL_COLOR);
+    draw_text_bf(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-20, b->info_panel.h/2.2, ALLEGRO_ALIGN_LEFT, "This is a test: %b <-- bitmap?", b->clue_unit_bmp[1][1]);
 
+    al_flip_display();
+    al_rest(5);
+                    
+//    draw_text_bf(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-20, b->info_panel.h/2.2, ALLEGRO_ALIGN_LEFT, "This is a test: %b <-- bitmap?", b->clue_unit_bmp[1][1]);
+    //b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
+
+    //al_set_target_bitmap(dispbuf);
+    
+    return;
+    
+    i=al_utf8_encode(str, 0xA78D);
+    str[i]=0;
+    ustr = al_ustr_newf("Testing bitmap: %s works?", str);
+    ALLEGRO_BITMAP *test = al_create_bitmap(b->info_panel.h/2.2 + 2,  b->info_panel.h/2.2+2);
+    al_set_target_bitmap(test);
+    al_clear_to_color(NULL_COLOR);
+    al_draw_scaled_bitmap(b->clue_unit_bmp[1][1], 0, 0, al_get_bitmap_width(b->clue_unit_bmp[1][1]), al_get_bitmap_height(b->clue_unit_bmp[1][1]), 1, 1, b->info_panel.h/2.2, b->info_panel.h/2.2, 0);
+    bmp_font = al_grab_font_from_bitmap(test, 1, garbage_unicode_range);
     font = b->text_font ? b->text_font : default_font;
+    al_set_fallback_font(font, bmp_font);
+
     ndestroy_bitmap(b->info_text_bmp);
     b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
-    al_draw_multiline_text(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-20, b->info_panel.h/2.2, ALLEGRO_ALIGN_LEFT, msg);
+    al_draw_multiline_ustr(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-20, b->info_panel.h/2.2, ALLEGRO_ALIGN_LEFT, ustr);
     
     b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
     al_set_target_bitmap(dispbuf);
@@ -819,3 +855,5 @@ void convert_grayscale(ALLEGRO_BITMAP *bmp) {
 	al_unlock_bitmap(bmp);
 	al_set_target_bitmap(dispbuf);
 }
+
+
