@@ -4,7 +4,7 @@ Watson is a clone of “Sherlock”, an old game by Everett Kaser which is itsel
 
 Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from #allegro in Freenode for all the tips and advice.
    
-The tile set is rendered from TTF fonts obtained from www.fontlibrary.org. There is also an option to load custom tiles (pressing 'T', which should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles in .png format. These won't look as nice as the fonts due to the anti-aliasing. The icons included here were downloaded from www.icons8.com. The sounds are from www.freesound.org.
+The tile set is rendered from TTF fonts obtained from www.fontlibrary.org. There is also an option to load custom tiles (pressing 'T', which should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles in .png format. These won't look as nice as the fonts due to the anti-aliasing. The icons included here were downloaded from www.icons8.com. The sounds are from www.freesound.org. The button icons are by [Yusuke Kamiyamane](http://p.yusukekamiyamane.com/) licensed under a [Creative Commons Attribution 3.0 License] (http://creativecommons.org/licenses/by/3.0/).
 <p align="center">
 <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-1.png" width="400" />  <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-2.png" width="400"/>
 </p>
