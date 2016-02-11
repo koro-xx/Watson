@@ -1,7 +1,7 @@
 #define PRE_VERSION "0.79.2"
 #define PRE_DATE "2016-02-10"
 #ifdef _WIN32
-    #¹!1define _CRT_SECURE_NO_WARNINGS
+    #define _CRT_SECURE_NO_WARNINGS
 #endif
 
 /*
@@ -10,9 +10,7 @@
  by Koro (1/2016)
 
  Todo:
- - refresh ON DEMAND (fix 100% cpu usage!)
- - add undo button
- - fix help text window
+ - Add better help for beginners
  - Mouse click: delay for drag is too long (what's the right way to handle drag/click?)
  - g->tile[i][j] should have been a bitfield, but it probably doesn't matter now...
  - add additional clue type
@@ -433,7 +431,7 @@ RESTART:
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
     
-    show_info_text(&b, "Click on clue for info. Press H for help, S for settings, R to start new game. Click on '?' for a hint at any time.");
+    show_info_text(&b, "Click on clue for info. Press H for help, S for settings, R to start new game. Click the lightbulb for a hint at any time.");
 
     while(noexit)
     {
