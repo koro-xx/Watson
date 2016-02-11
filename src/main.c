@@ -63,8 +63,8 @@ const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle
     "Right click on a small item in a block to rule it out from its column (right-click again to bring it back). Left-click on the same item to assign it to its column (and right-click on an assigned item to unassign).\n"
     "\n"
     "There are vertical and horizontal clues. Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
-    "Click on the '?' button or press C for a hint.\n"
     "\n"
+    "TO GET STARTED: click the lightbulb or press C for a hint.\n"
     "Press R to restart or ESC to quit. You can resize the window or press F to go fullscreen.\n"
     "Choose \"advanced\" in the settings for a more difficult game (really hard - not recommended).\n"
     "\n"
@@ -951,6 +951,11 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     
         case TB_BUTTON_HELP:
             b->show_help=1;
+            break;
+
+        case TB_BUTTON_UNDO:
+            execute_undo(g);
+            update_board(g,b);
             break;
             
         default:

@@ -56,7 +56,7 @@ void destroy_board(Board *b){ // note that b->vclue.b and v->hclue.b are destroy
     }
     nfree(b->panel.b);
     
-    for(i=0; i<4;i++)
+    for(i=0; i<b->time_panel.sb;i++)
         nfree(b->time_panel.b[i]);
     
     destroy_board_clue_blocks(b);
@@ -385,7 +385,7 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.bg_color = TIME_PANEL_BG_COLOR;
     b->time_panel.bd_color = TIME_PANEL_BD_COLOR;
     b->time_panel.bd = 1;
-    b->time_panel.sb = 4;
+    b->time_panel.sb = 5;
     b->time_panel.parent = &b->all;
     b->time_panel.type = TB_TIME_PANEL;
     b->time_panel.index = 0;
@@ -393,15 +393,15 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.bmp = NULL;
 
     if(mode){ // if board is being created
-        b->time_panel.b = malloc(4*sizeof(struct Tiledblock *));
-        for(i=0;i<4;i++)
+        b->time_panel.b = malloc(5*sizeof(struct Tiledblock *));
+        for(i=0;i<5;i++)
             b->time_panel.b[i] = malloc(sizeof(struct TiledBlock));
     }
     
     // timer
     b->time_panel.b[0]->x = 2;
-    b->time_panel.b[0]->y = (b->time_panel.h/2 -17)/2;
-    b->time_panel.b[0]->h = 17;
+    b->time_panel.b[0]->y = (b->time_panel.h/2 -16)/2;
+    b->time_panel.b[0]->h = 16;
     b->time_panel.b[0]->w = b->time_panel.w-4;
     b->time_panel.b[0]->margin = 0;
     b->time_panel.b[0]->bd_color = NULL_COLOR;
@@ -415,15 +415,15 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.b[0]->hidden=0;
     b->time_panel.b[0]->bmp = &b->time_bmp;
     
-    for(i=0; i<3; i++){ // buttons
-        b->time_panel.b[i+1]->h = 18;
-        b->time_panel.b[i+1]->w = 18;
-        b->time_panel.b[i+1]->y = (b->time_panel.h/2-18)/2 + b->time_panel.h/2;
-        b->time_panel.b[i+1]->x = (i+1)*(b->time_panel.w/4) - 8;
+    for(i=0; i<4; i++){ // buttons
+        b->time_panel.b[i+1]->h = 16;
+        b->time_panel.b[i+1]->w = 16;
+        b->time_panel.b[i+1]->y = (b->time_panel.h/2-16)/2 + b->time_panel.h/2;
+        b->time_panel.b[i+1]->x = (i+1)*(b->time_panel.w/5) - 8;
         b->time_panel.b[i+1]->margin = 0;
         b->time_panel.b[i+1]->bg_color = NULL_COLOR;
         b->time_panel.b[i+1]->bd_color = WHITE_COLOR;
-        b->time_panel.b[i+1]->bd = 1;
+        b->time_panel.b[i+1]->bd = 0;
         b->time_panel.b[i+1]->sb=0;
         b->time_panel.b[i+1]->b = NULL;
         b->time_panel.b[i+1]->parent = &b->time_panel;
@@ -435,7 +435,8 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.b[1]->type = TB_BUTTON_HELP;
     b->time_panel.b[2]->type = TB_BUTTON_CLUE;
     b->time_panel.b[3]->type = TB_BUTTON_SETTINGS;
-
+    b->time_panel.b[4]->type = TB_BUTTON_UNDO;
+    
     // collect TiledBlocks into an array for convenience
     // and create settings block
     if(mode){ // only if board is being created

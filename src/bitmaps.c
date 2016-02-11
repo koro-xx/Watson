@@ -104,6 +104,10 @@ void destroy_all_bitmaps(Board *b){
         ndestroy_bitmap(symbol_bmp[i]);
     }
     
+    for(i=0; i<4; i++){
+        ndestroy_bitmap(b->button_bmp[i]);
+    }
+
     destroy_settings_bitmaps(b);
     destroy_board_bitmaps(b);
 }
@@ -139,10 +143,6 @@ void destroy_board_bitmaps(Board *b){
     }
     
     destroy_board_clue_blocks(b);
-
-    for(i=0; i<3; i++){
-        ndestroy_bitmap(b->button_bmp[i]);
-    }
     
     ndestroy_bitmap(b->time_bmp);
     ndestroy_bitmap(b->info_text_bmp);
@@ -178,6 +178,12 @@ int init_bitmaps(Board *b){
     
     b->info_text_bmp = NULL;
     b->info_panel.bmp = NULL;
+    
+    // if this fails, buttons will be created anyway at update_bitmaps
+    b->button_bmp[0] = al_load_bitmap("buttons/question.png");
+    b->button_bmp[1] = al_load_bitmap("buttons/light-bulb.png");
+    b->button_bmp[2] = al_load_bitmap("buttons/gear.png");
+    b->button_bmp[3] = al_load_bitmap("buttons/undo.png");
     
     if(b->type_of_tiles == 2)
         return init_bitmaps_classic(b);
@@ -460,20 +466,36 @@ int update_bitmaps(Game *g, Board *b){
 	al_set_target_bitmap(b->time_bmp);
 	al_clear_to_color(b->time_panel.b[0]->bg_color);
 	
-	b->button_bmp[0] = al_create_bitmap(b->time_panel.b[1]->w, b->time_panel.b[1]->h);
-    al_set_target_bitmap(b->button_bmp[0]);
-    al_clear_to_color(b->time_panel.b[1]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[1]->w/2,  (b->time_panel.b[1]->h-16)/2, ALLEGRO_ALIGN_CENTER, "H");
+    if(!b->button_bmp[0]){ // fallback to letter buttons
+        fprintf(stderr, "Error loading button/question.png\n");
+        b->button_bmp[0] = al_create_bitmap(b->time_panel.b[1]->w, b->time_panel.b[1]->h);
+        al_set_target_bitmap(b->button_bmp[0]);
+        al_clear_to_color(b->time_panel.b[1]->bg_color);
+        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[1]->w/2,  (b->time_panel.b[1]->h-16)/2, ALLEGRO_ALIGN_CENTER, "H");
+    }
     
-    b->button_bmp[1] = al_create_bitmap(b->time_panel.b[2]->w, b->time_panel.b[2]->h);
-    al_set_target_bitmap(b->button_bmp[1]);
-    al_clear_to_color(b->time_panel.b[2]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[2]->w/2,  (b->time_panel.b[2]->h-16)/2, ALLEGRO_ALIGN_CENTER, "?");
-    
-    b->button_bmp[2] = al_create_bitmap(b->time_panel.b[3]->w, b->time_panel.b[3]->h);
-    al_set_target_bitmap(b->button_bmp[2]);
-    al_clear_to_color(b->time_panel.b[3]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[3]->w/2,  (b->time_panel.b[3]->h-16)/2, ALLEGRO_ALIGN_CENTER, "S");
+    if(!b->button_bmp[1]){
+        fprintf(stderr, "Error loading button/light-bulb\n");
+        b->button_bmp[1] = al_create_bitmap(b->time_panel.b[2]->w, b->time_panel.b[2]->h);
+        al_set_target_bitmap(b->button_bmp[1]);
+        al_clear_to_color(b->time_panel.b[2]->bg_color);
+        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[2]->w/2,  (b->time_panel.b[2]->h-16)/2, ALLEGRO_ALIGN_CENTER, "?");
+    }
+      if(!b->button_bmp[1]){
+        fprintf(stderr, "Error loading button/gear.png\n");
+        b->button_bmp[2] = al_create_bitmap(b->time_panel.b[3]->w, b->time_panel.b[3]->h);
+        al_set_target_bitmap(b->button_bmp[2]);
+        al_clear_to_color(b->time_panel.b[3]->bg_color);
+        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[3]->w/2,  (b->time_panel.b[3]->h-16)/2, ALLEGRO_ALIGN_CENTER, "S");
+    }
+ 
+    if(!b->button_bmp[3]){
+        fprintf(stderr, "Error loading button/undo.png\n");
+        b->button_bmp[2] = al_create_bitmap(b->time_panel.b[4]->w, b->time_panel.b[4]->h);
+        al_set_target_bitmap(b->button_bmp[3]);
+        al_clear_to_color(b->time_panel.b[4]->bg_color);
+        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[4]->w/2,  (b->time_panel.b[4]->h-16)/2, ALLEGRO_ALIGN_CENTER, "U");
+    }
     
 	al_set_target_bitmap(dispbuf);
     create_settings_bitmaps(b);
