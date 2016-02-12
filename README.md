@@ -4,7 +4,6 @@ Watson is a clone of “Sherlock”, an old game by Everett Kaser which is itsel
 
 Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from #allegro in Freenode for all the tips and advice.
    
-The tile set is rendered from TTF fonts obtained from www.fontlibrary.org. There is also an option to load custom tiles (pressing 'T', which should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles in .png format. These won't look as nice as the fonts due to the anti-aliasing. The icons included here were downloaded from www.icons8.com. The sounds are from www.freesound.org. The button icons are by [Yusuke Kamiyamane](http://p.yusukekamiyamane.com/) licensed under a [Creative Commons Attribution 3.0 License] (http://creativecommons.org/licenses/by/3.0/).
 <p align="center">
 <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-1.png" width="400" />  <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-2.png" width="400"/>
 </p>
@@ -17,6 +16,13 @@ For an explanation of the meaning of each clue, left-click the clue. To get used
 This will also tell you if you made a mistake (for instance ruling out an item that could not be ruled out).
 
 The default board size is 6 x 6, but you can change it in the settings to any size from 4x4 to 8x8 (different width/height is also possible). The clues provided are guaranteed to lead to a unique solution. There is an 'advanced' option that generates much more difficult puzzles. These assume more indirect reasoning (like assuming that an item is in a given block and seeing what happens, then ruling it out if it leads to a contradiction). In my experience, advanced games tend to be almost impossible for a 6x6 or higher size board (I hope to tune this later). Also, advanced games won't always provide hints. I recommend against using this setting until it is improved.
+
+#Assets
+
+The main text font is [Linux Libertine](http://linuxlibertine.sf.net/) by Philipp H. Poll, licensed under the GPL. The TTF tiles used are a combination of symbols from different fonts downloaded from www.fontlibrary.org.
+The sounds are from www.freesound.org. Button icons are by [Yusuke Kamiyamane](http://p.yusukekamiyamane.com/) licensed under [Creative Commons CC BY 3.0](http://creativecommons.org/licenses/by/3.0/), and bitmap tiles are from www.icons8.com, also licensed under [Creative Commons CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/).
+
+The tile set is rendered from TTF fonts, but there is also an option to load custom bitmap tiles (pressing 'T'). If you want to change them, they should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles in .png format. 
 
 ##Build instructions:
 
@@ -50,6 +56,4 @@ For Linux:
 
 - Tune the difficulty of 'advanced' mode. 
 - Add extra settings to configure the number of revealed blocks and tune other aspects of puzzle generation.
-- Add 'undo' button.
-- Fix button dimenisons.
 - Fix CMakeLists.txt to include windows icon.

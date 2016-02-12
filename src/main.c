@@ -1,8 +1,10 @@
-#define PRE_VERSION "0.79.2"
-#define PRE_DATE "2016-02-10"
+#define PRE_VERSION "0.79.3"
+#define PRE_DATE "2016-02-12"
 #ifdef _WIN32
     #define _CRT_SECURE_NO_WARNINGS
 #endif
+
+//#define _DEBUG
 
 /*
 
@@ -45,6 +47,8 @@ int new_h=6;
 int new_advanced = 0;
 int sound_mute = 0;
 
+ALLEGRO_EVENT_QUEUE *event_queue = NULL;
+
 float RESIZE_DELAY = 0.04;
 float BLINK_DELAY = .3; float BLINK_TIME = .5;
 float CLICK_DELAY = 0.2;
@@ -54,19 +58,16 @@ GAME_STATE game_state;
 int desktop_xsize, desktop_ysize;
 int fullscreen;
 
-const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the bard.\n"
-    "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning.\n"
-    "Use the clues provided (right and bottom panels) to deduce which item goes where.\n"
+const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
+    "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \nTO GET STARTED: If you don't know how to play, click on the lightbulb to get a hint (or press C).\n"
     "\n"
-    "Right click on a small item in a block to rule it out from its column (right-click again to bring it back). Left-click on the same item to assign it to its column (and right-click on an assigned item to unassign).\n"
+    "Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
+    "Right click on an item in the main panel to rule it out (right-click again to bring it back). Left-click on the same item to assign it to its column (and right-click on an assigned item to unassign).\n"
     "\n"
-    "There are vertical and horizontal clues. Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
-    "\n"
-    "TO GET STARTED: click the lightbulb or press C for a hint.\n"
     "Press R to restart or ESC to quit. You can resize the window or press F to go fullscreen.\n"
     "Choose \"advanced\" in the settings for a more difficult game (really hard - not recommended).\n"
     "\n"
-    "DEBUG KEYS: S: show solution. T: switch tiles to bmp\'s loaded from APPDIR/icons.\n"
+    "DEBUG KEYS: S: show solution. T: switch font tiles / bitmaps\n"
     "Note: advanced game generation may take a while for large boards.";
 
 const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
@@ -124,17 +125,21 @@ void switch_solve_puzzle(Game *g, Board *b){
 }
 
 void show_help(Board *b){
-    al_draw_filled_rectangle((b->xsize-800)/2, (b->ysize-384)/2, (b->xsize+800)/2, (b->ysize+384)/2, WINDOW_BG_COLOR);
-    al_draw_rectangle((b->xsize-800)/2, (b->ysize-384)/2, (b->xsize+800)/2, (b->ysize+384)/2, WHITE_COLOR, 3);
-    al_draw_multiline_text(default_font, WHITE_COLOR, (b->xsize-770)/2, (b->ysize-340)/2, 770, 16, ALLEGRO_ALIGN_LEFT, HELP_TEXT);
+    al_pause_event_queue(event_queue, 1);
+    draw_center_text_box(b->text_font, WHITE_COLOR, WINDOW_BG_COLOR, WINDOW_BD_COLOR, 0.5, HELP_TEXT);
+    al_flip_display();
+    wait_for_input();
+    al_pause_event_queue(event_queue, 0);
+    b->show_help=0;
 }
 
 void show_about(Board *b){
-    al_draw_filled_rectangle((b->xsize-740)/2, (b->ysize-384)/2, (b->xsize+740)/2, (b->ysize+384)/2, WINDOW_BG_COLOR);
-    al_draw_rectangle((b->xsize-740)/2, (b->ysize-384)/2, (b->xsize+740)/2, (b->ysize+384)/2, WHITE_COLOR, 3);
-    al_draw_multiline_text(default_font, WHITE_COLOR, (b->xsize-700)/2, (b->ysize-340)/2, 700, 16, ALLEGRO_ALIGN_LEFT, ABOUT_TEXT);
+    al_pause_event_queue(event_queue, 1);
+    draw_center_text_box(b->text_font, WHITE_COLOR, WINDOW_BG_COLOR, WINDOW_BD_COLOR, 0.5, ABOUT_TEXT);
     al_flip_display();
     wait_for_input();
+    al_pause_event_queue(event_queue, 0);
+    b->show_about=0;
 }
 
 void draw_stuff(Board *b){
@@ -144,6 +149,10 @@ void draw_stuff(Board *b){
     
     al_clear_to_color(b->bg_color);
     if(b->show_settings){
+        if(b->show_about){
+            show_about(b);
+            return;
+        }
         draw_TiledBlock(&b->s, 0,0);
 		al_flip_display();
         return;
@@ -167,6 +176,7 @@ void draw_stuff(Board *b){
     
     if(b->show_help){
         show_help(b);
+        return;
     } else if(b->dragging){ // redraw tile to get it on top
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
@@ -178,6 +188,7 @@ void draw_stuff(Board *b){
 void animate_win(Board *b) {
 	int i, j, k=0;
 
+    al_pause_event_queue(event_queue,1);
 	for (j = 0; j < b->h; j++) {
 		for (i = 0; i < b->n; i++) {
 			k++;
@@ -187,7 +198,7 @@ void animate_win(Board *b) {
 			al_rest(0.5*(1 - sqrt((float) k / (b->h*b->n))));
 		}
 	}
-
+    al_pause_event_queue(event_queue,0);
 }
 
 void draw_generating_puzzle(Game *g, Board *b) {
@@ -291,7 +302,6 @@ int main(int argc, char **argv){
     Board b = {0};
     ALLEGRO_EVENT ev;
     ALLEGRO_TIMER *timer = NULL, *timer_second = NULL;
-    ALLEGRO_EVENT_QUEUE *event_queue = NULL;
     ALLEGRO_DISPLAY *display = NULL;
     double time_foo, dt, last_draw, resize_time, mouse_button_time;
     int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit;
@@ -301,9 +311,11 @@ int main(int argc, char **argv){
     char str[500];
     
     // seed random number generator. comment out for debug
-    //srand((unsigned int) time(NULL));
-
-    if (init_allegro()) return -1;	
+#ifndef _DEBUG
+        srand((unsigned int) time(NULL));
+#endif
+    
+    if (init_allegro()) return -1;
 
     
 #ifndef _WIN32
@@ -341,7 +353,7 @@ int main(int argc, char **argv){
     wait_for_input();
 
     b.type_of_tiles = 0; // use font tiles by default
-
+    
 RESTART:
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
   
@@ -354,9 +366,6 @@ RESTART:
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
-        if (event_queue) al_destroy_event_queue(event_queue);
-        if (timer) al_destroy_timer(timer);
-        if (timer_second) al_destroy_timer(timer_second);
         b.restart=0;
         al_set_target_backbuffer(display);
     }
@@ -416,7 +425,9 @@ RESTART:
     al_start_timer(timer_second);
 
 //  initialize flags
-    
+    al_set_timer_count(timer, 0);
+    al_set_timer_count(timer_second, 0);
+
     mouse_button_up=0;
     redraw=1; mouse_click=0;
     noexit=1; mouse_move=0;
@@ -430,13 +441,16 @@ RESTART:
     mouse_x = mouse_y = 0;
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
+    b.show_help = 0;
+    b.show_about = 0;
+    b.show_settings = 0;
     
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
     while(noexit)
     {
         al_wait_for_event(event_queue, &ev);
-        do{ // empty out the event queue
+ //       do{ // empty out the event queue
            switch(ev.type){
                 case ALLEGRO_EVENT_TIMER:
                     if(ev.timer.source==timer) redraw=1;
@@ -472,8 +486,6 @@ RESTART:
                         case ALLEGRO_KEY_ESCAPE:
                             if(b.show_settings)
                                 b.show_settings=0;
-                            else if(b.show_help)
-                                b.show_help = 0;
                             else
                                 request_exit=1;
                             break;
@@ -525,7 +537,7 @@ RESTART:
                     resizing=1; resize_time=al_get_time();
                     break;
             }
-        } while(al_get_next_event(event_queue, &ev));
+//        } while(al_get_next_event(event_queue, &ev));
 
         if(resizing){
             if(al_get_time()-resize_time > RESIZE_DELAY){
@@ -547,27 +559,6 @@ RESTART:
         
         if(resizing) // skip redraw and other stuff
             continue;
-    
-        if(request_exit){
-			request_exit = 0; 
-            if(yes_no_dialog("Exit game?"))
-                noexit=0;
-            al_flush_event_queue(event_queue);
-        }
-            
-        if(b.restart){
-            if(game_state == GAME_PLAYING){
-				al_flip_display(); // hack for double-buffer issue (should be done differently; maybe add this after draw_stuff)
-                snprintf(str, 500, "Start new %dx%d%s game?", new_n, new_h, new_advanced ? " advanced" : "");
-                if(!yes_no_dialog(str)){
-                    b.restart = 0;
-                }
-                al_flush_event_queue(event_queue);
-            }
-            if(b.restart){
-                goto RESTART;
-            }
-        }
         
         if(mouse_button_down){
             if(!mouse_drag){
@@ -592,11 +583,6 @@ RESTART:
             }
         }
         
-        if(b.show_settings == 2){
-            al_flush_event_queue(event_queue);
-			b.show_settings = 0; redraw = 1;
-        }
-
         if(game_state == GAME_PLAYING){
             if(!b.show_help && !b.show_settings){
                 if(mouse_move && (mouse_drag == 2)){
@@ -635,6 +621,29 @@ RESTART:
             al_set_target_backbuffer(display);
             draw_stuff(&b);
             last_draw=time_foo;
+        }
+        
+        if(request_exit){
+            request_exit = 0;
+            al_pause_event_queue(event_queue,1);
+            if(yes_no_dialog("Exit game?"))
+                noexit=0;
+            al_pause_event_queue(event_queue,0);
+        }
+        
+        if(b.restart){
+            if(game_state == GAME_PLAYING){
+                al_pause_event_queue(event_queue,0);
+                snprintf(str, 500, "Start new %dx%d%s game?", new_n, new_h, new_advanced ? " advanced" : "");
+                if(!yes_no_dialog(str)){
+                    b.restart = 0;
+                }
+                al_pause_event_queue(event_queue,1);
+            }
+            if(b.restart){
+                draw_stuff(&b);
+                goto RESTART;
+            }
         }
     } // end of game loop
     
@@ -796,6 +805,7 @@ void execute_undo(Game *g){
     undo_old = undo->parent;
     free(undo);
     undo = undo_old;
+    if(!sound_mute)play_sound(SOUND_UNHIDE_TILE);
     update_guessed(g);
 }
 
@@ -931,12 +941,12 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     
     if(b->show_settings){ // handle settings panel
 	   if(t->type == TB_SETTINGS_OK){
-            b->show_settings=2;
+            b->show_settings=0;
             check_settings(g, b);
         } else if(t->type == TB_SETTINGS_CANCEL){
-            b->show_settings=2;
+            b->show_settings=0;
         } else if(t->type == TB_SETTINGS_ABOUT){
-            show_about(b);
+            b->show_about =1;
         } else if(t->parent) {
             switch(t->parent->type){
                 case TB_SETTINGS_ROWS:
@@ -1040,6 +1050,11 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             update_board(g,b);
             break;
             
+        case TB_BUTTON_TILES:
+            switch_tiles(g,b,al_get_current_display());
+            update_board(g,b);
+            break;
+      
         default:
             break;
     }

@@ -35,13 +35,14 @@ typedef struct Board {
     int restart;
     int show_help;
     int show_settings;
+    int show_about;
     ALLEGRO_COLOR bg_color;
     ALLEGRO_BITMAP *panel_tile_bmp[8][8];
     ALLEGRO_BITMAP *guess_bmp[8][8];
     ALLEGRO_BITMAP *clue_unit_bmp[8][8];
     ALLEGRO_BITMAP *symbol_bmp[8];
     ALLEGRO_BITMAP **clue_bmp;
-    ALLEGRO_BITMAP *button_bmp[4];
+    ALLEGRO_BITMAP *button_bmp[5];
     ALLEGRO_BITMAP *time_bmp;
     ALLEGRO_BITMAP *info_text_bmp;
     ALLEGRO_BITMAP *s_bmp[14]; // settings block bitmaps
@@ -74,7 +75,8 @@ typedef enum BLOCK_TYPE{
     TB_SETTINGS_ADVANCED,
     TB_SETTINGS_ABOUT,
     TB_SETTINGS,
-    TB_BUTTON_UNDO
+    TB_BUTTON_UNDO,
+    TB_BUTTON_TILES
 }BLOCK_TYPE;
 
 //Prototypes

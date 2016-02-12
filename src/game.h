@@ -13,6 +13,7 @@ typedef enum GAME_STATE {
     GAME_PLAYING,
     GAME_WRONG,
     GAME_OVER = 3,
+    GAME_SETTINGS,
     NUMBER_OF_STATES
 } GAME_STATE;
 

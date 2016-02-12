@@ -3,6 +3,21 @@
 #define MAX_BF_BITMAPS 32
 #define BF_CODEPOINT_START 0x0860
 
+bool callback(int line_num, const char *line, int size, void *extra){
+    
+    //(* (int *) extra) ++;// = *line;
+    * (int *) extra = line_num;
+    return 1;
+}
+
+// xxx todo: make same function for text_bf (also do_multiline_text_bf)
+int get_multiline_text_lines(const ALLEGRO_FONT *font, float max_width, const char *text)
+{
+    int lines =0;
+    al_do_multiline_text(font, max_width, text, &callback, &lines);
+    return lines+1;
+}
+
 // works like al_draw_multiline_text but it allows the tag %b in the format string
 // and a list of pointers to bitmaps which are placed (scaled to the font size) at each %b
 // can take a maximum of 32 bitmaps
@@ -12,6 +27,7 @@ void draw_multiline_text_bf(ALLEGRO_FONT *font, ALLEGRO_COLOR color, int tx, int
     draw_multiline_text_vbf(font, color, tx, ty, tw, th, flags, format, ap);
     va_end(ap);
 }
+
 
 // like draw_multiline_text_bf but takes a va_list instead of a variable list of parameters
 // the dirty trick is to use a list of unused unicode code points and create a font
@@ -56,7 +72,7 @@ void draw_multiline_text_vbf(ALLEGRO_FONT *font, ALLEGRO_COLOR color, int tx, in
             bw = al_get_bitmap_width(tmp[i]);
             bh = al_get_bitmap_height(tmp[i]);
             // the rectangle is to guarantee the right height for al_grab_font
-            al_draw_rectangle(x+1.5, 1.5,  floor(x+1+bw*(float) texth/bh)-0.5, 1+texth-0.5, al_map_rgba(0,0,0,1),1);
+            al_draw_rectangle(x+1.5, 1.5,  (int)(x+1+bw*(float) texth/bh)-0.5, 1+texth-0.5, al_map_rgba(0,0,0,1),1);
             al_draw_scaled_bitmap(tmp[i], 0, 0, bw, bh, x, 1, bw*(float) texth/bh, texth, 0);
             x+= 2 + bw*(float) texth/bh;
         }

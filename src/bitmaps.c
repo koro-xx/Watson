@@ -22,10 +22,13 @@ ALLEGRO_COLOR TILE_GENERAL_BD_COLOR = {0,0,0,1};
 ALLEGRO_BITMAP *basic_bmp[8][8];
 ALLEGRO_BITMAP *symbol_bmp[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
-const int TILE_SHADOWS = 1;
+int TILE_SHADOWS = 1;
+int GLYPH_SHADOWS = 0;
+
 const float SHADOW_ALPHA = 0.3;
+//const char *TEXT_FONT_FILE = "fonts/aileron-regular.otf";
 const char *TILE_FONT_FILE = "fonts/tiles.ttf";
-const char *TEXT_FONT_FILE = "fonts/aileron-regular.otf";
+const char *TEXT_FONT_FILE = "fonts/text_font.ttf";
 
 
 // prototypes
@@ -34,10 +37,10 @@ int make_clue_bitmaps(Game *g, Board *b);
 
 char *CLUE_BG_COLOR[8]={
     "808080",
-    "4411F0",
+    "5522F0",
     "008080",
-    "9400D3",
-    "CC8000",
+    "840543",
+    "BB6000",
     "DAB520",
     "FFB6C1",
     "9ACD32"
@@ -56,27 +59,28 @@ char *CLUE_FG_COLOR[8]={
 };
 
 char *CLUE_BG_COLOR_BMP[8]={
-    "777777",
-    "555555",
-    "777777",
-    "555555",
-    "777777",
-    "555555",
-    "777777",
-    "555555"
+    "999999",
+    "999999",
+    "999999",
+    "999999",
+    "999999",
+    "999999",
+    "999999",
+    "999999",
 };
 
 
 //char *CLUE_BG_COLOR_BMP[8]={
-//    "888888",
-//    "333333",
-//    "888888",
-//    "333333",
-//    "888888",
-//    "333333",
-//    "888888",
-//    "333333"
+//    "777777",
+//    "555555",
+//    "777777",
+//    "555555",
+//    "777777",
+//    "555555",
+//    "777777",
+//    "555555"
 //};
+
 
 char *CLUE_CODE[8][8] = {
     {"A", "B", "C", "D", "E", "F", "G", "H"},
@@ -105,7 +109,7 @@ void destroy_all_bitmaps(Board *b){
         ndestroy_bitmap(symbol_bmp[i]);
     }
     
-    for(i=0; i<4; i++){
+    for(i=0; i<5; i++){
         ndestroy_bitmap(b->button_bmp[i]);
     }
 
@@ -185,6 +189,7 @@ int init_bitmaps(Board *b){
     b->button_bmp[1] = al_load_bitmap("buttons/light-bulb.png");
     b->button_bmp[2] = al_load_bitmap("buttons/gear.png");
     b->button_bmp[3] = al_load_bitmap("buttons/undo.png");
+    b->button_bmp[4] = al_load_bitmap("buttons/tiles.png");
     
     if(b->type_of_tiles == 2)
         return init_bitmaps_classic(b);
@@ -256,12 +261,15 @@ int init_bitmaps(Board *b){
 
 void draw_shadow(int w, int h, int t){
     float a=(float)t*0.5;
-    al_draw_line(a, 0, a, (h-a), al_premul_rgba_f(1,1,1,SHADOW_ALPHA),t);
-    al_draw_line(0, a, (w-a), a, al_premul_rgba_f(1,1,1,SHADOW_ALPHA),t);
-    al_draw_line(0 , h-a, w,h-a, al_map_rgba_f(0,0,0,SHADOW_ALPHA),t);
-    al_draw_line(w-a, 0, w-a,h, al_map_rgba_f(0,0,0,SHADOW_ALPHA),t);
+    al_draw_line(a, a, a, (h-a), al_premul_rgba_f(1,1,1,SHADOW_ALPHA),t);
+    al_draw_line(a, a, (w-a), a, al_premul_rgba_f(1,1,1,SHADOW_ALPHA),t);
+    al_draw_line(a , h-a, w-a,h-a, al_map_rgba_f(0,0,0,SHADOW_ALPHA),t);
+    al_draw_line(w-a, a, w-a,h-a, al_map_rgba_f(0,0,0,SHADOW_ALPHA),t);
 }
 
+ALLEGRO_COLOR invert_color(ALLEGRO_COLOR c){
+    return (ALLEGRO_COLOR){1-c.r, 1-c.g, 1-c.b, c.a};
+}
 
 
 int update_font_bitmaps(Game *g, Board *b){
@@ -294,6 +302,9 @@ int update_font_bitmaps(Game *g, Board *b){
             al_set_target_bitmap(b->guess_bmp[i][j]);
             al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
             al_get_glyph_dimensions(tile_font1, CLUE_CODE[i][j][0], &bbx, &bby, &bbw, &bbh);
+            if(GLYPH_SHADOWS){
+                al_draw_glyph(tile_font1, DARK_GREY_COLOR, (b->panel.b[0]->b[0]->w-bbw)/2 -bbx +1,(b->panel.b[0]->b[0]->h-bbh)/2-bby+1, CLUE_CODE[i][j][0]);
+            }
             al_draw_glyph(tile_font1, al_color_html(CLUE_FG_COLOR[i]), (b->panel.b[0]->b[0]->w-bbw)/2 -bbx,(b->panel.b[0]->b[0]->h-bbh)/2-bby, CLUE_CODE[i][j][0]);
             // this draws a border for all tiles, independent of the "bd" setting in b
             if(TILE_SHADOWS)
@@ -306,9 +317,12 @@ int update_font_bitmaps(Game *g, Board *b){
             al_set_target_bitmap(b->panel_tile_bmp[i][j]);
             al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
             al_get_glyph_dimensions(tile_font2, CLUE_CODE[i][j][0], &bbx, &bby, &bbw, &bbh);
+            if(GLYPH_SHADOWS){
+                al_draw_glyph(tile_font2, DARK_GREY_COLOR,(b->panel_tile_size -bbw)/2-bbx+1, (b->panel_tile_size - bbh)/2-bby+1, CLUE_CODE[i][j][0]);
+            }
             al_draw_glyph(tile_font2, al_color_html(CLUE_FG_COLOR[i]),(b->panel_tile_size -bbw)/2-bbx, (b->panel_tile_size - bbh)/2-bby, CLUE_CODE[i][j][0]);
             if(TILE_SHADOWS)
-                draw_shadow(b->panel_tile_size, b->panel_tile_size,1);
+                draw_shadow(b->panel_tile_size, b->panel_tile_size,2);
             else
                 al_draw_rectangle(.5,.5,b->panel_tile_size-.5,b->panel_tile_size-.5, TILE_GENERAL_BD_COLOR,1);
             
@@ -316,6 +330,9 @@ int update_font_bitmaps(Game *g, Board *b){
             al_set_target_bitmap(b->clue_unit_bmp[i][j]);
             al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
             al_get_glyph_dimensions(tile_font3, CLUE_CODE[i][j][0], &bbx, &bby, &bbw, &bbh);
+            if(GLYPH_SHADOWS){
+                al_draw_glyph(tile_font3, DARK_GREY_COLOR, (b->clue_unit_size-bbw)/2 -bbx +1,(b->clue_unit_size-bbh)/2-bby+1, CLUE_CODE[i][j][0]);
+            }
             al_draw_glyph(tile_font3, al_color_html(CLUE_FG_COLOR[i]), (b->clue_unit_size-bbw)/2 -bbx,(b->clue_unit_size-bbh)/2-bby, CLUE_CODE[i][j][0]);
             if(TILE_SHADOWS)
                 draw_shadow(b->clue_unit_size,b->clue_unit_size,2);
@@ -505,6 +522,14 @@ int update_bitmaps(Game *g, Board *b){
         al_set_target_bitmap(b->button_bmp[3]);
         al_clear_to_color(b->time_panel.b[4]->bg_color);
         al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[4]->w/2,  (b->time_panel.b[4]->h-16)/2, ALLEGRO_ALIGN_CENTER, "U");
+    }
+    
+    if(!b->button_bmp[4]){
+        fprintf(stderr, "Error loading button/undo.png\n");
+        b->button_bmp[4] = al_create_bitmap(b->time_panel.b[5]->w, b->time_panel.b[5]->h);
+        al_set_target_bitmap(b->button_bmp[4]);
+        al_clear_to_color(b->time_panel.b[5]->bg_color);
+        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[5]->w/2,  (b->time_panel.b[5]->h-16)/2, ALLEGRO_ALIGN_CENTER, "T");
     }
     
 	al_set_target_bitmap(dispbuf);

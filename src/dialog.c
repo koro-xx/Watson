@@ -1,5 +1,6 @@
 #include "dialog.h"
 #include "allegro_stuff.h"
+#include "text.h"
 
 /* xxx todo: improve dialog options */
 
@@ -50,4 +51,25 @@ int yes_no_dialog(const char *text){
     }
     al_destroy_event_queue(queue);
     return ret;
+}
+
+// width_factor is the preferred width (portion of the screen width), but if text won't fit
+// it will increase width until it fits
+void draw_center_text_box(ALLEGRO_FONT *font, ALLEGRO_COLOR text_color, ALLEGRO_COLOR bg_color, ALLEGRO_COLOR bd_color, float width_factor, const char *text){
+    int dw = al_get_bitmap_width(al_get_target_bitmap());
+    int dh = al_get_bitmap_height(al_get_target_bitmap());
+    float factor=width_factor;
+    int w,h;
+    
+    if(!font) return;
+    
+    do{
+        w=dw*factor;
+        h = get_multiline_text_lines(font,  w-40, text) * al_get_font_line_height(font) + 30;
+        factor += 0.05;
+    }while( (h > dh*0.9) && (factor < 1) );
+    
+    al_draw_filled_rectangle((dw-w)/2, (dh-h)/2, (dw+w)/2, (dh+h)/2, bg_color);
+    al_draw_rectangle((dw-w)/2, (dh-h)/2, (dw+w)/2, (dh+h)/2, bd_color, 3);
+    al_draw_multiline_text(font, text_color, (dw-w+40)/2, (dh-h+30)/2, w-30, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, text);
 }

@@ -72,9 +72,13 @@ void get_TiledBlock_offset(TiledBlock *t, int *x, int *y){
 }
 
 void highlight_TiledBlock(TiledBlock *t){
-    int x,y;
+    int x,y,i;
     get_TiledBlock_offset(t, &x, &y);
-    al_draw_rectangle(x-2,y-2, x+t->w+2, y+t->h+2, (ALLEGRO_COLOR){1,0,0,0.5}, 4);
+//    al_draw_rectangle(x-2,y-2, x+t->w+2, y+t->h+2, (ALLEGRO_COLOR){1,0,0,0.5}, 4);
+    for(i=0; i<8;i++){
+        al_draw_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba_f(1,0,0,0.2), i);
+    }
+    al_draw_filled_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba_f(1,1,1,0.2));
 }
 
 
