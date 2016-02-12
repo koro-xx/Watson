@@ -1,7 +1,7 @@
 #include "text.h"
 
 #define MAX_BF_BITMAPS 32
-#define BF_CODEPOINT_START 0xA78D
+#define BF_CODEPOINT_START 0x0860
 
 // works like al_draw_multiline_text but it allows the tag %b in the format string
 // and a list of pointers to bitmaps which are placed (scaled to the font size) at each %b
@@ -42,7 +42,6 @@ void draw_multiline_text_vbf(ALLEGRO_FONT *font, ALLEGRO_COLOR color, int tx, in
     }
     al_ustr_append_cstr(ustr, pos);
     
-    
     if(bn>0){
         bitmap_w = 1;
         for(i=0; i<bn; i++){
@@ -52,13 +51,14 @@ void draw_multiline_text_vbf(ALLEGRO_FONT *font, ALLEGRO_COLOR color, int tx, in
         bmp = al_create_bitmap(bitmap_w,texth+2);
         al_set_target_bitmap(bmp);
         al_clear_to_color(NULL_COLOR);
-        x=0;
+        x=1;
         for(i=0; i<bn; i++){
-            x+=1;
             bw = al_get_bitmap_width(tmp[i]);
             bh = al_get_bitmap_height(tmp[i]);
-            al_draw_scaled_bitmap(tmp[i], 0, 0, bw, bh, x+1, 1, bw*(float) texth/bh, texth, 0);
-            x+=bw*(float) texth/bh;
+            // the rectangle is to guarantee the right height for al_grab_font
+            al_draw_rectangle(x+1.5, 1.5,  floor(x+1+bw*(float) texth/bh)-0.5, 1+texth-0.5, al_map_rgba(0,0,0,1),1);
+            al_draw_scaled_bitmap(tmp[i], 0, 0, bw, bh, x, 1, bw*(float) texth/bh, texth, 0);
+            x+= 2 + bw*(float) texth/bh;
         }
         
         range[0] = BF_CODEPOINT_START;

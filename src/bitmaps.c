@@ -78,7 +78,6 @@ char *CLUE_BG_COLOR_BMP[8]={
 //    "333333"
 //};
 
-
 char *CLUE_CODE[8][8] = {
     {"A", "B", "C", "D", "E", "F", "G", "H"},
     {"Q", "R", "S", "T", "U", "V", "W", "X"},
@@ -269,8 +268,8 @@ int update_font_bitmaps(Game *g, Board *b){
     int i, j, s;
     float FONT_FACTOR=1;
     ALLEGRO_FONT *tile_font1, *tile_font2, *tile_font3;
-    // char str[1000];
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
+    int bbx, bby, bbw, bbh;
     
     s=min(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h);
     tile_font1 = al_load_ttf_font(TILE_FONT_FILE, -s*FONT_FACTOR, 0);
@@ -283,18 +282,6 @@ int update_font_bitmaps(Game *g, Board *b){
     
     for(i=0;i<b->h;i++){
         for(j=0;j<b->n;j++){
-            //            // create and save basic bitmaps from font (remove later)
-            //            basic_bmp[i][j] = al_create_bitmap(256, 256);
-            //            al_set_target_bitmap(basic_bmp[i][j]);
-            //            al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
-            //            tile_fotn = al_load_ttf_font(TILE_FONT_FILE, -256*FONT_FACTOR, 0);
-            //            al_draw_textf(tile_font, al_color_html(CLUE_FG_COLOR[i]), 128, 128-al_get_font_line_height(tile_font)/2, ALLEGRO_ALIGN_CENTER, "%s", CLUE_CODE[i][j]);
-            //            al_draw_rectangle(0,0,256, 256, BLACK_COLOR,1);
-            //            sprintf(str, "/Users/koro/temp/bmp/%d-%d.png", i,j);
-            //            al_save_bitmap(str, basic_bmp[i][j]);
-            
-            
-            
             b->guess_bmp[i][j] = al_create_bitmap(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h);
             b->panel_tile_bmp[i][j] = al_create_bitmap(b->panel_tile_size,b->panel_tile_size);
             b->clue_unit_bmp[i][j] = al_create_bitmap(b->clue_unit_size, b->clue_unit_size);
@@ -306,7 +293,8 @@ int update_font_bitmaps(Game *g, Board *b){
             // guessed bitmaps
             al_set_target_bitmap(b->guess_bmp[i][j]);
             al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
-            al_draw_textf(tile_font1, al_color_html(CLUE_FG_COLOR[i]), b->panel.b[0]->b[0]->w/2,b->panel.b[0]->b[0]->h/2-al_get_font_line_height(tile_font1)/2, ALLEGRO_ALIGN_CENTER, "%s", CLUE_CODE[i][j]);
+            al_get_glyph_dimensions(tile_font1, CLUE_CODE[i][j][0], &bbx, &bby, &bbw, &bbh);
+            al_draw_glyph(tile_font1, al_color_html(CLUE_FG_COLOR[i]), (b->panel.b[0]->b[0]->w-bbw)/2 -bbx,(b->panel.b[0]->b[0]->h-bbh)/2-bby, CLUE_CODE[i][j][0]);
             // this draws a border for all tiles, independent of the "bd" setting in b
             if(TILE_SHADOWS)
                 draw_shadow(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h,2);
@@ -314,9 +302,11 @@ int update_font_bitmaps(Game *g, Board *b){
                 al_draw_rectangle(.5,.5,b->panel.b[0]->b[0]->w-.5, b->panel.b[0]->b[0]->h-.5, TILE_GENERAL_BD_COLOR,1);
             
             // panel bitmaps
+    
             al_set_target_bitmap(b->panel_tile_bmp[i][j]);
             al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
-            al_draw_textf(tile_font2, al_color_html(CLUE_FG_COLOR[i]),b->panel_tile_size/2,b->panel_tile_size/2-al_get_font_line_height(tile_font2)/2, ALLEGRO_ALIGN_CENTER, "%s", CLUE_CODE[i][j]);
+            al_get_glyph_dimensions(tile_font2, CLUE_CODE[i][j][0], &bbx, &bby, &bbw, &bbh);
+            al_draw_glyph(tile_font2, al_color_html(CLUE_FG_COLOR[i]),(b->panel_tile_size -bbw)/2-bbx, (b->panel_tile_size - bbh)/2-bby, CLUE_CODE[i][j][0]);
             if(TILE_SHADOWS)
                 draw_shadow(b->panel_tile_size, b->panel_tile_size,1);
             else
@@ -325,11 +315,12 @@ int update_font_bitmaps(Game *g, Board *b){
             // clue unit tile bitmaps
             al_set_target_bitmap(b->clue_unit_bmp[i][j]);
             al_clear_to_color(al_color_html(CLUE_BG_COLOR[i]));
+            al_get_glyph_dimensions(tile_font3, CLUE_CODE[i][j][0], &bbx, &bby, &bbw, &bbh);
+            al_draw_glyph(tile_font3, al_color_html(CLUE_FG_COLOR[i]), (b->clue_unit_size-bbw)/2 -bbx,(b->clue_unit_size-bbh)/2-bby, CLUE_CODE[i][j][0]);
             if(TILE_SHADOWS)
                 draw_shadow(b->clue_unit_size,b->clue_unit_size,2);
             else
                 al_draw_rectangle(.5,.5,b->clue_unit_size-.5, b->clue_unit_size-.5, TILE_GENERAL_BD_COLOR,1);
-            al_draw_textf(tile_font3, al_color_html(CLUE_FG_COLOR[i]), b->clue_unit_size/2,b->clue_unit_size/2-al_get_font_line_height(tile_font3)/2, ALLEGRO_ALIGN_CENTER, "%s", CLUE_CODE[i][j]);
         }
     }
     

@@ -301,7 +301,7 @@ int main(int argc, char **argv){
     char str[500];
     
     // seed random number generator. comment out for debug
-    srand((unsigned int) time(NULL));
+    //srand((unsigned int) time(NULL));
 
     if (init_allegro()) return -1;	
 
@@ -431,7 +431,7 @@ RESTART:
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
     
-    show_info_text(&b, "Click on clue for info. Press H for help, S for settings, R to start new game. Click the lightbulb for a hint at any time.");
+    show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
     while(noexit)
     {
