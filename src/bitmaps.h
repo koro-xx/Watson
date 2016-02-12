@@ -28,6 +28,7 @@ void destroy_settings_bitmaps(Board *b);
 void create_settings_bitmaps(Board *b);
 void update_timer(Board *b);
 void show_info_text(Board *b, const char* msg);
+void show_info_text_b(Board *b, const char*msg, ...);
 void clear_info_panel(Board *b);
 void draw_title(void);
 void convert_grayscale(ALLEGRO_BITMAP *bmp);

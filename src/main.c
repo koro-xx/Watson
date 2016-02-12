@@ -35,7 +35,7 @@
 #include "game.h"
 #include "bitmaps.h"
 #include "dialog.h"
-
+#include "text.h"
 
 #define FPS 30
 
@@ -436,96 +436,97 @@ RESTART:
     while(noexit)
     {
         al_wait_for_event(event_queue, &ev);
-            
-        switch(ev.type){
-            case ALLEGRO_EVENT_TIMER:
-                if(ev.timer.source==timer) redraw=1;
-                else if (ev.timer.source==timer_second) second_tick=1;
-                break;
-            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                mouse_button_down = ev.mouse.button;
-                mouse_button_time = al_get_time();
-                mouse_cx = ev.mouse.x;
-                mouse_cy = ev.mouse.y;
-                tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
-                break;
-            case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-                if(mouse_drag==2){
-                    mouse_drag=3;
-                } else { //xxx todo: check tile on button_down, compare on button_up, click if same
-                    if(tb == get_TiledBlock_at(&b, mouse_x, mouse_y))
-                        mouse_click = mouse_button_down;
-                }
-                mouse_button_down=0;
-                break;
-            case ALLEGRO_EVENT_MOUSE_AXES:
-                mouse_x = ev.mouse.x;
-                mouse_y = ev.mouse.y;
-                mouse_move=1;
-                break;
-            case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                request_exit=1;
-                break;
-            case ALLEGRO_EVENT_KEY_CHAR:
-                keypress=1;
-                switch(ev.keyboard.keycode){
-                    case ALLEGRO_KEY_ESCAPE:
-                        if(b.show_settings)
-                            b.show_settings=0;
-                        else if(b.show_help)
-                            b.show_help = 0;
-                        else
-                            request_exit=1;
-                        break;
-                    case ALLEGRO_KEY_R:
-                        b.restart=1;
-                        break;
-                    case ALLEGRO_KEY_S: // debug: show solution
-                        switch_solve_puzzle(&g, &b);
-                        break;
-                    case ALLEGRO_KEY_T:
-                        if(switch_tiles(&g, &b, display)){
-                            fprintf(stderr, "Error switching tiles.\n");
-                            return -1;
-                        }
-                        al_flush_event_queue(event_queue);
-                        break;
-                    case ALLEGRO_KEY_SPACE:
-                        mouse_click=2;
-                        mouse_cx = mouse_x;
-                        mouse_cy = mouse_y;
-                        break;
-                    case ALLEGRO_KEY_H:
-                        b.show_help= b.show_help == 0 ? 1 : 0;
-                        break;
-                    case ALLEGRO_KEY_C:
-                        show_hint(&g, &b);
-                        break;
-                    case ALLEGRO_KEY_F:
-                        if(toggle_fullscreen(&g, &b, &display)){
-                            al_register_event_source(event_queue, al_get_display_event_source(display));
-                        }
-                        al_flush_event_queue(event_queue);
-                        break;
-                    case ALLEGRO_KEY_U:
-                        execute_undo(&g);
-                        update_board(&g, &b);
-                        al_flush_event_queue(event_queue);
-                        break;
-                }
-                break;
-            case ALLEGRO_EVENT_KEY_DOWN:
-            case ALLEGRO_EVENT_KEY_UP:
-            case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
-            case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
-                break;
-            case ALLEGRO_EVENT_DISPLAY_RESIZE:
-                if (fullscreen) break;
-                al_acknowledge_resize(display);
-                resizing=1; resize_time=al_get_time();
-                break;
-        }
-        
+        do{ // empty out the event queue
+           switch(ev.type){
+                case ALLEGRO_EVENT_TIMER:
+                    if(ev.timer.source==timer) redraw=1;
+                    else if (ev.timer.source==timer_second) second_tick=1;
+                    break;
+                case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                    mouse_button_down = ev.mouse.button;
+                    mouse_button_time = al_get_time();
+                    mouse_cx = ev.mouse.x;
+                    mouse_cy = ev.mouse.y;
+                    tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
+                    break;
+                case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+                    if(mouse_drag==2){
+                        mouse_drag=3;
+                    } else { //xxx todo: check tile on button_down, compare on button_up, click if same
+                        if(tb == get_TiledBlock_at(&b, mouse_x, mouse_y))
+                            mouse_click = mouse_button_down;
+                    }
+                    mouse_button_down=0;
+                    break;
+                case ALLEGRO_EVENT_MOUSE_AXES:
+                    mouse_x = ev.mouse.x;
+                    mouse_y = ev.mouse.y;
+                    mouse_move=1;
+                    break;
+                case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                    request_exit=1;
+                    break;
+                case ALLEGRO_EVENT_KEY_CHAR:
+                    keypress=1;
+                    switch(ev.keyboard.keycode){
+                        case ALLEGRO_KEY_ESCAPE:
+                            if(b.show_settings)
+                                b.show_settings=0;
+                            else if(b.show_help)
+                                b.show_help = 0;
+                            else
+                                request_exit=1;
+                            break;
+                        case ALLEGRO_KEY_R:
+                            b.restart=1;
+                            break;
+                        case ALLEGRO_KEY_S: // debug: show solution
+                            switch_solve_puzzle(&g, &b);
+                            break;
+                        case ALLEGRO_KEY_T:
+                            if(switch_tiles(&g, &b, display)){
+                                fprintf(stderr, "Error switching tiles.\n");
+                                return -1;
+                            }
+                            al_flush_event_queue(event_queue);
+                            break;
+                        case ALLEGRO_KEY_SPACE:
+                            mouse_click=2;
+                            mouse_cx = mouse_x;
+                            mouse_cy = mouse_y;
+                            break;
+                        case ALLEGRO_KEY_H:
+                            b.show_help= b.show_help == 0 ? 1 : 0;
+                            break;
+                        case ALLEGRO_KEY_C:
+                            show_hint(&g, &b);
+                            break;
+                        case ALLEGRO_KEY_F:
+                            if(toggle_fullscreen(&g, &b, &display)){
+                                al_register_event_source(event_queue, al_get_display_event_source(display));
+                            }
+                            al_flush_event_queue(event_queue);
+                            break;
+                        case ALLEGRO_KEY_U:
+                            execute_undo(&g);
+                            update_board(&g, &b);
+                            al_flush_event_queue(event_queue);
+                            break;
+                    }
+                    break;
+                case ALLEGRO_EVENT_KEY_DOWN:
+                case ALLEGRO_EVENT_KEY_UP:
+                case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
+                case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
+                    break;
+                case ALLEGRO_EVENT_DISPLAY_RESIZE:
+                    if (fullscreen) break;
+                    al_acknowledge_resize(display);
+                    resizing=1; resize_time=al_get_time();
+                    break;
+            }
+        } while(al_get_next_event(event_queue, &ev));
+
         if(resizing){
             if(al_get_time()-resize_time > RESIZE_DELAY){
                 resizing =0; resize_update=1;
@@ -775,24 +776,7 @@ void check_settings(Game *g, Board *b){
     }
 }
 
-void show_hint(Game *g, Board *b){
-    if(!check_panel_correctness(g)){
-        show_info_text(b, "Something is wrong. An item was ruled out incorrectly.");
-    }
-    else{
-        char hint[1000] = "";
-        int i=get_hint(g);
-        if(i){
-        b->highlight = b->clue_tiledblock[i & 255];
-        b->rule_out = b->panel.b[(i>>15) & 7]->b[(i>>12) & 7]->b[(i>>9) & 7];
-        strcat(hint, CLUE_TEXT[g->clue[i & 255].rel]);
-        strcat(hint, " So we can rule out the blinking tile.");
-        show_info_text(b, hint);
-        } else {
-            show_info_text(b, "No hint available.");
-        }
-    }
-}
+
 
 void destroy_undo(){
     struct Panel_State *foo;
@@ -822,6 +806,106 @@ void save_state(Game *g){
     foo->parent = undo;
     undo = foo;
     memcpy(&undo->tile, &g->tile, sizeof(undo->tile));
+}
+
+void explain_clue(Board *b, Clue *clue)
+{
+    ALLEGRO_BITMAP *b0, *b1, *b2;
+    b0 = b->clue_unit_bmp[clue->j[0]][clue->k[0]];
+    b1 = b->clue_unit_bmp[clue->j[1]][clue->k[1]];
+    b2 = b->clue_unit_bmp[clue->j[2]][clue->k[2]];
+    
+    switch(clue->rel){
+        case CONSECUTIVE:
+            show_info_text_b(b, "The column of %b is between %b and %b, but they could be on either side.", b1, b0, b2);
+            break;
+        case NEXT_TO:
+            show_info_text_b(b, "The columns of %b and %b are next to each other, but they could be on either side.", b0, b1);
+            break;
+        case NOT_NEXT_TO:
+            show_info_text_b(b, "The column of %b is NOT next to the column of %b.", b0, b1);
+            break;
+        case NOT_MIDDLE:
+            show_info_text_b(b, "There is exactly one column between %b and %b, and %b is NOT in that column.", b0, b2, b1);
+            break;
+        case ONE_SIDE:
+            show_info_text_b(b, "The column of %b is strictly to the left of %b.", b0, b1);
+            break;
+        case TOGETHER_2:
+            show_info_text_b(b, "%b and %b are on the same column.", b0, b1);
+            break;
+        case TOGETHER_3:
+            show_info_text_b(b, "%b, %b and %b are on the same column.", b0, b1, b2);
+            break;
+        case NOT_TOGETHER:
+            show_info_text_b(b, "%b and %b are NOT on the same column.", b0, b1);
+            break;
+        case TOGETHER_NOT_MIDDLE:
+            show_info_text_b(b, "%b and %b are on the same column, and %b is NOT in that column.", b0, b2, b1);
+            break;
+        default:
+            break;
+    }
+}
+
+void show_hint(Game *g, Board *b){
+    ALLEGRO_BITMAP *b0, *b1, *b2, *b3;
+    char hint[1000] = "";
+    int i;
+    
+    if(!check_panel_correctness(g)){
+        show_info_text(b, "Something is wrong. An item was ruled out incorrectly.");
+        return;
+    }
+    
+    i=get_hint(g);
+    if(!i){
+        show_info_text(b, "No hint available.");
+        return;
+    }
+    
+    b->highlight = b->clue_tiledblock[i & 255];
+    b->rule_out = b->panel.b[(i>>15) & 7]->b[(i>>12) & 7]->b[(i>>9) & 7];
+    strcat(hint, CLUE_TEXT[g->clue[i & 255].rel]);
+    strcat(hint, " So we can rule out the blinking tile.");
+    show_info_text(b, hint);
+    
+    b0 = b->clue_unit_bmp[g->clue[i & 255].j[0]][g->clue[i & 255].k[0]];
+    b1 = b->clue_unit_bmp[g->clue[i & 255].j[1]][g->clue[i & 255].k[1]];
+    b2 = b->clue_unit_bmp[g->clue[i & 255].j[2]][g->clue[i & 255].k[2]];
+    b3 = b->clue_unit_bmp[(i>>12) & 7][(i>>9) & 7];
+    
+    switch(g->clue[i & 255].rel){
+        case CONSECUTIVE:
+            show_info_text_b(b, "The column of %b is between %b and %b, so we can rule out %b from here.", b1, b0, b2, b3);
+            break;
+        case NEXT_TO:
+            show_info_text_b(b, "The columns of %b and %b are next to each other, so we can rule out %b from here.", b0, b1, b3);
+            break;
+        case NOT_NEXT_TO:
+            show_info_text_b(b, "The column of %b is NOT next to the column of %b, so we can rule out %b from here.", b0, b1, b3);
+            break;
+        case NOT_MIDDLE:
+            show_info_text_b(b, "There is exactly one column between %b and %b, and %b is NOT in that column, so we can rule out %b from here.", b0, b2, b1, b3);
+            break;
+        case ONE_SIDE:
+            show_info_text_b(b, "The column of %b is strictly to the left of %b, so we can rule out %b from here.", b0, b1, b3);
+            break;
+        case TOGETHER_2:
+            show_info_text_b(b, "%b and %b are on the same column, so we can rule out %b from here.", b0, b1,b3);
+            break;
+        case TOGETHER_3:
+            show_info_text_b(b, "%b, %b and %b are on the same column, so we can rule out %b from here.", b0, b1, b2, b3);
+            break;
+        case NOT_TOGETHER:
+            show_info_text_b(b, "%b and %b are NOT on the same column, so we can rule out %b from here.", b0, b1, b3);
+            break;
+        case TOGETHER_NOT_MIDDLE:
+            show_info_text_b(b, "%b and %b are on the same column, and %b is NOT in that column, so we can rule out %b from here.", b0, b2, b1, b3);
+            break;
+        default:
+            break;
+    }
 }
 
 void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
@@ -932,7 +1016,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
                     SWITCH(t->hidden);
                     if(!sound_mute) play_sound(SOUND_HIDE_TILE);
                 } else if (mclick==1){ // explain clue in info panel
-                    show_info_text(b, CLUE_TEXT[g->clue[t->index].rel]);
+                    explain_clue(b, &g->clue[t->index]);
                     b->highlight = t; // highlight clue
                 }
             }
