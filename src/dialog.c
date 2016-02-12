@@ -103,17 +103,15 @@ void draw_text_bf(ALLEGRO_FONT *font, ALLEGRO_COLOR color, int tx, int ty, int t
     range[1] = BF_CODEPOINT_START + bn-1;
     newfont = al_grab_font_from_bitmap(bmp, 1, range);
     al_set_fallback_font(font, newfont);
+    
+    al_set_target_bitmap(currbuf);
     al_draw_multiline_ustr(font, color, tx, ty, tw, th, flags, ustr);
-    al_draw_multiline_text(font, WHITE_COLOR, 0, 0, 500, 50, ALLEGRO_ALIGN_LEFT, "test");
     
     al_set_fallback_font(font, NULL);
     al_destroy_bitmap(bmp);
     al_destroy_font(newfont);
     al_ustr_free(ustr);
     free(fmt_cpy);
-    al_flip_display();
-    al_rest(5);
-    al_set_target_bitmap(currbuf);
 }
 
 /* This helper function helps splitting an ustr in several delimited parts.
