@@ -81,37 +81,5 @@ void draw_multiline_text_vbf(ALLEGRO_FONT *font, ALLEGRO_COLOR color, int tx, in
 }
 
 
-///* This helper function helps splitting an ustr in several delimited parts.
-// * It returns an ustr that refers to the next part of the string that
-// * is delimited by the delimiters in delimiter.
-// * Returns NULL at the end of the string.
-// * Pos is updated to byte index of character after the delimiter or
-// * to the end of the string.
-// */
-//static const ALLEGRO_USTR *ustr_split_next(const ALLEGRO_USTR *ustr,
-//                                           ALLEGRO_USTR_INFO *info, int *pos, const char *delimiter)
-//{
-//    const ALLEGRO_USTR *result;
-//    int end, size;
-//
-//    size = al_ustr_size(ustr);
-//    if (*pos >= size) {
-//        return NULL;
-//    }
-//
-//    end = al_ustr_find_set_cstr(ustr, *pos, delimiter);
-//    if (end == -1)
-//        end = size;
-//
-//    result = al_ref_ustr(info, ustr, *pos, end);
-//    /* Set pos to character AFTER delimiter */
-//    al_ustr_next(ustr, &end);
-//    (*pos) = end;
-//    return result;
-//}
-//
-////xxx todo:
-////void text_box(const char *text){
-////
-////}
+
 
