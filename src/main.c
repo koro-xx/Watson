@@ -453,8 +453,8 @@ RESTART:
  //       do{ // empty out the event queue
            switch(ev.type){
                 case ALLEGRO_EVENT_TIMER:
-                    if(ev.timer.source==timer) redraw=1;
-                    else if (ev.timer.source==timer_second) second_tick=1;
+                    if (ev.timer.source==timer_second) second_tick=1;
+                    else if (b.rule_out) redraw=1;
                     break;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                     mouse_button_down = ev.mouse.button;
@@ -484,8 +484,10 @@ RESTART:
                     keypress=1;
                     switch(ev.keyboard.keycode){
                         case ALLEGRO_KEY_ESCAPE:
-                            if(b.show_settings)
+                            if(b.show_settings){
                                 b.show_settings=0;
+                                redraw=1;
+                            }
                             else
                                 request_exit=1;
                             break;
@@ -494,6 +496,7 @@ RESTART:
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
                             switch_solve_puzzle(&g, &b);
+                            redraw=1;
                             break;
                         case ALLEGRO_KEY_T:
                             if(switch_tiles(&g, &b, display)){
@@ -501,6 +504,7 @@ RESTART:
                                 return -1;
                             }
                             al_flush_event_queue(event_queue);
+                            redraw=1;
                             break;
                         case ALLEGRO_KEY_SPACE:
                             mouse_click=2;
@@ -508,21 +512,25 @@ RESTART:
                             mouse_cy = mouse_y;
                             break;
                         case ALLEGRO_KEY_H:
-                            b.show_help= b.show_help == 0 ? 1 : 0;
+                            SWITCH(b.show_help);
+                            redraw=1;
                             break;
                         case ALLEGRO_KEY_C:
                             show_hint(&g, &b);
+                            redraw=1;
                             break;
                         case ALLEGRO_KEY_F:
                             if(toggle_fullscreen(&g, &b, &display)){
                                 al_register_event_source(event_queue, al_get_display_event_source(display));
                             }
                             al_flush_event_queue(event_queue);
+                            redraw=1;
                             break;
                         case ALLEGRO_KEY_U:
                             execute_undo(&g);
                             update_board(&g, &b);
                             al_flush_event_queue(event_queue);
+                            redraw=1;
                             break;
                     }
                     break;
@@ -555,6 +563,7 @@ RESTART:
             al_set_target_backbuffer(display);
             update_board(&g, &b);
 			al_convert_bitmaps(); // turn bitmaps to video bitmaps
+            redraw=1;
         }
         
         if(resizing) // skip redraw and other stuff
@@ -580,6 +589,7 @@ RESTART:
             if((game_state == GAME_PLAYING) && (g.guessed == g.h*g.n)){
                 win_or_lose(&g, &b); // check if player has won
                 al_flush_event_queue(event_queue);
+                redraw=1;
             }
         }
         
@@ -589,22 +599,27 @@ RESTART:
                     mouse_move=0;
                     b.dragging->x = mouse_x + b.dragging_cx;
                     b.dragging->y = mouse_y + b.dragging_cy;
+                    redraw=1;
                 }
                 
                 if(mouse_drag == 1){ // 1 for drag, 3 for drop, 2 for dragging
                     mouse_grab(&b, mouse_x, mouse_y);
                     if(b.dragging) mouse_drag=2; else mouse_drag = 0;
+                    redraw=1;
                 } else if (mouse_drag == 3){
                     mouse_drop(&b, mouse_x, mouse_y);
                     mouse_drag=0;
+                    redraw=1;
                 }
             }
         }
         
         if(keypress){
             keypress=0;
-            if(b.show_help)
-                b.show_help = b.show_help>1 ? 0 : 2;
+            if(b.show_help){
+                b.show_help = 1; // b.show_help>1 ? 0 : 2;
+                redraw=1;
+            }
         }
         
         if(second_tick && (game_state == GAME_PLAYING)){ 
@@ -612,6 +627,7 @@ RESTART:
 // it happens on windows wiht D3D. This is why we use OPENGL.
             update_timer(&b);
 			second_tick = 0;
+            redraw=1;
         }
             
         if(redraw) {
@@ -629,6 +645,7 @@ RESTART:
             if(yes_no_dialog("Exit game?"))
                 noexit=0;
             al_pause_event_queue(event_queue,0);
+            redraw=1;
         }
         
         if(b.restart){
@@ -639,7 +656,9 @@ RESTART:
                     b.restart = 0;
                 }
                 al_pause_event_queue(event_queue,1);
+                redraw=1;
             }
+            
             if(b.restart){
                 draw_stuff(&b);
                 goto RESTART;
