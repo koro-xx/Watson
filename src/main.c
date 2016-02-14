@@ -47,6 +47,12 @@ int new_h=6;
 int new_advanced = 0;
 int sound_mute = 0;
 
+
+// this is mainly for testing, not actually used. use emit_event(EVENT_TYPE) to emit user events.
+#define BASE_USER_EVENT_TYPE ALLEGRO_GET_EVENT_TYPE('c','c','c','c')
+#define EVENT_REDRAW (BASE_USER_EVENT_TYPE + 1)
+ALLEGRO_EVENT_SOURCE user_event_src;
+
 ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 
 float RESIZE_DELAY = 0.04;
@@ -122,6 +128,14 @@ void destroy_undo();
 void switch_solve_puzzle(Game *g, Board *b){
     SWAP(g->guess, g->puzzle);
     update_board(g, b);
+}
+
+
+void emit_event(int event_type){
+    static ALLEGRO_EVENT user_event = {0};
+    
+    user_event.type = event_type;
+    al_emit_user_event(&user_event_src, &user_event, NULL);
 }
 
 void show_help(Board *b){
@@ -346,8 +360,12 @@ int main(int argc, char **argv){
 	al_set_target_backbuffer(display);
     al_set_window_title(display, "Watson");
     al_clear_to_color(NULL_COLOR);
-	b.restart = 0;
-
+	
+    al_init_user_event_source(&user_event_src);
+    
+    
+    
+    b.restart = 0;
     draw_title();
     al_flip_display();
     wait_for_input();
@@ -418,7 +436,8 @@ RESTART:
     al_register_event_source(event_queue, al_get_timer_event_source(timer_second));
     al_register_event_source(event_queue, al_get_keyboard_event_source());
     al_register_event_source(event_queue, al_get_mouse_event_source());
-    
+    al_register_event_source(event_queue , &user_event_src);
+
     update_board(&g,&b);
     al_set_target_backbuffer(display);
     al_start_timer(timer);
@@ -452,6 +471,9 @@ RESTART:
         al_wait_for_event(event_queue, &ev);
  //       do{ // empty out the event queue
            switch(ev.type){
+               case EVENT_REDRAW:
+                   redraw=1;
+                   break;
                 case ALLEGRO_EVENT_TIMER:
                     if (ev.timer.source==timer_second) second_tick=1;
                     else if (b.rule_out) redraw=1;
@@ -774,6 +796,7 @@ void mouse_drop(Board *b, int mx, int my){
     if(t->type == b->dragging->type){
         swap_clues(b, b->dragging, t);
         if(b->highlight == b->dragging) b->highlight = t;
+        else if(b->highlight == t) b->highlight = b->dragging;
         if(!sound_mute) play_sound(SOUND_HIDE_TILE);
     }
     b->dragging = NULL;
