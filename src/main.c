@@ -38,6 +38,7 @@
 #include "bitmaps.h"
 #include "dialog.h"
 #include "text.h"
+#include "settings.h"
 
 #define FPS 30
 
@@ -331,7 +332,6 @@ int main(int argc, char **argv){
     
     if (init_allegro()) return -1;
 
-    
 #ifndef _WIN32
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
@@ -357,6 +357,9 @@ int main(int argc, char **argv){
         fprintf(stderr, "Failed to create display!\n");
         return -1;
     }
+    
+    if(init_fonts()) return -1;
+    
 	al_set_target_backbuffer(display);
     al_set_window_title(display, "Watson");
     al_clear_to_color(NULL_COLOR);
@@ -1080,6 +1083,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             break;
         case TB_BUTTON_SETTINGS:
             update_settings_block(g, b);
+            show_settings(b, event_queue);
             b->show_settings=1;
             break;
     

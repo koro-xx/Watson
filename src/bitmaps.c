@@ -6,6 +6,7 @@
 #include "allegro_stuff.h"
 #include "dialog.h"
 #include "text.h"
+#include <allegro5/allegro_memfile.h>
 
 typedef enum SYMBOL{
     SYM_FORBIDDEN,
@@ -27,8 +28,7 @@ int GLYPH_SHADOWS = 0;
 
 const float SHADOW_ALPHA = 0.3;
 //const char *TEXT_FONT_FILE = "fonts/aileron-regular.otf";
-const char *TILE_FONT_FILE = "fonts/tiles.ttf";
-const char *TEXT_FONT_FILE = "fonts/text_font.ttf";
+
 
 
 // prototypes
@@ -154,6 +154,7 @@ void destroy_board_bitmaps(Board *b){
     al_destroy_font(b->text_font);
 }
 
+
 int init_bitmaps(Board *b){
     // will load bitmaps from folders named 0, 1,..., 7
     // inside the folder "icons", each containing 8 square bitmaps
@@ -164,19 +165,6 @@ int init_bitmaps(Board *b){
     char pathname[1000];
     ALLEGRO_PATH *path;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-    
-    // move this elsewhere
-    //    ALLEGRO_FILE *fp;
-    //    void *mem;
-    //    int64_t fsize;
-    //
-    //    fp = al_fopen("myfont.ttf", "r");
-    //    fsize = al_fsize(fp);
-    //    mem = malloc(fsize);
-    //    al_fread(fp, mem, fsize);
-    //    al_fclose(fp);
-    //    fp=al_open_memfile(mem, fsize+1, "rwb");
-    //    tile_font = al_load_ttf_font_f(fp, "player_font.ttf", 10, 0);
     
     // create buttons
     // xxx todo: improve these
@@ -280,9 +268,10 @@ int update_font_bitmaps(Game *g, Board *b){
     int bbx, bby, bbw, bbh;
     
     s=min(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h);
-    tile_font1 = al_load_ttf_font(TILE_FONT_FILE, -s*FONT_FACTOR, 0);
-    tile_font2 = al_load_ttf_font(TILE_FONT_FILE, -b->panel_tile_size*FONT_FACTOR, 0);
-    tile_font3 = al_load_ttf_font(TILE_FONT_FILE, -b->clue_unit_size*FONT_FACTOR, 0);
+    tile_font1 = load_font_mem(tile_font_mem, TILE_FONT_FILE, -s*FONT_FACTOR);
+    tile_font2 = load_font_mem(tile_font_mem, TILE_FONT_FILE, -b->panel_tile_size*FONT_FACTOR);
+    tile_font3 = load_font_mem(tile_font_mem, TILE_FONT_FILE, -b->clue_unit_size*FONT_FACTOR);
+
     if(!tile_font1 || !tile_font2 || !tile_font3) {
         fprintf(stderr, "Error loading tile font file %s.\n", TILE_FONT_FILE);
         return -1;
@@ -484,7 +473,7 @@ int update_bitmaps(Game *g, Board *b){
 
     
     // reload text fonts
-    if(!(b->text_font = al_load_ttf_font(TEXT_FONT_FILE, -b->info_panel.h/2.2, 0))){
+    if(!(b->text_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -b->info_panel.h/2.2))){
         fprintf(stderr, "Error loading font %s.\n", TEXT_FONT_FILE);
     }
     
@@ -684,7 +673,7 @@ void draw_title(void) {
 	int dw = (al_get_display_width(al_get_current_display())-500)/2;
 	int dh = (al_get_display_height(al_get_current_display()) - 250) / 2;
 
-	if (!(font = al_load_ttf_font(TEXT_FONT_FILE, -64, 0))) {
+	if (!(font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -64))) {
 		fprintf(stderr, "Error loading font %s.\n", TEXT_FONT_FILE);
 		return;
 	}

@@ -5,9 +5,41 @@
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_color.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_memfile.h>
 
 ALLEGRO_FONT *default_font = NULL;
+MemFile text_font_mem={0};
+MemFile tile_font_mem={0};
+const char *TILE_FONT_FILE = "fonts/tiles.ttf";
+const char *TEXT_FONT_FILE = "fonts/text_font.ttf";
+
 char DEFAULT_FONT_FILE[]="fonts/fixed_font.tga";
+
+int init_fonts(void){
+    
+    default_font = al_load_font(DEFAULT_FONT_FILE, 16, 0);
+    
+    text_font_mem = create_memfile(TEXT_FONT_FILE);
+    tile_font_mem = create_memfile(TILE_FONT_FILE);
+    if(!text_font_mem.mem || !tile_font_mem.mem || !default_font){
+        fprintf(stderr, "Error loading fonts.\n");
+        return -1;
+    }
+    
+    return 0;
+}
+
+ALLEGRO_FONT *load_font_mem(MemFile font_mem, const char *filename, int size){
+    // filename is only to detect extension
+    ALLEGRO_FILE *fp = NULL;
+    ALLEGRO_FONT *font;
+    
+    fp = al_open_memfile(font_mem.mem, font_mem.size, "r");
+    if(!fp) return NULL;
+    
+    font = al_load_ttf_font_f(fp, filename, size, 0);
+    return font;
+}
 
 int init_allegro(void){
     ALLEGRO_PATH *path;
@@ -38,17 +70,30 @@ int init_allegro(void){
     al_init_ttf_addon();
 	if (!al_init_primitives_addon()) {
 		fprintf(stderr, "Failed to initialize primitives addon.\n");
+        return -1;
 	}
-
-    if(!default_font){
-        if( !(default_font = al_load_font(DEFAULT_FONT_FILE, 16, 0)) ){
-            fprintf(stderr, "Error loading font %s\n", DEFAULT_FONT_FILE);
-            return -1;
-        }
-    }
-
+    
+    if(init_fonts()) return -1;
+    
 	return 0;
 };
+
+
+MemFile create_memfile(const char* filename){
+    MemFile ret = {0};
+
+    ALLEGRO_FILE *fp = al_fopen(filename, "r");
+
+    if(!fp) return ret;
+    ret.size = al_fsize(fp);
+    ret.mem = malloc(ret.size);
+    if(!ret.mem || (al_fread(fp, ret.mem, ret.size) != ret.size))
+        ret.mem=NULL;
+    al_fclose(fp);
+    return ret;
+}
+
+
 
 // adapter = 0 for first desktop
 void get_desktop_resolution(int adapter, int *w, int *h)
