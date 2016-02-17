@@ -135,14 +135,19 @@ void wait_for_keypress()
 
 //wait for keypress or mouse click
 void wait_for_input(){
-    ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
     ALLEGRO_EVENT ev;
-    
-    al_register_event_source(queue, al_get_keyboard_event_source());
-    al_register_event_source(queue, al_get_mouse_event_source());
+    ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
+ 
+    if(al_is_keyboard_installed())
+        al_register_event_source(queue, al_get_keyboard_event_source());
+    if(al_is_mouse_installed())
+        al_register_event_source(queue, al_get_mouse_event_source());
+    if(al_is_touch_input_installed())
+        al_register_event_source(queue, al_get_touch_input_event_source());
     
     do{
         al_wait_for_event(queue, &ev);
-    } while( (ev.type != ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (ev.type != ALLEGRO_EVENT_KEY_CHAR) );
+    } while( (ev.type != ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (ev.type != ALLEGRO_EVENT_KEY_CHAR) && (ev.type != ALLEGRO_EVENT_TOUCH_BEGIN) );
+    
     al_destroy_event_queue(queue);
 }

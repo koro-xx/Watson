@@ -6,6 +6,7 @@
 #include "TiledBlock.h"
 #include "macros.h"
 #include <allegro5/allegro_font.h>
+#include "main.h"
 
 typedef struct Board {
     int n;
@@ -47,6 +48,7 @@ typedef struct Board {
     ALLEGRO_BITMAP *info_text_bmp;
     ALLEGRO_BITMAP *s_bmp[14]; // settings block bitmaps
     ALLEGRO_FONT *text_font;
+    Settings set;
 } Board;
 
 

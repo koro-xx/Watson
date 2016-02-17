@@ -3,7 +3,7 @@
 
 #include "board.h"
 
-int show_settings(Board *b, ALLEGRO_EVENT_QUEUE *queue);
+int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue);
 
 
 #endif /* defined(__watson_tests__settings__) */

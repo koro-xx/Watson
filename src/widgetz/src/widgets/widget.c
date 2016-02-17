@@ -248,7 +248,7 @@ int wz_widget_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 }
 
 /*
-Function: wz_init_widget
+Function: wz_
 
 Initializes a generic widget to some sane values
 */

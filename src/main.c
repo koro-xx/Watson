@@ -1,5 +1,3 @@
-#define PRE_VERSION "0.79.3"
-#define PRE_DATE "2016-02-12"
 #ifdef _WIN32
     #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -39,15 +37,20 @@
 #include "dialog.h"
 #include "text.h"
 #include "settings.h"
+#include "main.h"
 
 #define FPS 30
 
 // defaults:
-int new_n=6;
-int new_h=6;
-int new_advanced = 0;
-int sound_mute = 0;
-
+Settings set = {
+    6, // n
+    6, // h
+    0, // advanced
+    0, // sound_mute
+    0, // type_of_tiles
+    0, // fat_fingers
+    0  // restart
+};
 
 // this is mainly for testing, not actually used. use emit_event(EVENT_TYPE) to emit user events.
 #define BASE_USER_EVENT_TYPE ALLEGRO_GET_EVENT_TYPE('c','c','c','c')
@@ -77,7 +80,7 @@ const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle
     "DEBUG KEYS: S: show solution. T: switch font tiles / bitmaps\n"
     "Note: advanced game generation may take a while for large boards.";
 
-const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
+const char ABOUT_TEXT_[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
     "\n"
     "Watson is an open source clone of \"Sherlock\", an old game by Evertt Kaser which is itself based on the a classic puzzle known as \"Zebra puzzle\" or \"Einstein's riddle\".\n"
     "\n"
@@ -150,7 +153,7 @@ void show_help(Board *b){
 
 void show_about(Board *b){
     al_pause_event_queue(event_queue, 1);
-    draw_center_text_box(b->text_font, WHITE_COLOR, WINDOW_BG_COLOR, WINDOW_BD_COLOR, 0.5, ABOUT_TEXT);
+    draw_center_text_box(b->text_font, WHITE_COLOR, WINDOW_BG_COLOR, WINDOW_BD_COLOR, 0.5, ABOUT_TEXT_);
     al_flip_display();
     wait_for_input();
     al_pause_event_queue(event_queue, 0);
@@ -209,7 +212,7 @@ void animate_win(Board *b) {
 			k++;
 			convert_grayscale(b->guess_bmp[i][j]);
 			draw_stuff(b);
-			if (!sound_mute) { play_sound(SOUND_STONE); }
+			if (!set.sound_mute) { play_sound(SOUND_STONE); }
 			al_rest(0.5*(1 - sqrt((float) k / (b->h*b->n))));
 		}
 	}
@@ -253,10 +256,10 @@ void win_or_lose(Game *g, Board *b){
         game_state = GAME_OVER;
         show_info_text(b, "Elementary, watson!");
         animate_win(b);
-        if (!sound_mute) play_sound(SOUND_WIN);
+        if (!set.sound_mute) play_sound(SOUND_WIN);
     } else {
         show_info_text(b, "Something is wrong. Try again, or press R to start a new puzzle.");
-        if (!sound_mute) play_sound(SOUND_WRONG);
+        if (!set.sound_mute) play_sound(SOUND_WRONG);
     }
 }
 
@@ -365,17 +368,13 @@ int main(int argc, char **argv){
     al_clear_to_color(NULL_COLOR);
 	
     al_init_user_event_source(&user_event_src);
-    
-    
-    
-    b.restart = 0;
+
     draw_title();
     al_flip_display();
     wait_for_input();
-
-    b.type_of_tiles = 0; // use font tiles by default
     
 RESTART:
+    b.type_of_tiles = set.type_of_tiles; // use font tiles by default
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
   
 	if (!fullscreen) {
@@ -383,21 +382,22 @@ RESTART:
     } else
         max_display_factor = 1;
 
-    if(b.restart){
+    if(set.restart){
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
-        b.restart=0;
+        set.restart=0;
         al_set_target_backbuffer(display);
     }
     
     b.max_xsize = desktop_xsize*max_display_factor;
     b.max_ysize = desktop_ysize*max_display_factor; // change this later to something adequate
 
-    g.n = new_n; g.h=new_h; // temporarily only works for 6
-    b.n = new_n; b.h=new_h;
-    g.advanced = new_advanced; // use "what if" depth 1?
-
+    g.n = b.n = set.n;
+    g.h = b.h = set.h;
+    g.advanced = set.advanced; // use "what if" depth 1?
+    b.type_of_tiles = set.type_of_tiles;
+    
     draw_generating_puzzle(&g, &b);
     create_game_with_clues(&g);
 
@@ -453,7 +453,7 @@ RESTART:
     mouse_button_up=0;
     redraw=1; mouse_click=0;
     noexit=1; mouse_move=0;
-    b.restart=0; keypress=0;
+    set.restart=0; keypress=0;
     last_draw=0; resizing=0;
     mouse_drag = 0; mouse_button_down = 0;
     resize_update=0; resize_time = 0;
@@ -466,7 +466,7 @@ RESTART:
     b.show_help = 0;
     b.show_about = 0;
     b.show_settings = 0;
-    
+
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
     while(noexit)
@@ -517,7 +517,7 @@ RESTART:
                                 request_exit=1;
                             break;
                         case ALLEGRO_KEY_R:
-                            b.restart=1;
+                            set.restart=1;
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
                             switch_solve_puzzle(&g, &b);
@@ -676,7 +676,7 @@ RESTART:
         if(b.restart){
             if(game_state == GAME_PLAYING){
                 al_pause_event_queue(event_queue,0);
-                snprintf(str, 500, "Start new %dx%d%s game?", new_n, new_h, new_advanced ? " advanced" : "");
+                snprintf(str, 500, "Start new %dx%d%s game?", set.n, set.h, set.advanced ? " advanced" : "");
                 if(!yes_no_dialog(str)){
                     b.restart = 0;
                 }
@@ -777,7 +777,7 @@ void mouse_grab(Board *b, int mx, int my){
             b->dragging_cy = b->dragging->y - my+5;
             b->dragging->x = mx + b->dragging_cx;
             b->dragging->y = my + b->dragging_cy;
-            if(!sound_mute) play_sound(SOUND_UNHIDE_TILE);
+            if(!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
             return;
         }
     }
@@ -800,7 +800,7 @@ void mouse_drop(Board *b, int mx, int my){
         swap_clues(b, b->dragging, t);
         if(b->highlight == b->dragging) b->highlight = t;
         else if(b->highlight == t) b->highlight = b->dragging;
-        if(!sound_mute) play_sound(SOUND_HIDE_TILE);
+        if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
     }
     b->dragging = NULL;
     return;
@@ -814,18 +814,18 @@ void check_settings(Game *g, Board *b){
         if(b->s.b[1]->b[i]->hidden==0){n=i+4;}
     }
     if((b->n != n) || (b->h != h)){
-        new_n=n;
-        new_h=h;
+        set.n=n;
+        set.h=h;
         b->restart=1;
     }
     
     if(b->s.b[2]->b[0]->hidden==0)
-        sound_mute=0;
+        set.sound_mute=set.sound_mute = 0;
     else
-        sound_mute=1;
+        set.sound_mute=set.sound_mute = 1;
     
     if(b->s.b[6]->b[0]->hidden == g->advanced){ // has changed
-        new_advanced = b->s.b[6]->b[0]->hidden ? 0 : 1;
+        set.advanced = b->s.b[6]->b[0]->hidden ? 0 : 1;
         b->restart = 1;
     }
 }
@@ -850,7 +850,7 @@ void execute_undo(Game *g){
     undo_old = undo->parent;
     free(undo);
     undo = undo_old;
-    if(!sound_mute)play_sound(SOUND_UNHIDE_TILE);
+    if(!set.sound_mute)play_sound(SOUND_UNHIDE_TILE);
     update_guessed(g);
 }
 
@@ -1034,18 +1034,18 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
                 save_state(g);
                 if(g->tile[i][j][k]){ // hide tile
                     hide_tile_and_check(g, i, j, k);
-                    if (!sound_mute) play_sound(SOUND_HIDE_TILE);
+                    if (!set.sound_mute) play_sound(SOUND_HIDE_TILE);
                 } else { // tile was hidden, unhide
                     if(!is_guessed(g, j, k)){
                         g->tile[i][j][k]=1;
-                        if (!sound_mute) play_sound(SOUND_UNHIDE_TILE);
+                        if (!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
                     }
                 }
             } else if (mclick==1){
                 if(g->tile[i][j][k]){
                     save_state(g);
                     guess_tile(g, i, j, k);
-                    if (!sound_mute) play_sound(SOUND_GUESS_TILE);
+                    if (!set.sound_mute) play_sound(SOUND_GUESS_TILE);
                 }
             }
             update_board(g, b);
@@ -1057,7 +1057,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
                 // we found guessed block - unguess it
                 save_state(g);
                 unguess_tile(g, t->parent->index, t->index);
-                if (!sound_mute) play_sound(SOUND_UNHIDE_TILE);
+                if (!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
             }
             update_board(g, b);
             break;
@@ -1069,7 +1069,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             if(t->bmp && (t->index >= 0)){
                 if(mclick==2){ // toggle hide-show clue
                     SWITCH(t->hidden);
-                    if(!sound_mute) play_sound(SOUND_HIDE_TILE);
+                    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
                 } else if (mclick==1){ // explain clue in info panel
                     explain_clue(b, &g->clue[t->index]);
                     b->highlight = t; // highlight clue
@@ -1083,7 +1083,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             break;
         case TB_BUTTON_SETTINGS:
             update_settings_block(g, b);
-            show_settings(b, event_queue);
+            show_settings(&set, b, event_queue);
             b->show_settings=1;
             break;
     
@@ -1116,7 +1116,7 @@ void update_settings_block(Game *g, Board *b){
     }
     b->s.b[0]->b[b->h-4]->hidden = 0;
     b->s.b[1]->b[b->n-4]->hidden = 0;
-    if(sound_mute)
+    if(set.sound_mute)
         b->s.b[2]->b[0]->hidden = 1;
     else
         b->s.b[2]->b[0]->hidden = 0;
