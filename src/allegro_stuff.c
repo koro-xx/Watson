@@ -13,6 +13,13 @@ MemFile tile_font_mem={0};
 const char *TILE_FONT_FILE = "fonts/tiles.ttf";
 const char *TEXT_FONT_FILE = "fonts/text_font.ttf";
 
+struct Buffer_USTR{
+    ALLEGRO_USTR *ustr;
+    struct Buffer_USTR *next;
+};
+
+struct Buffer_USTR *buffer_ustr = NULL;
+
 char DEFAULT_FONT_FILE[]="fonts/fixed_font.tga";
 
 int init_fonts(void){
@@ -134,20 +141,76 @@ void wait_for_keypress()
 }
 
 //wait for keypress or mouse click
-void wait_for_input(){
+void wait_for_input(ALLEGRO_EVENT_QUEUE *queue){
     ALLEGRO_EVENT ev;
-    ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
- 
-    if(al_is_keyboard_installed())
-        al_register_event_source(queue, al_get_keyboard_event_source());
-    if(al_is_mouse_installed())
-        al_register_event_source(queue, al_get_mouse_event_source());
-    if(al_is_touch_input_installed())
-        al_register_event_source(queue, al_get_touch_input_event_source());
+    int done = 0;
+    int own_queue = queue ? 0 : 1;
+
+    if(own_queue)
+    {
+        queue = al_create_event_queue();
+
+        if(al_is_keyboard_installed())
+            al_register_event_source(queue, al_get_keyboard_event_source());
+        if(al_is_mouse_installed())
+            al_register_event_source(queue, al_get_mouse_event_source());
+        if(al_is_touch_input_installed())
+            al_register_event_source(queue, al_get_touch_input_event_source());
+    }
     
-    do{
-        al_wait_for_event(queue, &ev);
-    } while( (ev.type != ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (ev.type != ALLEGRO_EVENT_KEY_CHAR) && (ev.type != ALLEGRO_EVENT_TOUCH_BEGIN) );
+    while(!done)
+    {
+        while(!al_peek_next_event(queue, &ev))
+            al_rest(0.001);
+        
+        switch(ev.type)
+        {
+            case ALLEGRO_EVENT_DISPLAY_RESIZE:
+            case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
+                if(!own_queue) done = 1;
+                break;
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+            case ALLEGRO_EVENT_KEY_CHAR:
+            case ALLEGRO_EVENT_TOUCH_BEGIN:
+                done = 1;
+            default:
+                al_drop_next_event(queue);
+        }
+    }
     
-    al_destroy_event_queue(queue);
+    if(own_queue) al_destroy_event_queue(queue);
+}
+
+ALLEGRO_USTR *new_ustr(const char *str){
+    struct Buffer_USTR *buf = malloc(sizeof(*buf));
+    buf->ustr = al_ustr_new(str);
+    buf->next = buffer_ustr;
+    buffer_ustr = buf;
+    return buf->ustr;
+}
+
+void free_ustr(void){
+    while(buffer_ustr){
+        al_ustr_free(buffer_ustr->ustr);
+        buffer_ustr = buffer_ustr->next;
+    }
+}
+
+ALLEGRO_BITMAP *screenshot(){
+    int store = al_get_new_bitmap_format();
+    ALLEGRO_BITMAP *ret;
+    al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_RGB_888);
+    ret = al_clone_bitmap(al_get_target_bitmap());
+    al_set_new_bitmap_format(store);
+    return ret;
+}
+
+ALLEGRO_BITMAP *scaled_clone_bitmap(ALLEGRO_BITMAP *source, int w, int h){
+    ALLEGRO_BITMAP *currbuf = al_get_target_bitmap();
+    ALLEGRO_BITMAP *ret = al_create_bitmap(w,h);
+    al_set_target_bitmap(ret);
+    al_clear_to_color(NULL_COLOR);
+    al_draw_scaled_bitmap(source, 0, 0, al_get_bitmap_width(source), al_get_bitmap_height(source), 0, 0, w, h, 0);
+    al_set_target_bitmap(currbuf);
+    return ret;
 }

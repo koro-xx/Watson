@@ -40,12 +40,24 @@ void get_highest_resolution(int *w, int *h);
 
 void wait_for_keypress(void);
 
-// wait for keypress or mouse click:
-void wait_for_input(void);
+// wait for any input
+// if queue = NULL will use own queue, with installed input devices
+// otherwise uses provided queue with registered input devices
+void wait_for_input(ALLEGRO_EVENT_QUEUE *queue);
 MemFile create_memfile(const char* filename);
 int init_fonts(void);
 ALLEGRO_FONT *load_font_mem(MemFile font_mem, const char *filename, int size);
 
+ALLEGRO_USTR *new_ustr(const char *str);
+void free_ustr(void);
+
+// clones the target bitmap (usually the display backbuffer)
+ALLEGRO_BITMAP *screenshot();
+
+ALLEGRO_BITMAP *scaled_clone_bitmap(ALLEGRO_BITMAP *source, int w, int h);
+
+
+    
 // variables
 extern ALLEGRO_FONT *default_font;
 extern MemFile text_font_mem;

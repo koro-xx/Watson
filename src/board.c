@@ -41,10 +41,6 @@ int INFO_PANEL_MARGIN = 4;
 int PANEL_TILE_COLUMNS[9] = {0, 1, 2, 2, 2, 3, 3, 4, 4};
 int PANEL_TILE_ROWS[9] = {0, 1, 1, 2, 2, 2, 2, 2, 2};
 
-// prototypes
-void create_settings_block(Board *b);
-void destroy_settings_block(Board *b);
-
 void destroy_board(Board *b){ // note that b->vclue.b and v->hclue.b are destroyed elsewhere
     int i,j;
     
@@ -64,7 +60,6 @@ void destroy_board(Board *b){ // note that b->vclue.b and v->hclue.b are destroy
     nfree(b->all.b);
     nfree(b->clue_bmp);
     nfree(b->clue_tiledblock);
-    destroy_settings_block(b);
 }
 
 void destroy_board_clue_blocks(Board *b){
@@ -108,11 +103,9 @@ int create_board(Game *g, Board *b, int mode){
     b->ysize = b->max_ysize*(1.0-INFO_PANEL_PORTION);
     
     b->bg_color = BG_COLOR;
-	b->show_settings = 0;
     b->dragging = NULL;
     b->highlight = NULL;
     b->rule_out = NULL;
-    b->show_help = 0;
  
     // panel dimensions
     b->panel.x = PANEL_MARGIN;
@@ -400,7 +393,7 @@ int create_board(Game *g, Board *b, int mode){
     
     // timer
     b->time_panel.b[0]->x = 2;
-    b->time_panel.b[0]->y = (b->time_panel.h/2 -16)/2;
+    b->time_panel.b[0]->y = 4;
     b->time_panel.b[0]->h = 16;
     b->time_panel.b[0]->w = b->time_panel.w-4;
     b->time_panel.b[0]->margin = 0;
@@ -416,10 +409,10 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.b[0]->bmp = &b->time_bmp;
     
     for(i=0; i<5; i++){ // buttons
-        b->time_panel.b[i+1]->h = 16;
-        b->time_panel.b[i+1]->w = 16;
-        b->time_panel.b[i+1]->y = (b->time_panel.h/2-16)/2 + b->time_panel.h/2;
-        b->time_panel.b[i+1]->x = (i+1)*(b->time_panel.w/6) - 8;
+        b->time_panel.b[i+1]->h = min((b->time_panel.h-24), b->time_panel.w/5);
+        b->time_panel.b[i+1]->w = b->time_panel.b[i+1]->h;
+        b->time_panel.b[i+1]->y = ((b->time_panel.h + (b->time_panel.b[0]->y+b->time_panel.b[0]->h))-b->time_panel.b[i+1]->h)/2;
+        b->time_panel.b[i+1]->x = ((i+1)*b->time_panel.w  +(i-5)*b->time_panel.b[i+1]->w)/6;
         b->time_panel.b[i+1]->margin = 0;
         b->time_panel.b[i+1]->bg_color = NULL_COLOR;
         b->time_panel.b[i+1]->bd_color = WHITE_COLOR;
@@ -427,7 +420,7 @@ int create_board(Game *g, Board *b, int mode){
         b->time_panel.b[i+1]->sb=0;
         b->time_panel.b[i+1]->b = NULL;
         b->time_panel.b[i+1]->parent = &b->time_panel;
-        b->time_panel.b[i+1]->bmp = &b->button_bmp[i];
+        b->time_panel.b[i+1]->bmp = &b->button_bmp_scaled[i];
         b->time_panel.b[i+1]->index =0;
         b->time_panel.b[i+1]->hidden=0;
     }
@@ -441,7 +434,6 @@ int create_board(Game *g, Board *b, int mode){
     // collect TiledBlocks into an array for convenience
     // and create settings block
     if(mode){ // only if board is being created
-        create_settings_block(b);
         b->all.x = 0;
         b->all.y = 0;
         b->all.margin = 0;
@@ -468,8 +460,6 @@ int create_board(Game *g, Board *b, int mode){
 	b->ysize = b->info_panel.y + b->info_panel.h + b->info_panel.margin;
 	b->all.w = b->xsize;
 	b->all.h = b->ysize;
-	b->s.x = (b->xsize - b->s.w) / 2;
-	b->s.y = (b->ysize - b->s.h) / 2;
 
     if(mode != 1){ // only for update or fullscreen
         b->all.x = (b->max_xsize - b->xsize)/2;
@@ -482,178 +472,3 @@ int create_board(Game *g, Board *b, int mode){
     return update_bitmaps(g, b);
 }
 
-void destroy_settings_block(Board *b){
-    int i,j;
-    for(i=0; i<b->s.sb; i++){
-        for(j=0; j<b->s.b[i]->sb; j++)
-            nfree(b->s.b[i]->b[j]);
-        nfree(b->s.b[i]);
-    }
-    nfree(b->s.b);
-}
-
-void create_settings_block(Board *b){
-    int i, j;
-    int xo=32;
-    
-    b->s.sb = 8;
-    b->s.b = malloc(b->s.sb*sizeof(TiledBlock *));
-    b->s.hidden=0;
-    b->s.w = 300;
-    b->s.h = 300;
-    b->s.bmp = NULL;
-    b->s.bd = 2;
-    b->s.bd_color = WINDOW_BD_COLOR;
-    b->s.bg_color = WINDOW_BG_COLOR;
-    b->s.index=-1;
-    b->s.parent=NULL;
-    b->s.x = (b->xsize - b->s.w)/2; // change to b->all
-    b->s.y = (b->ysize - b->s.h)/2;
-    b->s.margin=0;
-    b->s.type = TB_SETTINGS;
-    
-    for(i=0;i<b->s.sb; i++){
-        b->s.b[i]=new_TiledBlock();
-        b->s.b[i]->parent = &b->s;
-    }
-    
-    // rows and columns picker
-    for(i=0;i<2;i++){
-        b->s.b[i]->x = xo;
-        b->s.b[i]->y = 64 + i*32;
-        b->s.b[i]->w = 240;
-        b->s.b[i]->h = 16;
-        b->s.b[i]->parent = &b->s;
-        b->s.b[i]->bmp = NULL,
-        b->s.b[i]->bd_color = WINDOW_BD_COLOR;
-        b->s.b[i]->bg_color = NULL_COLOR;
-        b->s.b[i]->index = i;
-        b->s.b[i]->sb = 5;
-        b->s.b[i]->b = malloc(b->s.b[i]->sb*sizeof(TiledBlock*));
-        for(j=0; j<b->s.b[i]->sb; j++){
-            b->s.b[i]->b[j] = new_TiledBlock();
-            b->s.b[i]->b[j]->x = 10*8+16*2*j;
-            b->s.b[i]->b[j]->y = 0;
-            b->s.b[i]->b[j]->w = 16;
-            b->s.b[i]->b[j]->h = 16;
-            b->s.b[i]->b[j]->parent = b->s.b[i];
-            b->s.b[i]->b[j]->bmp = &b->s_bmp[j];
-            b->s.b[i]->b[j]->bd_color = WINDOW_BD_COLOR;
-            b->s.b[i]->b[j]->bg_color = NULL_COLOR;
-            b->s.b[i]->b[j]->bd = 1;
-            b->s.b[i]->b[j]->type = TB_OTHER;
-            b->s.b[i]->b[j]->index = j+4;
-            b->s.b[i]->b[j]->hidden = 1;
-        }
-    }
-    
-    b->s.b[0]->bmp = &b->s_bmp[5];
-    b->s.b[1]->bmp = &b->s_bmp[6];
-    b->s.b[0]->type = TB_SETTINGS_ROWS;
-    b->s.b[1]->type = TB_SETTINGS_COLUMNS;
-    
-    // sound block
-    b->s.b[2]=new_TiledBlock(); // sets it to 0 by default
-    b->s.b[2]->x = xo;
-    b->s.b[2]->y =b->s.b[1]->y+64;
-    b->s.b[2]->w = 12*8;
-    b->s.b[2]->h = 16;
-    b->s.b[2]->sb = 1;
-    b->s.b[2]->bmp = &b->s_bmp[7];
-    b->s.b[2]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[2]->bg_color = NULL_COLOR;
-    b->s.b[2]->type = TB_SETTINGS_SOUND;
-    
-    b->s.b[2]->b=malloc(sizeof(TiledBlock *));
-    // sound button
-    b->s.b[2]->b[0]=new_TiledBlock();
-    b->s.b[2]->b[0]->x = 10*8;
-    b->s.b[2]->b[0]->y = 0;
-    b->s.b[2]->b[0]->w = 16;
-    b->s.b[2]->b[0]->h = 16;
-    b->s.b[2]->b[0]->parent = b->s.b[2];
-    b->s.b[2]->b[0]->bmp = &b->s_bmp[8];
-    b->s.b[2]->b[0]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[2]->b[0]->bg_color = WHITE_COLOR;
-    b->s.b[2]->b[0]->bd = 1;
-    
-    
-    // title
-    b->s.b[3] = new_TiledBlock();
-    b->s.b[3]->x = b->s.w/2 - 32;;
-    b->s.b[3]->y = 16;
-    b->s.b[3]->w = 10*8;
-    b->s.b[3]->h = 16;
-    b->s.b[3]->parent = &b->s;
-    b->s.b[3]->bmp = &b->s_bmp[9];
-    b->s.b[3]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[3]->bg_color = NULL_COLOR;
-    
-    
-    // ok button
-    b->s.b[4] = new_TiledBlock();
-    b->s.b[4]->x = (b->s.w-128)/3;
-    b->s.b[4]->y = b->s.h - 32; //32+4*32;
-    b->s.b[4]->w = 64;
-    b->s.b[4]->h = 16;
-    b->s.b[4]->parent = &b->s;
-    b->s.b[4]->bmp = &b->s_bmp[10];
-    b->s.b[4]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[4]->bg_color = NULL_COLOR;
-    b->s.b[4]->bd = 1;
-    b->s.b[4]->type = TB_SETTINGS_OK;
-    
-    
-    // cancel button
-    b->s.b[5] = new_TiledBlock();
-    b->s.b[5]->x = 64+2*(b->s.w-128)/3;
-    b->s.b[5]->y = b->s.b[4]->y; //32+4*32;
-    b->s.b[5]->w = 64;
-    b->s.b[5]->h = 16;
-    b->s.b[5]->parent = &b->s;
-    b->s.b[5]->bmp = &b->s_bmp[11];
-    b->s.b[5]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[5]->bg_color = NULL_COLOR;
-    b->s.b[5]->bd = 1;
-    b->s.b[5]->type = TB_SETTINGS_CANCEL;
-    
-    // advanced block
-    b->s.b[6]=new_TiledBlock(); // sets it to 0 by default
-    b->s.b[6]->x = b->s.b[2]->x + b->s.b[2]->w + 32;//8 + 12*8 + 32;
-    b->s.b[6]->y = b->s.b[2]->y;
-    b->s.b[6]->w = 12*8;
-    b->s.b[6]->h = 16;
-    b->s.b[6]->parent = &b->s;
-    b->s.b[6]->sb = 1;
-    b->s.b[6]->bmp = &b->s_bmp[12];
-    b->s.b[6]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[6]->bg_color = NULL_COLOR;
-    b->s.b[6]->type = TB_SETTINGS_ADVANCED;
-    
-    b->s.b[6]->b=malloc(sizeof(TiledBlock *));
-    // advanced button
-    b->s.b[6]->b[0]=new_TiledBlock();
-    b->s.b[6]->b[0]->x = 10*8;
-    b->s.b[6]->b[0]->y = 0;
-    b->s.b[6]->b[0]->w = 16;
-    b->s.b[6]->b[0]->h = 16;
-    b->s.b[6]->b[0]->parent = b->s.b[6];
-    b->s.b[6]->b[0]->bmp = &b->s_bmp[8]; // same as sound
-    b->s.b[6]->b[0]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[6]->b[0]->bg_color = WHITE_COLOR;
-    b->s.b[6]->b[0]->bd = 1;
-    
-    // about button
-    b->s.b[7]=new_TiledBlock(); // sets it to 0 by default
-    b->s.b[7]->x = b->s.w/2 - 32;
-    b->s.b[7]->y = b->s.b[6]->y + 64;
-    b->s.b[7]->w = 64;
-    b->s.b[7]->h = 16;
-    b->s.b[7]->parent = &b->s;
-    b->s.b[7]->sb = 0;
-    b->s.b[7]->bmp = &b->s_bmp[13];
-    b->s.b[7]->bd_color = WINDOW_BD_COLOR;
-    b->s.b[7]->bg_color = NULL_COLOR;
-    b->s.b[7]->bd = 1;
-    b->s.b[7]->type = TB_SETTINGS_ABOUT;
-}

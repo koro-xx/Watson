@@ -18,7 +18,6 @@ typedef struct Board {
     TiledBlock hclue;
     TiledBlock info_panel;
     TiledBlock time_panel;
-    TiledBlock s; // settings
     TiledBlock all;
     TiledBlock **clue_tiledblock; // pointer to the tiled block where clue is
     TiledBlock *dragging;
@@ -34,9 +33,6 @@ typedef struct Board {
     int type_of_tiles; // 0 = use ttf font, 1 = use file bitmaps, 2 = use classic tiles from grid
     float time_start;
     int restart;
-    int show_help;
-    int show_settings;
-    int show_about;
     ALLEGRO_COLOR bg_color;
     ALLEGRO_BITMAP *panel_tile_bmp[8][8];
     ALLEGRO_BITMAP *guess_bmp[8][8];
@@ -44,11 +40,10 @@ typedef struct Board {
     ALLEGRO_BITMAP *symbol_bmp[8];
     ALLEGRO_BITMAP **clue_bmp;
     ALLEGRO_BITMAP *button_bmp[5];
+    ALLEGRO_BITMAP *button_bmp_scaled[5];
     ALLEGRO_BITMAP *time_bmp;
     ALLEGRO_BITMAP *info_text_bmp;
-    ALLEGRO_BITMAP *s_bmp[14]; // settings block bitmaps
     ALLEGRO_FONT *text_font;
-    Settings set;
 } Board;
 
 
@@ -69,14 +64,6 @@ typedef enum BLOCK_TYPE{
     TB_BUTTON_CLUE,
     TB_TIMER,
     TB_ALL,
-    TB_SETTINGS_OK,
-    TB_SETTINGS_CANCEL,
-    TB_SETTINGS_SOUND,
-    TB_SETTINGS_ROWS,
-    TB_SETTINGS_COLUMNS,
-    TB_SETTINGS_ADVANCED,
-    TB_SETTINGS_ABOUT,
-    TB_SETTINGS,
     TB_BUTTON_UNDO,
     TB_BUTTON_TILES
 }BLOCK_TYPE;

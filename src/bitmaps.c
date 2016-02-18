@@ -113,7 +113,6 @@ void destroy_all_bitmaps(Board *b){
         ndestroy_bitmap(b->button_bmp[i]);
     }
 
-    destroy_settings_bitmaps(b);
     destroy_board_bitmaps(b);
 }
 
@@ -437,7 +436,7 @@ void show_info_text(Board *b, const char* msg){
     b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
-    draw_multiline_text_bf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-20, b->info_panel.h/2.2, ALLEGRO_ALIGN_LEFT, msg);
+    draw_multiline_text_bf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-30, al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
     
     b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
     al_set_target_bitmap(dispbuf);
@@ -458,7 +457,7 @@ void show_info_text_b(Board *b, const char* msg, ...){
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
     va_start(ap, msg);
-    draw_multiline_text_vbf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-20, b->info_panel.h/2.2, ALLEGRO_ALIGN_LEFT, msg, ap);
+    draw_multiline_text_vbf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-30, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, msg, ap);
     va_end(ap);
     b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
     al_set_target_bitmap(dispbuf);
@@ -473,7 +472,7 @@ int update_bitmaps(Game *g, Board *b){
 
     
     // reload text fonts
-    if(!(b->text_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -b->info_panel.h/2.2))){
+    if(!(b->text_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -min(b->info_panel.h/2.2, (float)b->info_panel.w/30)))){
         fprintf(stderr, "Error loading font %s.\n", TEXT_FONT_FILE);
     }
     
@@ -481,48 +480,12 @@ int update_bitmaps(Game *g, Board *b){
     b->time_bmp = al_create_bitmap(b->time_panel.b[0]->w, b->time_panel.b[0]->h);
 	al_set_target_bitmap(b->time_bmp);
 	al_clear_to_color(b->time_panel.b[0]->bg_color);
-	
-    if(!b->button_bmp[0]){ // fallback to letter buttons
-        fprintf(stderr, "Error loading button/question.png\n");
-        b->button_bmp[0] = al_create_bitmap(b->time_panel.b[1]->w, b->time_panel.b[1]->h);
-        al_set_target_bitmap(b->button_bmp[0]);
-        al_clear_to_color(b->time_panel.b[1]->bg_color);
-        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[1]->w/2,  (b->time_panel.b[1]->h-16)/2, ALLEGRO_ALIGN_CENTER, "H");
-    }
     
-    if(!b->button_bmp[1]){
-        fprintf(stderr, "Error loading button/light-bulb\n");
-        b->button_bmp[1] = al_create_bitmap(b->time_panel.b[2]->w, b->time_panel.b[2]->h);
-        al_set_target_bitmap(b->button_bmp[1]);
-        al_clear_to_color(b->time_panel.b[2]->bg_color);
-        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[2]->w/2,  (b->time_panel.b[2]->h-16)/2, ALLEGRO_ALIGN_CENTER, "?");
-    }
-      if(!b->button_bmp[1]){
-        fprintf(stderr, "Error loading button/gear.png\n");
-        b->button_bmp[2] = al_create_bitmap(b->time_panel.b[3]->w, b->time_panel.b[3]->h);
-        al_set_target_bitmap(b->button_bmp[2]);
-        al_clear_to_color(b->time_panel.b[3]->bg_color);
-        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[3]->w/2,  (b->time_panel.b[3]->h-16)/2, ALLEGRO_ALIGN_CENTER, "S");
-    }
- 
-    if(!b->button_bmp[3]){
-        fprintf(stderr, "Error loading button/undo.png\n");
-        b->button_bmp[2] = al_create_bitmap(b->time_panel.b[4]->w, b->time_panel.b[4]->h);
-        al_set_target_bitmap(b->button_bmp[3]);
-        al_clear_to_color(b->time_panel.b[4]->bg_color);
-        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[4]->w/2,  (b->time_panel.b[4]->h-16)/2, ALLEGRO_ALIGN_CENTER, "U");
-    }
-    
-    if(!b->button_bmp[4]){
-        fprintf(stderr, "Error loading button/undo.png\n");
-        b->button_bmp[4] = al_create_bitmap(b->time_panel.b[5]->w, b->time_panel.b[5]->h);
-        al_set_target_bitmap(b->button_bmp[4]);
-        al_clear_to_color(b->time_panel.b[5]->bg_color);
-        al_draw_text(default_font, WHITE_COLOR,b->time_panel.b[5]->w/2,  (b->time_panel.b[5]->h-16)/2, ALLEGRO_ALIGN_CENTER, "T");
+    for(i=0; i<5; i++){
+        b->button_bmp_scaled[i] = scaled_clone_bitmap(b->button_bmp[i], b->time_panel.b[i+1]->w, b->time_panel.b[i+1]->h);
     }
     
 	al_set_target_bitmap(dispbuf);
-    create_settings_bitmaps(b);
 
 	if (b->type_of_tiles == 0) { // use font bitmaps
 		return update_font_bitmaps(g, b);
@@ -690,79 +653,6 @@ void draw_title(void) {
 
 }
 
-void destroy_settings_bitmaps(Board *b){
-    int i;
-    for(i=0;i<5;i++){
-        ndestroy_bitmap(*b->s.b[0]->b[i]->bmp);
-    }
-    
-    for(i=0;i<8;i++){
-        ndestroy_bitmap(*b->s.b[i]->bmp);
-    }
-
-    ndestroy_bitmap(*b->s.b[2]->b[0]->bmp);
-}
-
-void create_settings_bitmaps(Board *b){
-    int i;
-    ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-
-    for(i=0;i<5;i++){
-        *b->s.b[0]->b[i]->bmp = al_create_bitmap(b->s.b[0]->b[i]->w, b->s.b[0]->b[i]->h);
-        al_set_target_bitmap(*b->s.b[0]->b[i]->bmp);
-        al_clear_to_color(b->s.b[0]->b[i]->bg_color);
-        al_draw_textf(default_font, WHITE_COLOR, 8, 0, ALLEGRO_ALIGN_CENTER, "%d", i+4);
-    }
-
-    *b->s.b[0]->bmp = al_create_bitmap(b->s.b[0]->w, b->s.b[0]->h);
-    al_set_target_bitmap(*b->s.b[0]->bmp);
-    al_clear_to_color(b->s.b[0]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, 0, 0, ALLEGRO_ALIGN_LEFT, "Rows:");
-    
-    *b->s.b[1]->bmp = al_create_bitmap(b->s.b[1]->w, b->s.b[1]->h);
-    al_set_target_bitmap(*b->s.b[1]->bmp);
-    al_clear_to_color(b->s.b[1]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, 0, 0, ALLEGRO_ALIGN_LEFT, "Columns:");
-
-    *b->s.b[2]->bmp = al_create_bitmap(b->s.b[2]->w, b->s.b[2]->h);
-    al_set_target_bitmap(*b->s.b[2]->bmp);
-    al_clear_to_color(b->s.b[2]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, 0, 0, ALLEGRO_ALIGN_LEFT, "Sound:");
-
-    // sound_button
-    *b->s.b[2]->b[0]->bmp = al_create_bitmap(b->s.b[2]->b[0]->w, b->s.b[2]->b[0]->h);
-    al_set_target_bitmap(*b->s.b[2]->b[0]->bmp);
-    al_clear_to_color(b->s.b[2]->b[0]->bg_color);
-
-    *b->s.b[3]->bmp = al_create_bitmap(b->s.b[3]->w, b->s.b[3]->h);
-    al_set_target_bitmap(*b->s.b[3]->bmp);
-    al_clear_to_color(b->s.b[3]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, 0, 0, ALLEGRO_ALIGN_LEFT, "SETTINGS");
-
-    *b->s.b[4]->bmp = al_create_bitmap(b->s.b[4]->w, b->s.b[4]->h);
-    al_set_target_bitmap(*b->s.b[4]->bmp);
-    al_clear_to_color(b->s.b[4]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, b->s.b[4]->w/2, 0, ALLEGRO_ALIGN_CENTER, "OK");
-
-    *b->s.b[5]->bmp = al_create_bitmap(b->s.b[5]->w, b->s.b[5]->h);
-    al_set_target_bitmap(*b->s.b[5]->bmp);
-    al_clear_to_color(b->s.b[5]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, b->s.b[5]->w/2, 0, ALLEGRO_ALIGN_CENTER, "Cancel");
-    
-    
-    *b->s.b[6]->bmp = al_create_bitmap(b->s.b[6]->w, b->s.b[6]->h);
-    al_set_target_bitmap(*b->s.b[6]->bmp);
-    al_clear_to_color(b->s.b[6]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, 0, 0, ALLEGRO_ALIGN_LEFT, "Advanced:");
-    
-    // about button
-    *b->s.b[7]->bmp = al_create_bitmap(b->s.b[7]->w, b->s.b[7]->h);
-    al_set_target_bitmap(*b->s.b[7]->bmp);
-    al_clear_to_color(b->s.b[7]->bg_color);
-    al_draw_text(default_font, WHITE_COLOR, b->s.b[7]->w/2, 0, ALLEGRO_ALIGN_CENTER, "About");
-
-    al_set_target_bitmap(dispbuf);
-}
 
 
 // debug

@@ -36,7 +36,7 @@
 #include "bitmaps.h"
 #include "dialog.h"
 #include "text.h"
-#include "settings.h"
+#include "gui.h"
 #include "main.h"
 
 #define FPS 30
@@ -68,7 +68,7 @@ GAME_STATE game_state;
 int desktop_xsize, desktop_ysize;
 int fullscreen;
 
-const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
+const char HELP_TEXT_[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
     "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \nTO GET STARTED: If you don't know how to play, click on the lightbulb to get a hint (or press C).\n"
     "\n"
     "Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
@@ -120,7 +120,6 @@ void update_board(Game *g, Board *b);
 void mouse_grab(Board *b, int mx, int my);
 void mouse_drop(Board *b, int mx, int my);
 TiledBlock* settings_block(void);
-void update_settings_block(Game *g, Board *b);
 TiledBlock *get_TiledBlock_at(Board *b, int x, int y);
 void show_hint(Game *g, Board *b);
 void update_guessed(Game *g);
@@ -134,7 +133,6 @@ void switch_solve_puzzle(Game *g, Board *b){
     update_board(g, b);
 }
 
-
 void emit_event(int event_type){
     static ALLEGRO_EVENT user_event = {0};
     
@@ -142,23 +140,6 @@ void emit_event(int event_type){
     al_emit_user_event(&user_event_src, &user_event, NULL);
 }
 
-void show_help(Board *b){
-    al_pause_event_queue(event_queue, 1);
-    draw_center_text_box(b->text_font, WHITE_COLOR, WINDOW_BG_COLOR, WINDOW_BD_COLOR, 0.5, HELP_TEXT);
-    al_flip_display();
-    wait_for_input();
-    al_pause_event_queue(event_queue, 0);
-    b->show_help=0;
-}
-
-void show_about(Board *b){
-    al_pause_event_queue(event_queue, 1);
-    draw_center_text_box(b->text_font, WHITE_COLOR, WINDOW_BG_COLOR, WINDOW_BD_COLOR, 0.5, ABOUT_TEXT_);
-    al_flip_display();
-    wait_for_input();
-    al_pause_event_queue(event_queue, 0);
-    b->show_about=0;
-}
 
 void draw_stuff(Board *b){
     static float time = -1;
@@ -166,16 +147,6 @@ void draw_stuff(Board *b){
     int x, y;
     
     al_clear_to_color(b->bg_color);
-    if(b->show_settings){
-        if(b->show_about){
-            show_about(b);
-            return;
-        }
-        draw_TiledBlock(&b->s, 0,0);
-		al_flip_display();
-        return;
-    }
-
     draw_TiledBlock(&b->all,0,0);
     
     if(b->rule_out){
@@ -192,10 +163,7 @@ void draw_stuff(Board *b){
     }
     
     
-    if(b->show_help){
-        show_help(b);
-        return;
-    } else if(b->dragging){ // redraw tile to get it on top
+    if(b->dragging){ // redraw tile to get it on top
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
     }
@@ -220,13 +188,11 @@ void animate_win(Board *b) {
 }
 
 void draw_generating_puzzle(Game *g, Board *b) {
-    int h = al_get_bitmap_height(al_get_target_bitmap());
-    int w = al_get_bitmap_width(al_get_target_bitmap());
-//    al_clear_to_color(b->bg_color);
-
-    al_draw_filled_rectangle((w-450)/2, (h-100)/2, (w+450)/2, (h+100)/2, WINDOW_BG_COLOR);
-    al_draw_rectangle((w-450)/2, (h-100)/2, (w+450)/2, (h+100)/2, WINDOW_BD_COLOR,3);
-    al_draw_textf(default_font, WHITE_COLOR, w/2, h/2 - 8, ALLEGRO_ALIGN_CENTER, "Generating %d x %d%s puzzle, please wait...", g->n, g->h, g->advanced ? " advanced" : "");
+    char msg[1000];
+    int w = al_get_display_width(al_get_current_display());
+    int h = al_get_display_height(al_get_current_display());
+    snprintf(msg, 999, "Generating %d x %d%s puzzle, please wait...", g->n, g->h, g->advanced ? " advanced" : "");
+    draw_multiline_wz_box(msg, w/2, h/2, 0.4*w);
     al_flip_display();
 }
 
@@ -239,8 +205,10 @@ int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
         b->type_of_tiles = (b->type_of_tiles + 1) %3;
         if(init_bitmaps(b))
             b->type_of_tiles = (b->type_of_tiles + 1) %3;
-        if(init_bitmaps(b))
-            return -1; // error
+        if(init_bitmaps(b)){
+            fprintf(stderr, "error switching tiles.\n");
+            exit(-1);
+        }
     }
     b->max_xsize = al_get_display_width(display);
     b->max_ysize = al_get_display_height(display);
@@ -322,11 +290,10 @@ int main(int argc, char **argv){
     ALLEGRO_TIMER *timer = NULL, *timer_second = NULL;
     ALLEGRO_DISPLAY *display = NULL;
     double time_foo, dt, last_draw, resize_time, mouse_button_time;
-    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit;
+    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit, restart;
     int mouse_x, mouse_y, mouse_cx, mouse_cy;
 	float max_display_factor;
     TiledBlock *tb = NULL;
-    char str[500];
     
     // seed random number generator. comment out for debug
 #ifndef _DEBUG
@@ -371,7 +338,8 @@ int main(int argc, char **argv){
 
     draw_title();
     al_flip_display();
-    wait_for_input();
+    wait_for_input(NULL);
+    restart=0;
     
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
@@ -382,11 +350,11 @@ RESTART:
     } else
         max_display_factor = 1;
 
-    if(set.restart){
+    if(restart){
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
-        set.restart=0;
+        restart=0;
         al_set_target_backbuffer(display);
     }
     
@@ -453,7 +421,7 @@ RESTART:
     mouse_button_up=0;
     redraw=1; mouse_click=0;
     noexit=1; mouse_move=0;
-    set.restart=0; keypress=0;
+    restart=0; keypress=0;
     last_draw=0; resizing=0;
     mouse_drag = 0; mouse_button_down = 0;
     resize_update=0; resize_time = 0;
@@ -463,9 +431,6 @@ RESTART:
     mouse_x = mouse_y = 0;
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
-    b.show_help = 0;
-    b.show_about = 0;
-    b.show_settings = 0;
 
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
@@ -474,8 +439,14 @@ RESTART:
         al_wait_for_event(event_queue, &ev);
  //       do{ // empty out the event queue
            switch(ev.type){
-               case EVENT_REDRAW:
-                   redraw=1;
+
+               
+               case EVENT_RESTART:
+                   restart=1;
+                   goto RESTART;
+
+               case EVENT_EXIT:
+                   noexit=0;
                    break;
                 case ALLEGRO_EVENT_TIMER:
                     if (ev.timer.source==timer_second) second_tick=1;
@@ -509,27 +480,24 @@ RESTART:
                     keypress=1;
                     switch(ev.keyboard.keycode){
                         case ALLEGRO_KEY_ESCAPE:
-                            if(b.show_settings){
-                                b.show_settings=0;
-                                redraw=1;
-                            }
+                            if(confirm_exit(&b, event_queue))
+                                noexit=0;
                             else
-                                request_exit=1;
+                                redraw=1;
                             break;
                         case ALLEGRO_KEY_R:
-                            set.restart=1;
+                            if(confirm_restart(&b, &set, event_queue)){
+                                restart=1;
+                                goto RESTART;
+                            }
+                            redraw=1;
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
                             switch_solve_puzzle(&g, &b);
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_T:
-                            if(switch_tiles(&g, &b, display)){
-                                fprintf(stderr, "Error switching tiles.\n");
-                                return -1;
-                            }
-                            al_flush_event_queue(event_queue);
-                            redraw=1;
+                            emit_event(EVENT_SWITCH_TILES);
                             break;
                         case ALLEGRO_KEY_SPACE:
                             mouse_click=2;
@@ -537,7 +505,7 @@ RESTART:
                             mouse_cy = mouse_y;
                             break;
                         case ALLEGRO_KEY_H:
-                            SWITCH(b.show_help);
+                            show_help(&b, event_queue);
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_C:
@@ -569,6 +537,14 @@ RESTART:
                     al_acknowledge_resize(display);
                     resizing=1; resize_time=al_get_time();
                     break;
+               case EVENT_REDRAW:
+                   redraw=1;
+                   break;
+               case EVENT_SWITCH_TILES:
+                   switch_tiles(&g, &b, display);
+                   al_flush_event_queue(event_queue);
+                   redraw=1;
+                   break;
             }
 //        } while(al_get_next_event(event_queue, &ev));
 
@@ -619,32 +595,26 @@ RESTART:
         }
         
         if(game_state == GAME_PLAYING){
-            if(!b.show_help && !b.show_settings){
-                if(mouse_move && (mouse_drag == 2)){
-                    mouse_move=0;
-                    b.dragging->x = mouse_x + b.dragging_cx;
-                    b.dragging->y = mouse_y + b.dragging_cy;
-                    redraw=1;
-                }
-                
-                if(mouse_drag == 1){ // 1 for drag, 3 for drop, 2 for dragging
-                    mouse_grab(&b, mouse_x, mouse_y);
-                    if(b.dragging) mouse_drag=2; else mouse_drag = 0;
-                    redraw=1;
-                } else if (mouse_drag == 3){
-                    mouse_drop(&b, mouse_x, mouse_y);
-                    mouse_drag=0;
-                    redraw=1;
-                }
-            }
-        }
-        
-        if(keypress){
-            keypress=0;
-            if(b.show_help){
-                b.show_help = 1; // b.show_help>1 ? 0 : 2;
+            if(mouse_move && (mouse_drag == 2)){
+                mouse_move=0;
+                b.dragging->x = mouse_x + b.dragging_cx;
+                b.dragging->y = mouse_y + b.dragging_cy;
                 redraw=1;
             }
+            
+            if(mouse_drag == 1){ // 1 for drag, 3 for drop, 2 for dragging
+                mouse_grab(&b, mouse_x, mouse_y);
+                if(b.dragging) mouse_drag=2; else mouse_drag = 0;
+                redraw=1;
+            } else if (mouse_drag == 3){
+                mouse_drop(&b, mouse_x, mouse_y);
+                mouse_drag=0;
+                redraw=1;
+            }
+        }
+    
+        if(keypress){
+            keypress=0;
         }
         
         if(second_tick && (game_state == GAME_PLAYING)){ 
@@ -664,32 +634,7 @@ RESTART:
             last_draw=time_foo;
         }
         
-        if(request_exit){
-            request_exit = 0;
-            al_pause_event_queue(event_queue,1);
-            if(yes_no_dialog("Exit game?"))
-                noexit=0;
-            al_pause_event_queue(event_queue,0);
-            redraw=1;
-        }
-        
-        if(b.restart){
-            if(game_state == GAME_PLAYING){
-                al_pause_event_queue(event_queue,0);
-                snprintf(str, 500, "Start new %dx%d%s game?", set.n, set.h, set.advanced ? " advanced" : "");
-                if(!yes_no_dialog(str)){
-                    b.restart = 0;
-                }
-                al_pause_event_queue(event_queue,1);
-                redraw=1;
-            }
-            
-            if(b.restart){
-                draw_stuff(&b);
-                goto RESTART;
-            }
-        }
-    } // end of game loop
+    }// end of game loop
     
     destroy_everything(&b);
     al_destroy_display(display);
@@ -759,11 +704,6 @@ void swap_clues(Board *b, TiledBlock *c1, TiledBlock *c2){
 };
 
 TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
-    if(b->show_settings){
-        return get_TiledBlock(&b->s, x, y);
-    } else if(b->show_help)
-        return &b->all;
-    else
         return get_TiledBlock(&b->all, x, y);
 }
 
@@ -805,32 +745,6 @@ void mouse_drop(Board *b, int mx, int my){
     b->dragging = NULL;
     return;
 };
-
-void check_settings(Game *g, Board *b){
-    int i, n = b->n, h= b->h;
-
-    for(i=0; i<5; i++){
-        if(b->s.b[0]->b[i]->hidden==0){h=i+4;}
-        if(b->s.b[1]->b[i]->hidden==0){n=i+4;}
-    }
-    if((b->n != n) || (b->h != h)){
-        set.n=n;
-        set.h=h;
-        b->restart=1;
-    }
-    
-    if(b->s.b[2]->b[0]->hidden==0)
-        set.sound_mute=set.sound_mute = 0;
-    else
-        set.sound_mute=set.sound_mute = 1;
-    
-    if(b->s.b[6]->b[0]->hidden == g->advanced){ // has changed
-        set.advanced = b->s.b[6]->b[0]->hidden ? 0 : 1;
-        b->restart = 1;
-    }
-}
-
-
 
 void destroy_undo(){
     struct Panel_State *foo;
@@ -984,44 +898,6 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     t = get_TiledBlock_at(b, mx, my);
     if (!t) return;
     
-    if(b->show_settings){ // handle settings panel
-	   if(t->type == TB_SETTINGS_OK){
-            b->show_settings=0;
-            check_settings(g, b);
-        } else if(t->type == TB_SETTINGS_CANCEL){
-            b->show_settings=0;
-        } else if(t->type == TB_SETTINGS_ABOUT){
-            b->show_about =1;
-        } else if(t->parent) {
-            switch(t->parent->type){
-                case TB_SETTINGS_ROWS:
-                    for(i=0; i<5; i++){
-                        b->s.b[0]->b[i]->hidden=1;
-                    }
-                    b->s.b[0]->b[t->index-4]->hidden=0;
-                    break;
-                case TB_SETTINGS_COLUMNS:
-                    for(i=0; i<5; i++){
-                        b->s.b[1]->b[i]->hidden=1;
-                    }
-                    b->s.b[1]->b[t->index-4]->hidden=0;
-                    break;
-                case TB_SETTINGS_SOUND:
-                    SWITCH(b->s.b[2]->b[0]->hidden);
-                    break;
-                case TB_SETTINGS_ADVANCED:
-                    SWITCH(b->s.b[6]->b[0]->hidden);
-                    break;
-            }
-        }
-        return;
-    }
-    
-    if(b->show_help){
-        b->show_help=0;
-        return;
-    }
-    
     if(game_state == GAME_OVER){
         show_info_text(b, "Press R to start a new puzzle.");
     }
@@ -1082,13 +958,13 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             show_hint(g,b);
             break;
         case TB_BUTTON_SETTINGS:
-            update_settings_block(g, b);
             show_settings(&set, b, event_queue);
-            b->show_settings=1;
+            emit_event(EVENT_REDRAW);
             break;
     
         case TB_BUTTON_HELP:
-            b->show_help=1;
+            show_help(b, event_queue);
+            emit_event(EVENT_REDRAW);
             break;
 
         case TB_BUTTON_UNDO:
@@ -1097,8 +973,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
             break;
             
         case TB_BUTTON_TILES:
-            switch_tiles(g,b,al_get_current_display());
-            update_board(g,b);
+            emit_event(EVENT_SWITCH_TILES);
             break;
       
         default:
@@ -1107,22 +982,3 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
 }
 
 
-void update_settings_block(Game *g, Board *b){
-    int i;
-    
-    for(i=0; i<5; i++){
-        b->s.b[0]->b[i]->hidden=1;
-        b->s.b[1]->b[i]->hidden=1;
-    }
-    b->s.b[0]->b[b->h-4]->hidden = 0;
-    b->s.b[1]->b[b->n-4]->hidden = 0;
-    if(set.sound_mute)
-        b->s.b[2]->b[0]->hidden = 1;
-    else
-        b->s.b[2]->b[0]->hidden = 0;
-    
-    if(g->advanced)
-        b->s.b[6]->b[0]->hidden = 0;
-    else
-        b->s.b[6]->b[0]->hidden = 1;
-}
