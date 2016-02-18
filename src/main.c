@@ -49,7 +49,8 @@ Settings set = {
     0, // sound_mute
     0, // type_of_tiles
     0, // fat_fingers
-    0  // restart
+    0,  // restart
+    0 // saved
 };
 
 // this is mainly for testing, not actually used. use emit_event(EVENT_TYPE) to emit user events.
@@ -126,6 +127,60 @@ void update_guessed(Game *g);
 void execute_undo(Game *g);
 void save_state(Game *g);
 void destroy_undo();
+void switch_solve_puzzle(Game *g, Board *b);
+int save_game_f(Game *g, Board *b);
+int load_game_f(Game *g, Board *b);
+
+
+
+void tutorial(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue){
+    draw_center_textbox_wait("Welcome to the tutorial of Watson, the puzzle game.\n\n"
+                             "The objective of the game is to deduce the position of each item in themain panel. Each column must have one item of each type. Each item should appear exactly once inthe panel.\n\n"
+                             "There are a number of groups of items of the same type. The default number is 6, but this can be changed in the settings, as well as the number of columns.\n\n"
+                             "Each column has block for each group of same-type items.\n\n"
+                             "Press a key to continue.", 0.5, b, queue);
+    
+    b->highlight = &b->panel;
+    show_info_text(b, "This is the main panel. Since we initially don't know the positions of the items, each block displays all possible items.");
+    draw_stuff(b);
+    al_flip_display();
+    wait_for_input(queue);
+    
+    switch_solve_puzzle(g,b);
+    show_info_text(b, "This is what the solved puzzle looks like.");
+    draw_stuff(b);
+    al_flip_display();
+    wait_for_input(queue);
+    switch_solve_puzzle(g,b);
+    
+    b->highlight = &b->vclue;
+    show_info_text(b, "This is the vertical clue panel. Each clue tells us something about the relative position of items in a column.");
+    draw_stuff(b);
+    al_flip_display();
+    wait_for_input(queue);
+
+    b->highlight = &b->hclue;
+    show_info_text(b, "This is the horizontal clue panel. Each clue tells us something about the relative position of the columns of some items.");
+    draw_stuff(b);
+    al_flip_display();
+    wait_for_input(queue);
+   
+    b->highlight = NULL;
+    show_info_text(b, "There are several types of clues. During the game, you can read an explanation of the meaning of a clue by left-clicking on it.");
+    draw_stuff(b);
+    al_flip_display();
+    wait_for_input(queue);
+    
+    b->highlight = NULL;
+    show_info_text(b, "To illustrate how to use the clues to solve a puzzle, I will show you the first steps for this game.");
+    draw_stuff(b);
+    al_flip_display();
+    wait_for_input(queue);
+ 
+}
+
+
+
 
 // debug: show solution
 void switch_solve_puzzle(Game *g, Board *b){
@@ -167,8 +222,6 @@ void draw_stuff(Board *b){
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
     }
-
-	al_flip_display();
 };
 
 void animate_win(Board *b) {
@@ -180,6 +233,7 @@ void animate_win(Board *b) {
 			k++;
 			convert_grayscale(b->guess_bmp[i][j]);
 			draw_stuff(b);
+            al_flip_display();
 			if (!set.sound_mute) { play_sound(SOUND_STONE); }
 			al_rest(0.5*(1 - sqrt((float) k / (b->h*b->n))));
 		}
@@ -336,6 +390,8 @@ int main(int argc, char **argv){
 	
     al_init_user_event_source(&user_event_src);
 
+    if(load_game_f(&g,&b)) set.saved=1;
+    
     draw_title();
     al_flip_display();
     wait_for_input(NULL);
@@ -438,114 +494,132 @@ RESTART:
     {
         al_wait_for_event(event_queue, &ev);
  //       do{ // empty out the event queue
-           switch(ev.type){
-
-               
-               case EVENT_RESTART:
-                   restart=1;
-                   goto RESTART;
-
-               case EVENT_EXIT:
-                   noexit=0;
-                   break;
-                case ALLEGRO_EVENT_TIMER:
-                    if (ev.timer.source==timer_second) second_tick=1;
-                    else if (b.rule_out) redraw=1;
-                    break;
-                case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-                    mouse_button_down = ev.mouse.button;
-                    mouse_button_time = al_get_time();
-                    mouse_cx = ev.mouse.x;
-                    mouse_cy = ev.mouse.y;
-                    tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
-                    break;
-                case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-                    if(mouse_drag==2){
-                        mouse_drag=3;
-                    } else { //xxx todo: check tile on button_down, compare on button_up, click if same
-                        if(tb == get_TiledBlock_at(&b, mouse_x, mouse_y))
-                            mouse_click = mouse_button_down;
-                    }
-                    mouse_button_down=0;
-                    break;
-                case ALLEGRO_EVENT_MOUSE_AXES:
-                    mouse_x = ev.mouse.x;
-                    mouse_y = ev.mouse.y;
-                    mouse_move=1;
-                    break;
-                case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                    request_exit=1;
-                    break;
-                case ALLEGRO_EVENT_KEY_CHAR:
-                    keypress=1;
-                    switch(ev.keyboard.keycode){
-                        case ALLEGRO_KEY_ESCAPE:
-                            if(confirm_exit(&b, event_queue))
-                                noexit=0;
-                            else
-                                redraw=1;
-                            break;
-                        case ALLEGRO_KEY_R:
-                            if(confirm_restart(&b, &set, event_queue)){
-                                restart=1;
-                                goto RESTART;
-                            }
+        switch(ev.type){
+            case EVENT_RESTART:
+                restart=1;
+                goto RESTART;
+                
+            case EVENT_EXIT:
+                noexit=0;
+                break;
+                
+            case EVENT_SAVE:
+                if(!save_game_f(&g, &b)){
+                    show_info_text(&b, "Game saved");
+                    set.saved = 1;
+                } else {
+                    show_info_text(&b, "Error: game could not be saved.");
+                }
+                break;
+            case EVENT_LOAD:
+                if(load_game_f(&g, &b)){
+                    show_info_text(&b, "Error game could not be loaded.");
+                } else {
+                    restart = 1;
+                    goto RESTART;
+                }
+                break;
+            case ALLEGRO_EVENT_TIMER:
+                if (ev.timer.source==timer_second) second_tick=1;
+                else if (b.rule_out) redraw=1;
+                break;
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                mouse_button_down = ev.mouse.button;
+                mouse_button_time = al_get_time();
+                mouse_cx = ev.mouse.x;
+                mouse_cy = ev.mouse.y;
+                tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
+                break;
+            case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
+                if(mouse_drag==2){
+                    mouse_drag=3;
+                } else { //xxx todo: check tile on button_down, compare on button_up, click if same
+                    if(tb == get_TiledBlock_at(&b, mouse_x, mouse_y))
+                        mouse_click = mouse_button_down;
+                }
+                mouse_button_down=0;
+                break;
+            case ALLEGRO_EVENT_MOUSE_AXES:
+                mouse_x = ev.mouse.x;
+                mouse_y = ev.mouse.y;
+                mouse_move=1;
+                break;
+            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                request_exit=1;
+                break;
+            case ALLEGRO_EVENT_KEY_CHAR:
+                keypress=1;
+                switch(ev.keyboard.keycode){
+                    case ALLEGRO_KEY_ESCAPE:
+                        if(confirm_exit(&b, event_queue))
+                            noexit=0;
+                        else
                             redraw=1;
-                            break;
-                        case ALLEGRO_KEY_S: // debug: show solution
-                            switch_solve_puzzle(&g, &b);
-                            redraw=1;
-                            break;
-                        case ALLEGRO_KEY_T:
-                            emit_event(EVENT_SWITCH_TILES);
-                            break;
-                        case ALLEGRO_KEY_SPACE:
-                            mouse_click=2;
-                            mouse_cx = mouse_x;
-                            mouse_cy = mouse_y;
-                            break;
-                        case ALLEGRO_KEY_H:
-                            show_help(&b, event_queue);
-                            redraw=1;
-                            break;
-                        case ALLEGRO_KEY_C:
-                            show_hint(&g, &b);
-                            redraw=1;
-                            break;
-                        case ALLEGRO_KEY_F:
-                            if(toggle_fullscreen(&g, &b, &display)){
-                                al_register_event_source(event_queue, al_get_display_event_source(display));
-                            }
-                            al_flush_event_queue(event_queue);
-                            redraw=1;
-                            break;
-                        case ALLEGRO_KEY_U:
-                            execute_undo(&g);
-                            update_board(&g, &b);
-                            al_flush_event_queue(event_queue);
-                            redraw=1;
-                            break;
-                    }
-                    break;
-                case ALLEGRO_EVENT_KEY_DOWN:
-                case ALLEGRO_EVENT_KEY_UP:
-                case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
-                case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
-                    break;
-                case ALLEGRO_EVENT_DISPLAY_RESIZE:
-                    if (fullscreen) break;
-                    al_acknowledge_resize(display);
-                    resizing=1; resize_time=al_get_time();
-                    break;
-               case EVENT_REDRAW:
-                   redraw=1;
-                   break;
-               case EVENT_SWITCH_TILES:
-                   switch_tiles(&g, &b, display);
-                   al_flush_event_queue(event_queue);
-                   redraw=1;
-                   break;
-            }
+                        break;
+                    case ALLEGRO_KEY_R:
+                        if(confirm_restart(&b, &set, event_queue)){
+                            restart=1;
+                            goto RESTART;
+                        }
+                        redraw=1;
+                        break;
+                    case ALLEGRO_KEY_S: // debug: show solution
+                        switch_solve_puzzle(&g, &b);
+                        redraw=1;
+                        break;
+                    case ALLEGRO_KEY_T:
+                        emit_event(EVENT_SWITCH_TILES);
+                        break;
+                    case ALLEGRO_KEY_SPACE:
+                        mouse_click=2;
+                        mouse_cx = mouse_x;
+                        mouse_cy = mouse_y;
+                        break;
+                    case ALLEGRO_KEY_H:
+                        show_help(&b, event_queue);
+                        redraw=1;
+                        break;
+                    case ALLEGRO_KEY_C:
+                        show_hint(&g, &b);
+                        redraw=1;
+                        break;
+                    case ALLEGRO_KEY_F:
+                        if(toggle_fullscreen(&g, &b, &display)){
+                            al_register_event_source(event_queue, al_get_display_event_source(display));
+                        }
+                        al_flush_event_queue(event_queue);
+                        redraw=1;
+                        break;
+                    case ALLEGRO_KEY_U:
+                        execute_undo(&g);
+                        update_board(&g, &b);
+                        al_flush_event_queue(event_queue);
+                        redraw=1;
+                        break;
+                    case ALLEGRO_KEY_ENTER:
+                        tutorial(&g, &b, event_queue);
+                        break;
+                }
+                break;
+            case ALLEGRO_EVENT_KEY_DOWN:
+            case ALLEGRO_EVENT_KEY_UP:
+            case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
+            case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
+                break;
+            case ALLEGRO_EVENT_DISPLAY_RESIZE:
+                if (fullscreen) break;
+                al_acknowledge_resize(display);
+                resizing=1; resize_time=al_get_time();
+                break;
+            case EVENT_REDRAW:
+                redraw=1;
+                break;
+            case EVENT_SWITCH_TILES:
+                switch_tiles(&g, &b, display);
+                al_flush_event_queue(event_queue);
+                redraw=1;
+                break;
+        }
 //        } while(al_get_next_event(event_queue, &ev));
 
         if(resizing){
@@ -631,6 +705,7 @@ RESTART:
             dt = time_foo-last_draw;
             al_set_target_backbuffer(display);
             draw_stuff(&b);
+            al_flip_display();
             last_draw=time_foo;
         }
         
@@ -981,4 +1056,68 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     }
 }
 
+// work in progress
+int save_game_f(Game *g, Board *b){
+    ALLEGRO_PATH *path;
+    ALLEGRO_FILE *fp;
+    
+    path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    
+    al_set_path_filename(path, "Watson.sav");
+    fp = al_fopen(al_path_cstr(path, '/'), "wb");
+    if(!fp){
+        fprintf(stderr, "Couldn't open %s for writing.\n", (char *) al_path_cstr(path, '/'));
+        al_destroy_path(path);
+        return -1;
+    }
+    al_fwrite(fp, &g->n, sizeof(g->n));
+    al_fwrite(fp, &g->h, sizeof(g->h));
+    al_fwrite(fp, &g->puzzle, sizeof(g->puzzle));
+    al_fwrite(fp, &g->clue_n, sizeof(g->clue_n));
+    al_fwrite(fp, &g->clue, sizeof(g->clue));
+    al_fwrite(fp, &g->tile, sizeof(g->tile));
+    al_fwrite(fp, &g->time, sizeof(g->time));
+    al_fclose(fp);
+    al_destroy_path(path);
+    return 0;
+}
 
+
+int load_game_f(Game *g, Board *b){
+    ALLEGRO_PATH *path;
+    ALLEGRO_FILE *fp;
+    ALLEGRO_FS_ENTRY *entry;
+    //	int i,j,k;
+    
+    path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    al_set_path_filename(path, "Watson.sav");
+    fp = al_fopen(al_path_cstr(path, '/'), "rb");
+    if(!fp){
+        fprintf(stderr, "Couldn't open %s for reading.\n", (char *) al_path_cstr(path, '/') );
+        al_destroy_path(path);
+        return -1;
+    }
+    if(al_fread(fp, &g->n, sizeof(g->n)) != sizeof(g->n)){
+        al_destroy_path(path);
+        return -1;
+    }
+    
+    al_fread(fp, &g->h, sizeof(g->h));
+    al_fread(fp, &g->puzzle, sizeof(g->puzzle));
+    al_fread(fp, &g->clue_n, sizeof(g->clue_n));
+    al_fread(fp, &g->clue, sizeof(g->clue));
+    al_fread(fp, &g->tile, sizeof(g->tile));
+    al_fread(fp, &g->time, sizeof(g->time));
+    al_fclose(fp);
+    
+    b->n=g->n; b->h=g->h;
+    
+    update_guessed(g);
+
+    /* delete saved game after reading
+    entry = al_create_fs_entry(al_path_cstr(path, '/'));
+    al_remove_fs_entry(entry);
+    al_destroy_path(path);
+    */
+    return 0;
+}

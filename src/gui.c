@@ -61,7 +61,10 @@ enum {
     BUTTON_EXIT,
     BUTTON_TILES,
     GROUP_COLS,
-    GROUP_ROWS
+    GROUP_ROWS,
+    BUTTON_SAVE,
+    BUTTON_LOAD
+    
 };
 
 // even if wgt->own = 1, the original function duplicates the string
@@ -133,7 +136,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     
 
     //xxx todo: change this factor depending on dpi???
-    size = min(max(1,GUI_XFACTOR*(float)b->xsize/gui_w), max(1,GUI_YFACTOR*(float)b->ysize/400.0));
+    size = min(max(1,GUI_XFACTOR*(float)b->xsize/gui_w), max(1,GUI_YFACTOR*(float)b->ysize/470.0));
     
     font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size * size);
     
@@ -158,7 +161,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     wz_init_skin_theme(&skin_theme);
 
     // main gui
-    gui = wz_create_widget(0, b->all.x + (b->xsize-size*gui_w)/2, b->all.y + (b->ysize-size*400)/2, -1);
+    gui = wz_create_widget(0, b->all.x + (b->xsize-size*gui_w)/2, b->all.y + (b->ysize-size*470)/2, -1);
     wz_set_theme(gui, (WZ_THEME*)&skin_theme);
 
     // about button
@@ -195,13 +198,25 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Advanced:"), 1, -1);
     button_advanced = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 50 * size, 50 * size, set->advanced ? al_ustr_new("on") : al_ustr_new("off"), 1, -1, BUTTON_ADVANCED);
     ((WZ_BUTTON*) button_advanced)->down = set->advanced;
+
     
+    // Sound + Advanced buttons
+    wz_create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+//    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Sound:"), 1, -1);
+    wz_create_toggle_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Save game"), 1, -1, BUTTON_SAVE);
+//    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Advanced:"), 1, -1);
+    wgt = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Load game"), 1, -1, BUTTON_LOAD);
+    ((WZ_BUTTON*) wgt)->down = !set->saved;
+
     // restart/exit/switch tiles buttons
-    wz_create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    wz_create_fill_layout(gui, 0, 330 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("New game"), 1, BUTTON_RESTART);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Exit game"), 1, BUTTON_EXIT);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Switch tiles"), 1, BUTTON_TILES);
-    wz_create_fill_layout(gui, 0, 330 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+
+    
+    // ok/cancel buttons
+    wz_create_fill_layout(gui, 0, 400 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("OK"), 1, BUTTON_OK);
     wgt = (WZ_WIDGET*) wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Cancel"), 1, BUTTON_CANCEL);
     // escape key cancels and exits
@@ -317,6 +332,28 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                     wz_set_text_own((WZ_WIDGET *) event.user.data2, al_ustr_new("off"));
                                 else
                                     wz_set_text_own((WZ_WIDGET *) event.user.data2, al_ustr_new("on"));
+                                break;
+                                
+                            case BUTTON_SAVE:
+                                if(set->saved)
+                                    if(!yes_no_gui(al_ustr_new("Save game? This will overwrite\na previous save."), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue))
+                                        break;
+                                emit_event(EVENT_SAVE);
+                                cancel=1;
+                                done=1;
+                                break;
+                                
+                            case BUTTON_LOAD:
+                                if( !set->saved || !yes_no_gui(al_ustr_new("Discard current game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue) )
+                                {
+                                    {
+                                        ((WZ_BUTTON*) event.user.data2)->down = 1;
+                                        break;
+                                    }
+                                }
+                                emit_event(EVENT_LOAD);
+                                cancel=1;
+                                done=1;
                                 break;
 
                         }
@@ -521,3 +558,4 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     wz_destroy_skin_theme(&skin_theme);
     wz_destroy(gui);
 }
+
