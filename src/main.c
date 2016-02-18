@@ -399,7 +399,7 @@ int main(int argc, char **argv){
 	
     al_init_user_event_source(&user_event_src);
 
-    if(load_game_f(&g,&b)) set.saved=1;
+    if(!load_game_f(&g,&b)) set.saved=1;
     
     draw_title();
     al_flip_display();

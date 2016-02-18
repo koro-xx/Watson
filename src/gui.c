@@ -198,7 +198,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     ((WZ_BUTTON*) button_advanced)->down = set->advanced;
 
     
-    // Sound + Advanced buttons
+    // Save + Load buttons
     wz_create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
 //    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Sound:"), 1, -1);
     wz_create_toggle_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Save game"), 1, -1, BUTTON_SAVE);
