@@ -9,10 +9,13 @@
  Watson, a logic game.
  by Koro (1/2016)
 
- Todo:
- - Add better help for beginners
+ Todo
+ - show game time at the end of the game
+ - offer a restart button at the end
+ - add highscore table / input
+ - remove tile switch button
+ - finish tutorial
  - Mouse click: delay for drag is too long (what's the right way to handle drag/click?)
- - g->tile[i][j] should have been a bitfield, but it probably doesn't matter now...
  - add additional clue type
  */
 #include <stdio.h>
@@ -68,29 +71,6 @@ int swap_mouse_buttons=0;
 GAME_STATE game_state;
 int desktop_xsize, desktop_ysize;
 int fullscreen;
-
-const char HELP_TEXT_[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
-    "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \nTO GET STARTED: If you don't know how to play, click on the lightbulb to get a hint (or press C).\n"
-    "\n"
-    "Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
-    "Right click on an item in the main panel to rule it out (right-click again to bring it back). Left-click on the same item to assign it to its column (and right-click on an assigned item to unassign).\n"
-    "\n"
-    "Press R to restart or ESC to quit. You can resize the window or press F to go fullscreen.\n"
-    "Choose \"advanced\" in the settings for a more difficult game (really hard - not recommended).\n"
-    "\n"
-    "DEBUG KEYS: S: show solution. T: switch font tiles / bitmaps\n"
-    "Note: advanced game generation may take a while for large boards.";
-
-const char ABOUT_TEXT_[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
-    "\n"
-    "Watson is an open source clone of \"Sherlock\", an old game by Evertt Kaser which is itself based on the a classic puzzle known as \"Zebra puzzle\" or \"Einstein's riddle\".\n"
-    "\n"
-    "Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from Freenode #allegro for all the tips and advice.\n"
-    "\n"
-    "The tile set is rendered from TTF fonts obtained from fontlibrary.org. Pressing the game will switch to custom tiles, which sould be stored in <appdir>/icons into 8 separate folders numbered 0 to 7, each with 8 square tiles in .png format. Of course, these won't look as nice as the fonts due to the anti-aliasing. The tiles provided here were downloaded from www.icons8.com.\n"
-    "\n"
-    "The \"advanced\" mode generates (much) harder puzzles, to the point of being almost impossible, so it needs to be tuned.";
-
 
 struct Panel_State{
     int tile[8][8][8];
@@ -1062,6 +1042,10 @@ int save_game_f(Game *g, Board *b){
     ALLEGRO_FILE *fp;
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    if(!al_make_directory(al_path_cstr(path, '/'))){
+        fprintf(stderr, "could not open or create path %s.\n", al_path_cstr(path, '/'));
+        return -1;
+    }
     
     al_set_path_filename(path, "Watson.sav");
     fp = al_fopen(al_path_cstr(path, '/'), "wb");

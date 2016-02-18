@@ -1,8 +1,6 @@
 // Based in example.c
 // from the WidgetZ GUI library by Pavel Sountsov
 
-// * deal with window resize
-// * pre-initialize ustr[blah] with enum, and destroy at end
 
 #include "gui.h"
 #include <stdio.h>
