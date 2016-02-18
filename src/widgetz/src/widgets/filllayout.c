@@ -21,7 +21,7 @@ misrepresented as being the original software.
 distribution.
 */
 
-#include "widgetz_internal.h"
+#include "../../widgetz_internal.h"
 
 /*
 Title: Fill Layout

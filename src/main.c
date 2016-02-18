@@ -10,6 +10,7 @@
  by Koro (1/2016)
 
  Todo
+ - change wait_for_input to return key pressed or event type
  - show game time at the end of the game
  - offer a restart button at the end
  - add highscore table / input
@@ -113,6 +114,28 @@ int load_game_f(Game *g, Board *b);
 
 
 
+void blink_TB(TiledBlock *t){
+    ALLEGRO_BITMAP *screen = screenshot();
+    int x,y;
+    
+    get_TiledBlock_offset(t, &x, &y);
+    al_draw_filled_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba(255,255,255,150));
+    al_flip_display();
+    al_rest(0.1);
+    al_draw_bitmap(screen,0,0,0);
+    al_flip_display();
+    al_rest(0.2);
+    al_draw_bitmap(screen,0,0,0);
+    al_draw_filled_rectangle(x,y,x+ t->w, y+t->h, al_premul_rgba(255,255,255,150));
+    al_flip_display();
+    al_rest(0.1);
+    al_draw_bitmap(screen,0,0,0);
+    al_flip_display();
+    al_destroy_bitmap(screen);
+    
+}
+
+
 void tutorial(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue){
     draw_center_textbox_wait("Welcome to the tutorial of Watson, the puzzle game.\n\n"
                              "The objective of the game is to deduce the position of each item in themain panel. Each column must have one item of each type. Each item should appear exactly once inthe panel.\n\n"
@@ -124,8 +147,11 @@ void tutorial(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue){
     show_info_text(b, "This is the main panel. Since we initially don't know the positions of the items, each block displays all possible items.");
     draw_stuff(b);
     al_flip_display();
+    draw_stuff(b);
+    blink_TB(&b->panel);
     wait_for_input(queue);
-    
+
+    b->highlight = NULL;
     switch_solve_puzzle(g,b);
     show_info_text(b, "This is what the solved puzzle looks like.");
     draw_stuff(b);
@@ -137,12 +163,16 @@ void tutorial(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue){
     show_info_text(b, "This is the vertical clue panel. Each clue tells us something about the relative position of items in a column.");
     draw_stuff(b);
     al_flip_display();
+    draw_stuff(b);
+    blink_TB(&b->vclue);
     wait_for_input(queue);
 
     b->highlight = &b->hclue;
     show_info_text(b, "This is the horizontal clue panel. Each clue tells us something about the relative position of the columns of some items.");
     draw_stuff(b);
     al_flip_display();
+    draw_stuff(b);
+    blink_TB(&b->hclue);
     wait_for_input(queue);
    
     b->highlight = NULL;
@@ -158,7 +188,6 @@ void tutorial(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue){
     wait_for_input(queue);
  
 }
-
 
 
 
@@ -390,21 +419,27 @@ RESTART:
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
-        restart=0;
         al_set_target_backbuffer(display);
     }
     
     b.max_xsize = desktop_xsize*max_display_factor;
     b.max_ysize = desktop_ysize*max_display_factor; // change this later to something adequate
 
-    g.n = b.n = set.n;
-    g.h = b.h = set.h;
     g.advanced = set.advanced; // use "what if" depth 1?
     b.type_of_tiles = set.type_of_tiles;
     
-    draw_generating_puzzle(&g, &b);
-    create_game_with_clues(&g);
-
+    if(restart != 2){ // 2 is for loaded game
+        g.n = b.n = set.n;
+        g.h = b.h = set.h;
+        draw_generating_puzzle(&g, &b);
+        create_game_with_clues(&g);
+    } else {
+        set.n = g.n;
+        set.h = g.h;
+    }
+    
+    restart = 0;
+    
     if(create_board(&g, &b, 1)){
         fprintf(stderr, "Failed to create game board.\n");
         return -1;
@@ -495,7 +530,7 @@ RESTART:
                 if(load_game_f(&g, &b)){
                     show_info_text(&b, "Error game could not be loaded.");
                 } else {
-                    restart = 1;
+                    restart = 2;
                     goto RESTART;
                 }
                 break;

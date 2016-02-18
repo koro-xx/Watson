@@ -39,8 +39,8 @@ typedef struct Board {
     ALLEGRO_BITMAP *clue_unit_bmp[8][8];
     ALLEGRO_BITMAP *symbol_bmp[8];
     ALLEGRO_BITMAP **clue_bmp;
-    ALLEGRO_BITMAP *button_bmp[5];
-    ALLEGRO_BITMAP *button_bmp_scaled[5];
+    ALLEGRO_BITMAP *button_bmp[4];
+    ALLEGRO_BITMAP *button_bmp_scaled[4];
     ALLEGRO_BITMAP *time_bmp;
     ALLEGRO_BITMAP *info_text_bmp;
     ALLEGRO_FONT *text_font;

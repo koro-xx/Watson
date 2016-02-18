@@ -21,7 +21,7 @@ misrepresented as being the original software.
 distribution.
 */
 
-#include "widgetz_internal.h"
+#include "../../widgetz_internal.h"
 
 /* Returns 1 if the position changed, 0 otherwise*/
 static int set_scroll_pos(WZ_SCROLL* scl, float x, float y)

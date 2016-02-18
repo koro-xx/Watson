@@ -5,7 +5,7 @@ Taken from Allegro Nine Patch library. See LICENSE for copying information.
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 
-#include "widgetz_nine_patch.h"
+#include "../widgetz_nine_patch.h"
 
 typedef struct nine_patch_mark_tag
 {

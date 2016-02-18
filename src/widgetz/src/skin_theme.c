@@ -21,8 +21,8 @@ misrepresented as being the original software.
 distribution.
 */
 
-#include "widgetz_internal.h"
-#include "widgetz_nine_patch.h"
+#include "../widgetz_internal.h"
+#include "../widgetz_nine_patch.h"
 #include <math.h>
 
 #include <allegro5/allegro.h>

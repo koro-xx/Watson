@@ -21,6 +21,7 @@ int CLUE_TILE_MARGIN = 3;
 int VCLUE_COLUMN_SPACE = 0;
 int HCLUE_ROW_SPACE = 0;
 int INFO_PANEL_MARGIN = 4;
+float H_FLEX_FACTOR = 0.03;
 
 // general tile settings
 #define BG_COLOR NULL_COLOR
@@ -37,6 +38,8 @@ int INFO_PANEL_MARGIN = 4;
 #define INFO_PANEL_BD_COLOR GREY_COLOR
 #define TIME_PANEL_BG_COLOR DARK_GREY_COLOR
 #define TIME_PANEL_BD_COLOR GREY_COLOR
+
+#define TIME_PANEL_BUTTONS 4
 
 int PANEL_TILE_COLUMNS[9] = {0, 1, 2, 2, 2, 3, 3, 4, 4};
 int PANEL_TILE_ROWS[9] = {0, 1, 1, 2, 2, 2, 2, 2, 2};
@@ -339,8 +342,8 @@ int create_board(Game *g, Board *b, int mode){
 	b->ysize = max(b->hclue.h + 2 * b->hclue.margin, b->vclue.y + b->vclue.h + b->vclue.margin);
 
 	for (i = 1; i < b->n; i++)
-		b->panel.b[i]->x += i*min(40, (b->max_xsize - b->xsize) / b->n);
-	b->hclue.x += min(40*b->n, (b->max_xsize - b->xsize));
+		b->panel.b[i]->x += i*min((b->max_xsize*H_FLEX_FACTOR), (b->max_xsize - b->xsize) / b->n);
+    b->hclue.x += b->n * min((b->max_xsize*H_FLEX_FACTOR), (b->max_xsize - b->xsize) / b->n);
 
 	b->info_panel.h = (float)b->max_ysize*INFO_PANEL_PORTION - 2 * INFO_PANEL_MARGIN;
 	b->vclue.y += min((b->max_ysize - b->ysize - b->info_panel.h - 2*b->info_panel.margin)/2, 30);
@@ -378,7 +381,7 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.bg_color = TIME_PANEL_BG_COLOR;
     b->time_panel.bd_color = TIME_PANEL_BD_COLOR;
     b->time_panel.bd = 1;
-    b->time_panel.sb = 6;
+    b->time_panel.sb = 1+TIME_PANEL_BUTTONS;
     b->time_panel.parent = &b->all;
     b->time_panel.type = TB_TIME_PANEL;
     b->time_panel.index = 0;
@@ -387,7 +390,7 @@ int create_board(Game *g, Board *b, int mode){
 
     if(mode){ // if board is being created
         b->time_panel.b = malloc(6*sizeof(struct Tiledblock *));
-        for(i=0;i<6;i++)
+        for(i=0;i<5;i++)
             b->time_panel.b[i] = malloc(sizeof(struct TiledBlock));
     }
     
@@ -408,11 +411,11 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.b[0]->hidden=0;
     b->time_panel.b[0]->bmp = &b->time_bmp;
     
-    for(i=0; i<5; i++){ // buttons
+    for(i=0; i<TIME_PANEL_BUTTONS; i++){ // buttons
         b->time_panel.b[i+1]->h = min((b->time_panel.h-24), b->time_panel.w/5);
         b->time_panel.b[i+1]->w = b->time_panel.b[i+1]->h;
         b->time_panel.b[i+1]->y = ((b->time_panel.h + (b->time_panel.b[0]->y+b->time_panel.b[0]->h))-b->time_panel.b[i+1]->h)/2;
-        b->time_panel.b[i+1]->x = ((i+1)*b->time_panel.w  +(i-5)*b->time_panel.b[i+1]->w)/6;
+        b->time_panel.b[i+1]->x = ((i+1)*b->time_panel.w  +(i-TIME_PANEL_BUTTONS)*b->time_panel.b[i+1]->w)/(TIME_PANEL_BUTTONS+1);
         b->time_panel.b[i+1]->margin = 0;
         b->time_panel.b[i+1]->bg_color = NULL_COLOR;
         b->time_panel.b[i+1]->bd_color = WHITE_COLOR;
@@ -429,7 +432,6 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.b[2]->type = TB_BUTTON_CLUE;
     b->time_panel.b[3]->type = TB_BUTTON_SETTINGS;
     b->time_panel.b[4]->type = TB_BUTTON_UNDO;
-    b->time_panel.b[5]->type = TB_BUTTON_TILES;
     
     // collect TiledBlocks into an array for convenience
     // and create settings block

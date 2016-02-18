@@ -21,7 +21,7 @@ misrepresented as being the original software.
 distribution.
 */
 
-#include "widgetz_internal.h"
+#include "../../widgetz_internal.h"
 
 void wz_snap_editbox(WZ_EDITBOX* box)
 {

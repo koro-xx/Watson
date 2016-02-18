@@ -205,6 +205,20 @@ ALLEGRO_BITMAP *screenshot(){
     return ret;
 }
 
+ALLEGRO_BITMAP *screenshot_part(int x, int y, int w, int h){
+    int store = al_get_new_bitmap_format();
+    ALLEGRO_BITMAP *ret;
+    ALLEGRO_BITMAP *currbuf = al_get_target_bitmap();
+    
+    al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_RGB_888);
+    ret = al_create_bitmap(w,h);
+    al_set_target_bitmap(ret);
+    al_draw_bitmap_region(currbuf, x, y, w, h, 0, 0, 0);
+    al_set_target_bitmap(currbuf);
+    al_set_new_bitmap_format(store);
+    return ret;
+}
+
 ALLEGRO_BITMAP *scaled_clone_bitmap(ALLEGRO_BITMAP *source, int w, int h){
     ALLEGRO_BITMAP *currbuf = al_get_target_bitmap();
     ALLEGRO_BITMAP *ret = al_create_bitmap(w,h);

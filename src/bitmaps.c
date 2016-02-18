@@ -109,8 +109,9 @@ void destroy_all_bitmaps(Board *b){
         ndestroy_bitmap(symbol_bmp[i]);
     }
     
-    for(i=0; i<5; i++){
+    for(i=0; i<4; i++){
         ndestroy_bitmap(b->button_bmp[i]);
+        ndestroy_bitmap(b->button_bmp_scaled[i]);
     }
 
     destroy_board_bitmaps(b);
@@ -176,7 +177,6 @@ int init_bitmaps(Board *b){
     b->button_bmp[1] = al_load_bitmap("buttons/light-bulb.png");
     b->button_bmp[2] = al_load_bitmap("buttons/gear.png");
     b->button_bmp[3] = al_load_bitmap("buttons/undo.png");
-    b->button_bmp[4] = al_load_bitmap("buttons/tiles.png");
     
     if(b->type_of_tiles == 2)
         return init_bitmaps_classic(b);
@@ -481,7 +481,7 @@ int update_bitmaps(Game *g, Board *b){
 	al_set_target_bitmap(b->time_bmp);
 	al_clear_to_color(b->time_panel.b[0]->bg_color);
     
-    for(i=0; i<5; i++){
+    for(i=0; i<4; i++){
         b->button_bmp_scaled[i] = scaled_clone_bitmap(b->button_bmp[i], b->time_panel.b[i+1]->w, b->time_panel.b[i+1]->h);
     }
     

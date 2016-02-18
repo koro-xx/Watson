@@ -53,6 +53,7 @@ void free_ustr(void);
 
 // clones the target bitmap (usually the display backbuffer)
 ALLEGRO_BITMAP *screenshot();
+ALLEGRO_BITMAP *screenshot_part(int x, int y, int w, int h);
 
 ALLEGRO_BITMAP *scaled_clone_bitmap(ALLEGRO_BITMAP *source, int w, int h);
 
