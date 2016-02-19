@@ -2,6 +2,7 @@
     #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+// INTEGRATION WITH ANDROID
 //#define _DEBUG
 
 /*
@@ -10,6 +11,7 @@
  by Koro (1/2016)
 
  Todo
+ - fix time update: should use "game time" to account for saved games
  - change wait_for_input to return key pressed or event type
  - show game time at the end of the game
  - offer a restart button at the end
@@ -115,191 +117,27 @@ void  explain_clue(Board *b, Clue *clue);
 
 
 
-void blink_TB(TiledBlock *t){
-    ALLEGRO_BITMAP *screen = screenshot();
-    int x,y;
-    
-    get_TiledBlock_offset(t, &x, &y);
-    al_draw_filled_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba(255,255,255,150));
-    al_flip_display();
-    al_rest(0.1);
-    al_draw_bitmap(screen,0,0,0);
-    al_flip_display();
-    al_rest(0.2);
-    al_draw_bitmap(screen,0,0,0);
-    al_draw_filled_rectangle(x,y,x+ t->w, y+t->h, al_premul_rgba(255,255,255,150));
-    al_flip_display();
-    al_rest(0.1);
-    al_draw_bitmap(screen,0,0,0);
-    al_flip_display();
-    al_destroy_bitmap(screen);
-    
-}
+//void blink_TB(TiledBlock *t){
+//    ALLEGRO_BITMAP *screen = screenshot();
+//    int x,y;
+//    
+//    get_TiledBlock_offset(t, &x, &y);
+//    al_draw_filled_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba(255,255,255,150));
+//    al_flip_display();
+//    al_rest(0.1);
+//    al_draw_bitmap(screen,0,0,0);
+//    al_flip_display();
+//    al_rest(0.2);
+//    al_draw_bitmap(screen,0,0,0);
+//    al_draw_filled_rectangle(x,y,x+ t->w, y+t->h, al_premul_rgba(255,255,255,150));
+//    al_flip_display();
+//    al_rest(0.1);
+//    al_draw_bitmap(screen,0,0,0);
+//    al_flip_display();
+//    al_destroy_bitmap(screen);
+//    
+//}
 
-
-void tutorial(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue){
-    draw_center_textbox_wait("Welcome to the tutorial of Watson, the puzzle game.\n\n"
-                             "The objective of the game is to deduce the position of each item in themain panel. Each column must have one item of each type. Each item should appear exactly once inthe panel.\n\n"
-                             "There are a number of groups of items of the same type. The default number is 6, but this can be changed in the settings, as well as the number of columns.\n\n"
-                             "Each column has block for each group of same-type items.\n\n"
-                             "Press a key to continue.", 0.5, b, queue);
-    
-    b->highlight = &b->panel;
-    show_info_text(b, "This is the main panel. Since we initially don't know the positions of the items, each block displays all possible items.");
-    draw_stuff(b);
-    al_flip_display();
-    draw_stuff(b);
-    blink_TB(&b->panel);
-    wait_for_input(queue);
-
-    b->highlight = NULL;
-    switch_solve_puzzle(g,b);
-    show_info_text(b, "This is what the solved puzzle looks like.");
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    switch_solve_puzzle(g,b);
-    
-    b->highlight = &b->vclue;
-    show_info_text(b, "This is the vertical clue panel. Each clue tells us something about the relative position of items in a column.");
-    draw_stuff(b);
-    al_flip_display();
-    draw_stuff(b);
-    blink_TB(&b->vclue);
-    wait_for_input(queue);
-
-    b->highlight = &b->hclue;
-    show_info_text(b, "This is the horizontal clue panel. Each clue tells us something about the relative position of the columns of some items.");
-    draw_stuff(b);
-    al_flip_display();
-    draw_stuff(b);
-    blink_TB(&b->hclue);
-    wait_for_input(queue);
-   
-    b->highlight = NULL;
-    show_info_text(b, "There are several types of clues. During the game, you can read an explanation of the meaning of a clue by left-clicking on it.");
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    
-    b->highlight = NULL;
-    show_info_text(b, "To illustrate how to use the clues to solve a puzzle, I will show you the first steps for this game.");
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    
-    explain_clue(b, &g->clue[1]);
-    b->highlight=b->clue_tiledblock[1];
-    draw_stuff(b);
-    
-    draw_center_textbox_wait("This puzzle starts without any clue revealed. Since the clues only give information about relative poisitions of items, we have to rely on the columns on the edges to rule out some initial items.\n\n"
-                   "We begin with the highlighted clue. You can read its description in the bottom panel." , 0.5, b, queue);
-    
-    show_info_text_b(b, "Since the last column has no columns to its left, %b cannot be there. We remove it with a right-click (or touch).", b->clue_unit_bmp[3][5]);
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    
-    hide_tile_and_check(g, 5, 3, 5);
-    update_board(g, b);
-    draw_stuff(b);
-    al_flip_display();
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-    wait_for_input(queue);
-    
-    b->highlight=b->clue_tiledblock[21];
-    show_info_text_b(b, "This clue says that %b is in the same column as %b and %b. Thus we can rule out these last two items too.",  b->clue_unit_bmp[3][5], b->clue_unit_bmp[1][2], b->clue_unit_bmp[2][3]);
-    draw_stuff(b);
-    blink_TB(b->clue_tiledblock[21]);
-    wait_for_input(queue);
-    
-    hide_tile_and_check(g, 5, 1, 2);
-    update_board(g,b);
-    draw_stuff(b);
-    al_flip_display();
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-    al_rest(0.4);
-    hide_tile_and_check(g, 5, 2, 3);
-    update_board(g,b);
-    draw_stuff(b);
-    al_flip_display();
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-    al_rest(0.5);
-
-    b->highlight=b->clue_tiledblock[11];
-    explain_clue(b, &g->clue[11]);
-    draw_stuff(b);
-    draw_center_textbox_wait("This other clue says that the column of the middle item is between the columns of two other items (read description below). Thus we can remove it from the first and last columns.\n\nNote: This type of clue only says that one item is between other two, but it doesn't say which one is on the left and which on the right.", 0.5, b, queue);
-
-    hide_tile_and_check(g, 5, 5,5);
-    update_board(g,b);
-    draw_stuff(b);
-    al_flip_display();
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-    al_rest(0.4);
-    hide_tile_and_check(g, 0, 5, 5);
-    update_board(g,b);
-    draw_stuff(b);
-    al_flip_display();
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-    wait_for_input(queue);
-    
-    b->highlight=NULL;
-    
-    hide_tile_and_check(g, 0, 1,1);
-    hide_tile_and_check(g, 0, 3,2);
-    hide_tile_and_check(g, 0, 4,0);
-    hide_tile_and_check(g, 0, 4,0);
-    hide_tile_and_check(g, 5, 4,1);
-    hide_tile_and_check(g, 4, 4,1);
-    hide_tile_and_check(g, 4, 0,0);
-    hide_tile_and_check(g, 4, 1,2);
-    hide_tile_and_check(g, 4, 2,3);
-    hide_tile_and_check(g, 4, 3,5);
-    hide_tile_and_check(g, 5, 0,1);
-    hide_tile_and_check(g, 5, 1,0);
-    hide_tile_and_check(g, 5, 1,1);
-    hide_tile_and_check(g, 5, 1,4);
-    hide_tile_and_check(g, 5, 0,3);
-    update_board(g,b);
-    
-    show_info_text_b(b, "Moving forward in the game, we reach the current situation.");
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    
-    b->highlight=b->clue_tiledblock[19];
-    show_info_text_b(b, "Since %b must be in the same column as %b, and since %b is not in the last column, we can remove %b from there.", b->clue_unit_bmp[1][5], b->clue_unit_bmp[0][3],  b->clue_unit_bmp[0][3], b->clue_unit_bmp[1][5]);
-    draw_stuff(b);
-    al_flip_display();
-    blink_TB(b->clue_tiledblock[19]);
-    blink_TB(b->panel.b[5]->b[1]->b[5]);
-    wait_for_input(queue);
-    
-    b->highlight=NULL;
-    hide_tile_and_check(g, 5, 1,5);
-    update_board(g,b);
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-    show_info_text_b(b, "Since %b was the last tile left of its type, it was marked as 'guessed'.", b->clue_unit_bmp[1][3]);
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    
-    b->highlight=b->clue_tiledblock[17];
-    show_info_text_b(b, "But this clue tells us that %b is on the same column as %b. So we 'guess' it with a left-click (or long-press)", b->clue_unit_bmp[2][1], b->clue_unit_bmp[1][3]);
-    draw_stuff(b);
-    blink_TB(b->clue_tiledblock[17]);
-    al_flip_display();
-    wait_for_input(queue);
-
-    guess_tile(g, 5, 2, 1);
-    play_sound(SOUND_GUESS_TILE);
-    update_board(g,b);
-    draw_stuff(b);
-    al_flip_display();
-    wait_for_input(queue);
-    
-}
 
 
 
@@ -471,12 +309,10 @@ int main(int argc, char **argv){
     TiledBlock *tb = NULL;
     
     // seed random number generator. comment out for debug
-#ifndef _DEBUG
-        srand((unsigned int) time(NULL));
-#endif
+    srand((unsigned int) time(NULL));
     
     if (init_allegro()) return -1;
-
+ 
 #ifndef _WIN32
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
@@ -490,22 +326,29 @@ int main(int argc, char **argv){
 
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
 
-	if (fullscreen) {
+#ifndef MOBILE
+    if (fullscreen) {
         al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
         display = al_create_display(desktop_xsize, desktop_ysize);
-	} else {
+    } else {
 		al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
         display = al_create_display(800,600);
-	}
+    }
+#else 
+        al_set_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS, ALLEGRO_DISPLAY_ORIENTATION_LANDSCAPE, ALLEGRO_SUGGEST);
+        al_set_new_Display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+        display = al_creaet_display(desktop_xsize, desktop_ysize);
+#endif
+	
     
     if(!display) {
         fprintf(stderr, "Failed to create display!\n");
         return -1;
     }
+    al_set_target_backbuffer(display);
     
     if(init_fonts()) return -1;
     
-	al_set_target_backbuffer(display);
     al_set_window_title(display, "Watson");
     al_clear_to_color(NULL_COLOR);
 	
@@ -557,6 +400,7 @@ RESTART:
         return -1;
     }
     
+#ifndef MOBILE
     if (!fullscreen) {
         al_set_target_backbuffer(display);
         al_resize_display(display, b.xsize, b.ysize);
@@ -564,7 +408,8 @@ RESTART:
         al_acknowledge_resize(display);
         al_set_target_backbuffer(display);
     }
-    	
+#endif
+    
 	al_convert_bitmaps(); // turn bitmaps to memory bitmaps after resize (bug in allegro doesn't autoconvert)
 
     
@@ -588,8 +433,13 @@ RESTART:
     al_register_event_source(event_queue, al_get_display_event_source(display));
     al_register_event_source(event_queue, al_get_timer_event_source(timer));
     al_register_event_source(event_queue, al_get_timer_event_source(timer_second));
-    al_register_event_source(event_queue, al_get_keyboard_event_source());
-    al_register_event_source(event_queue, al_get_mouse_event_source());
+    if(al_is_keyboard_installed())
+        al_register_event_source(event_queue, al_get_keyboard_event_source());
+    if(al_is_mouse_installed())
+        al_register_event_source(event_queue, al_get_mouse_event_source());
+    if(al_is_touch_input_installed())
+        al_register_event_source(event_queue, al_get_touch_input_event_source());
+
     al_register_event_source(event_queue , &user_event_src);
 
     update_board(&g,&b);
@@ -622,6 +472,19 @@ RESTART:
         al_wait_for_event(event_queue, &ev);
  //       do{ // empty out the event queue
         switch(ev.type){
+            case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
+                deblog("RECEIVED RESUME");
+                al_acknowledge_drawing_resume(display);
+                al_rest(0.3);
+                resize_update=1;
+                break;
+            case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
+                deblog("RECEIVED HALT");
+                al_acknowledge_drawing_halt(display);
+                deblog("ACKNOWLEDGED HALT");
+                // this is to avoid a crash when the user returns to app
+                // exit(0);
+                break;
             case EVENT_RESTART:
                 restart=1;
                 goto RESTART;
@@ -650,6 +513,14 @@ RESTART:
                 if (ev.timer.source==timer_second) second_tick=1;
                 else if (b.rule_out) redraw=1;
                 break;
+            case ALLEGRO_EVENT_TOUCH_BEGIN:
+                mouse_button_down = 1;
+                mouse_button_time = al_get_time();
+                mouse_cx = ev.touch.x;
+                mouse_cy = ev.touch.y;
+                tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
+                break;
+
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                 mouse_button_down = ev.mouse.button;
                 mouse_button_time = al_get_time();
@@ -657,6 +528,28 @@ RESTART:
                 mouse_cy = ev.mouse.y;
                 tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
                 break;
+            
+            case ALLEGRO_EVENT_TOUCH_END:
+                if(!mouse_button_down) break;
+                mouse_button_down=0;
+                if(!tb) break;
+                mouse_cx = ev.touch.x;
+                mouse_cy = ev.touch.y;
+                if(al_get_time() - mouse_button_time > 0.5)
+                    mouse_click=2;
+                else
+                    mouse_click=1;
+                // revert touch-hold/touch in panel tiles
+                if(tb == get_TiledBlock_at(&b, mouse_cx, mouse_cy)){
+                    if(tb->type == TB_PANEL_TILE){
+                        if(mouse_click==2)
+                            mouse_click=1;
+                        else
+                            mouse_click=2;
+                    }
+                }
+                break;
+                
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                 if(mouse_drag==2){
                     mouse_drag=3;
@@ -724,7 +617,7 @@ RESTART:
                         redraw=1;
                         break;
                     case ALLEGRO_KEY_ENTER:
-                        tutorial(&g, &b, event_queue);
+                        //tutorial(&g, &b, event_queue);
                         break;
                 }
                 break;
@@ -749,6 +642,7 @@ RESTART:
         }
 //        } while(al_get_next_event(event_queue, &ev));
 
+        
         if(resizing){
             if(al_get_time()-resize_time > RESIZE_DELAY){
                 resizing =0; resize_update=1;
@@ -766,6 +660,9 @@ RESTART:
             update_board(&g, &b);
 			al_convert_bitmaps(); // turn bitmaps to video bitmaps
             redraw=1;
+        // android workaround, try removing:
+            al_clear_to_color(BLACK_COLOR);
+            al_flip_display(); // workaround for android
         }
         
         if(resizing) // skip redraw and other stuff

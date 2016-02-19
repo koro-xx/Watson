@@ -4,6 +4,15 @@
 #define PRE_VERSION "0.79.3"
 #define PRE_DATE "2016-02-12"
 
+#ifdef ALLEGRO_ANDROID
+    #define MOBILE
+    #define deblog(x,...) __android_log_print(ANDROID_LOG_INFO,"koro:%s:%u"x, __FILE__, __LINE__, ##__VA_ARGS__)
+    #define errlog(x,...) __android_log_print(ANDROID_LOG_INFO,"koro ERROR:%s:%u"x, __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+    #define deblog(x, ...) fprintf(stderr, "koro:%s:%u: "x, __FILE__, __LINE__, ##__VA_ARGS__)
+    #define errlog(x, ...) fprintf(stderr, "koro ERROR:%s:%u: "x, __FILE__, __LINE__, ##__VA_ARGS__)
+#endif
+
 #define BASE_USER_EVENT_TYPE ALLEGRO_GET_EVENT_TYPE('c','c','c','c')
 #define EVENT_REDRAW (BASE_USER_EVENT_TYPE + 1)
 #define EVENT_SWITCH_TILES (BASE_USER_EVENT_TYPE + 2)

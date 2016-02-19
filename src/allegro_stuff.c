@@ -6,6 +6,7 @@
 #include <allegro5/allegro_color.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_memfile.h>
+#include "main.h"
 
 ALLEGRO_FONT *default_font = NULL;
 MemFile text_font_mem={0};
@@ -50,9 +51,10 @@ ALLEGRO_FONT *load_font_mem(MemFile font_mem, const char *filename, int size){
 
 int init_allegro(void){
     ALLEGRO_PATH *path;
-
+    int no_input = 1;
+    
 	if(!al_init()) {
-        fprintf(stderr, "failed to initialize allegro!\n");
+        errlog("failed to initalize allegro!\n");
         return -1;
     }
     
@@ -61,22 +63,33 @@ int init_allegro(void){
     al_destroy_path(path);
     
     if(!al_install_keyboard()) {
-        fprintf(stderr, "failed to initialize the keyboard!\n");
-        return -1;
+        errlog("failed to initialize the keyboard!\n");
+        //return -1;
     }
     
     if(!al_install_mouse()) {
-        fprintf(stderr, "failed to initialize the mouse!\n");
+        errlog("failed to initialize the mouse.\n");
+    } else no_input = 0;
+    
+    init_sound(); // I don't care if there was an error here.
+
+    if(!al_install_touch_input()) {
+        errlog("failed to initialize touch input.\n");
+    } else no_input = 0;
+    
+    if(no_input){
+        errlog("no input found. Exitting.");
         return -1;
     }
-    
+
     init_sound(); // I don't care if there was an error here.
     
     al_init_image_addon();
     al_init_font_addon();
     al_init_ttf_addon();
-	if (!al_init_primitives_addon()) {
-		fprintf(stderr, "Failed to initialize primitives addon.\n");
+	
+    if (!al_init_primitives_addon()) {
+		errlog("Failed to initialize primitives addon.\n");
         return -1;
 	}
     
