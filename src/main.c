@@ -11,6 +11,7 @@
  by Koro (1/2016)
 
  Todo
+ - change main loop to avoid problem with slow refresh in android [empty the queue first]
  - fix time update: should use "game time" to account for saved games
  - change wait_for_input to return key pressed or event type
  - show game time at the end of the game
@@ -45,7 +46,11 @@
 #include "gui.h"
 #include "main.h"
 
-#define FPS 30
+#ifndef ALLEGRO_ANDROID
+	#define FPS 30
+#else
+	#define FPS 5
+#endif
 
 // defaults:
 Settings set = {
@@ -160,7 +165,7 @@ void draw_stuff(Board *b){
     float t;
     int x, y;
     
-    al_clear_to_color(b->bg_color);
+    al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     draw_TiledBlock(&b->all,0,0);
     
     if(b->rule_out){
@@ -229,6 +234,8 @@ int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
     al_set_target_backbuffer(display);
     update_board(g, b);
     al_convert_bitmaps();
+    al_clear_to_color(BLACK_COLOR);
+    al_flip_display();
     return 0;
 }
 
@@ -310,9 +317,11 @@ int main(int argc, char **argv){
     
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
-    
+   
+    deblog("Watson has started");
     if (init_allegro()) return -1;
- 
+    deblog("Allegro initialized");
+
 #ifndef _WIN32
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
@@ -325,21 +334,22 @@ int main(int argc, char **argv){
     al_set_new_display_option(ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST);
 
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
-
-#ifndef MOBILE
-    if (fullscreen) {
-        al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
-        display = al_create_display(desktop_xsize, desktop_ysize);
+    
+    if(!MOBILE){
+        if (fullscreen) {
+            al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+            display = al_create_display(desktop_xsize, desktop_ysize);
+        } else {
+            al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
+            display = al_create_display(800,600);
+        }
     } else {
-		al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
-        display = al_create_display(800,600);
-    }
-#else 
         al_set_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS, ALLEGRO_DISPLAY_ORIENTATION_LANDSCAPE, ALLEGRO_SUGGEST);
-        al_set_new_Display_flags(ALLEGRO_FULLSCREEN_WINDOW);
-        display = al_creaet_display(desktop_xsize, desktop_ysize);
-#endif
-	
+        al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
+        display = al_create_display(desktop_xsize, desktop_ysize);
+    }
+    
+    
     
     if(!display) {
         fprintf(stderr, "Failed to create display!\n");
@@ -351,7 +361,6 @@ int main(int argc, char **argv){
     
     al_set_window_title(display, "Watson");
     al_clear_to_color(NULL_COLOR);
-	
     al_init_user_event_source(&user_event_src);
 
     if(!load_game_f(&g,&b)) set.saved=1;
@@ -365,7 +374,7 @@ RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
   
-	if (!fullscreen) {
+	if (!fullscreen && !MOBILE) {
         max_display_factor = 0.9;
     } else
         max_display_factor = 1;
@@ -400,15 +409,13 @@ RESTART:
         return -1;
     }
     
-#ifndef MOBILE
-    if (!fullscreen) {
+    if(!MOBILE && !fullscreen) {
         al_set_target_backbuffer(display);
         al_resize_display(display, b.xsize, b.ysize);
         al_set_window_position(display, (desktop_xsize-b.xsize)/2, (desktop_ysize-b.ysize)/2);
         al_acknowledge_resize(display);
         al_set_target_backbuffer(display);
     }
-#endif
     
 	al_convert_bitmaps(); // turn bitmaps to memory bitmaps after resize (bug in allegro doesn't autoconvert)
 
@@ -467,23 +474,39 @@ RESTART:
 
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
+    al_set_target_backbuffer(display);
+    al_clear_to_color(BLACK_COLOR);
+    al_flip_display();
+    al_flush_event_queue(event_queue);
+
     while(noexit)
     {
         al_wait_for_event(event_queue, &ev);
- //       do{ // empty out the event queue
+        do{ // empty out the event queue
         switch(ev.type){
             case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
                 deblog("RECEIVED RESUME");
                 al_acknowledge_drawing_resume(display);
-                al_rest(0.3);
+                al_rest(0.01);
                 resize_update=1;
                 break;
-            case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
+            case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING: 
+		//xxx todo: move everything somewhere else
                 deblog("RECEIVED HALT");
-                al_acknowledge_drawing_halt(display);
+		al_stop_timer(timer);
+		al_stop_timer(timer_second);
+		al_acknowledge_drawing_halt(display);
                 deblog("ACKNOWLEDGED HALT");
-                // this is to avoid a crash when the user returns to app
-                // exit(0);
+		do{
+			sleep(0.01);
+			al_wait_for_event(event_queue, &ev);
+		}while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
+                al_acknowledge_drawing_resume(display);
+		al_rest(0.01);		
+		al_flush_event_queue(event_queue);
+		resize_update=1;
+              	al_start_timer(timer);
+		al_start_timer(timer_second);
                 break;
             case EVENT_RESTART:
                 restart=1;
@@ -511,7 +534,8 @@ RESTART:
                 break;
             case ALLEGRO_EVENT_TIMER:
                 if (ev.timer.source==timer_second) second_tick=1;
-                else if (b.rule_out) redraw=1;
+                else if (b.rule_out)
+			redraw=1;
                 break;
             case ALLEGRO_EVENT_TOUCH_BEGIN:
                 mouse_button_down = 1;
@@ -640,7 +664,7 @@ RESTART:
                 redraw=1;
                 break;
         }
-//        } while(al_get_next_event(event_queue, &ev));
+       } while(al_get_next_event(event_queue, &ev));
 
         
         if(resizing){
@@ -662,7 +686,7 @@ RESTART:
             redraw=1;
         // android workaround, try removing:
             al_clear_to_color(BLACK_COLOR);
-            al_flip_display(); // workaround for android
+            al_flip_display(); 
         }
         
         if(resizing) // skip redraw and other stuff
@@ -937,7 +961,8 @@ void show_hint(Game *g, Board *b){
     strcat(hint, CLUE_TEXT[g->clue[i & 255].rel]);
     strcat(hint, " So we can rule out the blinking tile.");
     show_info_text(b, hint);
-    
+    emit_event(EVENT_REDRAW);
+
     b0 = b->clue_unit_bmp[g->clue[i & 255].j[0]][g->clue[i & 255].k[0]];
     b1 = b->clue_unit_bmp[g->clue[i & 255].j[1]][g->clue[i & 255].k[1]];
     b2 = b->clue_unit_bmp[g->clue[i & 255].j[2]][g->clue[i & 255].k[2]];
@@ -1090,6 +1115,10 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
 int save_game_f(Game *g, Board *b){
     ALLEGRO_PATH *path;
     ALLEGRO_FILE *fp;
+    
+#ifdef ALLEGRO_ANDROID
+    al_set_standard_file_interface();
+#endif
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
     if(!al_make_directory(al_path_cstr(path, '/'))){

@@ -166,6 +166,10 @@ int init_bitmaps(Board *b){
     ALLEGRO_PATH *path;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
     
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
+
     // create buttons
     // xxx todo: improve these
     

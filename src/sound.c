@@ -2,6 +2,8 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
+#include "main.h"
+
 ALLEGRO_SAMPLE *sound_sample[NUMBER_OF_SOUNDS];
 
 char *sound_sample_filename[] = {
@@ -21,17 +23,20 @@ int init_sound(void){
     al_init_acodec_addon();
 
     if(!al_install_audio()) {
-        fprintf(stderr, "failed to initialize the audio!\n");
+        errlog("failed to initialize the audio!\n");
             return -1;
     }
-    
+
+    deblog("initialized audio addon");
     for(i=0; i < NUMBER_OF_SOUNDS; i++){
         if( !(sound_sample[i]=al_load_sample(sound_sample_filename[i])) ){
-            fprintf(stderr, "Error loading sample %s\n", sound_sample_filename[i]);
+            errlog("Error loading sample %s\n", sound_sample_filename[i]);
             err=1;
         }
     }
-    
+
+    deblog("loaded samples");
+
     al_reserve_samples(RESERVED_SAMPLES);
     if(err) return -1; else return 0;
 };

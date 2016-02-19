@@ -5,6 +5,7 @@
 #include <allegro5/allegro_primitives.h>
 #include "allegro_stuff.h"
 #include "bitmaps.h"
+#include "main.h"
 
 // spacing, in fraction of corresponding display dimensions
 float INFO_PANEL_PORTION = 0.07;
@@ -463,7 +464,7 @@ int create_board(Game *g, Board *b, int mode){
 	b->all.w = b->xsize;
 	b->all.h = b->ysize;
 
-    if(mode != 1){ // only for update or fullscreen
+    if((mode != 1) || MOBILE ){ // only for update or fullscreen or mobile
         b->all.x = (b->max_xsize - b->xsize)/2;
         b->all.y = (b->max_ysize - b->ysize)/2;
     }

@@ -24,12 +24,20 @@ struct Buffer_USTR *buffer_ustr = NULL;
 char DEFAULT_FONT_FILE[]="fonts/fixed_font.tga";
 
 int init_fonts(void){
-    
+
+	deblog("will load font now");
     default_font = al_load_font(DEFAULT_FONT_FILE, 16, 0);
-    
-    text_font_mem = create_memfile(TEXT_FONT_FILE);
+deblog("load default font passed");
+if(!default_font) errlog("Error loading default font");    
+deblog("will load first memfile");
+text_font_mem = create_memfile(TEXT_FONT_FILE);
+deblog("first memfile passed");
+if(!text_font_mem.mem) errlog("Error creating memfile for tile font");
     tile_font_mem = create_memfile(TILE_FONT_FILE);
-    if(!text_font_mem.mem || !tile_font_mem.mem || !default_font){
+if(!tile_font_mem.mem) errlog("Error creating memfile for tile font");
+
+deblog("second memfile passed");
+if(!text_font_mem.mem || !tile_font_mem.mem || !default_font){
         fprintf(stderr, "Error loading fonts.\n");
         return -1;
     }
@@ -57,11 +65,16 @@ int init_allegro(void){
         errlog("failed to initalize allegro!\n");
         return -1;
     }
-    
+
+	#ifdef ALLEGRO_ANDROID
+    	al_android_set_apk_file_interface();
+	#endif
+
+	deblog("initialized allegro");
     path = al_get_standard_path(ALLEGRO_RESOURCES_PATH);
     al_change_directory(al_path_cstr(path, '/'));  // change the working directory
     al_destroy_path(path);
-    
+
     if(!al_install_keyboard()) {
         errlog("failed to initialize the keyboard!\n");
         //return -1;
@@ -82,19 +95,25 @@ int init_allegro(void){
         return -1;
     }
 
+    deblog("initializing sound");
     init_sound(); // I don't care if there was an error here.
-    
+    deblog("initialized sound");
+
     al_init_image_addon();
+    deblog("initialized image addon");
     al_init_font_addon();
+    deblog("initialized font addon");
     al_init_ttf_addon();
+    deblog("initialized ttf addon");
 	
     if (!al_init_primitives_addon()) {
-		errlog("Failed to initialize primitives addon.\n");
+		errlog("Failed to initialize primitives addon");
         return -1;
 	}
     
+    deblog("initialized primitives addon");
+
     if(init_fonts()) return -1;
-    
 	return 0;
 };
 
@@ -103,12 +122,31 @@ MemFile create_memfile(const char* filename){
     MemFile ret = {0};
 
     ALLEGRO_FILE *fp = al_fopen(filename, "r");
+	deblog("al_fopen() ok");
 
-    if(!fp) return ret;
+    if(!fp){
+	    errlog("Error opening %s", filename);
+	    return ret;
+    }
+#ifndef ALLEGRO_ANDROID
     ret.size = al_fsize(fp);
+#else  // improvised fsize, allegro's fails in android
+    ret.size = 0;
+    char c[2048];
+    size_t re;
+    do{
+	    re = al_fread(fp, c, 2048);
+	    ret.size +=re;
+    }while((re != 0));
+    al_fseek(fp, 0, SEEK_SET);    
+#endif
     ret.mem = malloc(ret.size);
-    if(!ret.mem || (al_fread(fp, ret.mem, ret.size) != ret.size))
+    if(!ret.mem) errlog("Error allocating %zd bytes for memfile %s", ret.size, filename);
+	else deblog("memory allocated for memfile");
+    if(al_fread(fp, ret.mem, ret.size) != ret.size){
         ret.mem=NULL;
+	errlog("Error reading %s", filename);
+	}
     al_fclose(fp);
     return ret;
 }

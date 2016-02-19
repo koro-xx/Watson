@@ -131,6 +131,10 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     WZ_WIDGET *button_advanced;
     WZ_WIDGET *button_mute;
     Settings nset = *set;
+
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
     
 
     //xxx todo: change this factor depending on dpi???
@@ -138,10 +142,6 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     
     font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size * size);
     
-#if (ALLEGRO_SUB_VERSION > 0)
-    if(al_install_touch_input())
-        al_register_event_source(queue, al_get_touch_input_event_source());
-#endif
     refresh_rate = 60;
     fixed_dt = 1.0f / refresh_rate;
     old_time = al_current_time();
