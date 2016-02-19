@@ -71,6 +71,7 @@ ALLEGRO_EVENT_SOURCE user_event_src;
 
 ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 
+float fixed_dt = 1.0/60;
 float RESIZE_DELAY = 0.04;
 float BLINK_DELAY = .3; float BLINK_TIME = .5;
 float CLICK_DELAY = 0.2;
@@ -161,26 +162,19 @@ void emit_event(int event_type){
 
 
 void draw_stuff(Board *b){
-    static float time = -1;
-    float t;
     int x, y;
     
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     draw_TiledBlock(&b->all,0,0);
     
     if(b->rule_out){
-        t=al_get_time();
-        if (t-time >= BLINK_TIME + BLINK_DELAY){
-            time = t;
-        }
-        if (t-time < BLINK_TIME){
-            if(b->rule_out) highlight_TiledBlock(b->rule_out);
-            if(b->highlight) highlight_TiledBlock(b->highlight);
+        if(b->blink){
+            highlight_TiledBlock(b->rule_out);
+            highlight_TiledBlock(b->highlight);
         }
     } else {
         if(b->highlight) highlight_TiledBlock(b->highlight);
     }
-    
     
     if(b->dragging){ // redraw tile to get it on top
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
@@ -307,9 +301,10 @@ int main(int argc, char **argv){
     Game g = {0};
     Board b = {0};
     ALLEGRO_EVENT ev;
-    ALLEGRO_TIMER *timer = NULL, *timer_second = NULL;
+    ALLEGRO_TIMER *timer = NULL;
     ALLEGRO_DISPLAY *display = NULL;
-    double time_foo, dt, last_draw, resize_time, mouse_button_time;
+    double time_foo, dt, last_draw, resize_time, mouse_button_time, old_time;
+    double blink_time = 0;
     int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit, restart;
     int mouse_x, mouse_y, mouse_cx, mouse_cy;
 	float max_display_factor;
@@ -427,19 +422,15 @@ RESTART:
         return -1;
     }
 
+    //this timer is here just in case
+
 	if (!(timer = al_create_timer(1.0 / FPS))) {
 		fprintf(stderr, "failed to create timer!\n");
 		return -1;
 	}
-
-	if (!(timer_second = al_create_timer(1.0))) {
-		fprintf(stderr, "failed to create timer!\n");
-		return -1;
-	}
+    al_register_event_source(event_queue, al_get_timer_event_source(timer));
 
     al_register_event_source(event_queue, al_get_display_event_source(display));
-    al_register_event_source(event_queue, al_get_timer_event_source(timer));
-    al_register_event_source(event_queue, al_get_timer_event_source(timer_second));
     if(al_is_keyboard_installed())
         al_register_event_source(event_queue, al_get_keyboard_event_source());
     if(al_is_mouse_installed())
@@ -451,13 +442,9 @@ RESTART:
 
     update_board(&g,&b);
     al_set_target_backbuffer(display);
-    al_start_timer(timer);
-    al_start_timer(timer_second);
+//    al_start_timer(timer);
 
 //  initialize flags
-    al_set_timer_count(timer, 0);
-    al_set_timer_count(timer_second, 0);
-
     mouse_button_up=0;
     redraw=1; mouse_click=0;
     noexit=1; mouse_move=0;
@@ -471,18 +458,26 @@ RESTART:
     mouse_x = mouse_y = 0;
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
-
+    blink_time = 0;
+    b.blink = 0;
+    
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
     al_set_target_backbuffer(display);
     al_clear_to_color(BLACK_COLOR);
     al_flip_display();
     al_flush_event_queue(event_queue);
-
+    old_time = al_get_time();
+    
     while(noexit)
     {
-        al_wait_for_event(event_queue, &ev);
-        do{ // empty out the event queue
+        double dt = al_current_time() - old_time;
+        al_rest(fixed_dt - dt); //rest at least fixed_dt
+        dt = al_get_time() - old_time;
+        old_time = al_get_time();
+        
+       // al_wait_for_event(event_queue, &ev);
+        while(al_get_next_event(event_queue, &ev)){ // empty out the event queue
         switch(ev.type){
             case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
                 deblog("RECEIVED RESUME");
@@ -493,20 +488,18 @@ RESTART:
             case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING: 
 		//xxx todo: move everything somewhere else
                 deblog("RECEIVED HALT");
-		al_stop_timer(timer);
-		al_stop_timer(timer_second);
-		al_acknowledge_drawing_halt(display);
+                al_stop_timer(timer);
+                al_acknowledge_drawing_halt(display);
                 deblog("ACKNOWLEDGED HALT");
-		do{
-			sleep(0.01);
-			al_wait_for_event(event_queue, &ev);
-		}while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
+                do{
+                    sleep(0.01);
+                    al_wait_for_event(event_queue, &ev);
+                }while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
                 al_acknowledge_drawing_resume(display);
-		al_rest(0.01);		
-		al_flush_event_queue(event_queue);
-		resize_update=1;
-              	al_start_timer(timer);
-		al_start_timer(timer_second);
+                al_rest(0.01);
+                al_flush_event_queue(event_queue);
+                resize_update=1;
+                al_start_timer(timer);
                 break;
             case EVENT_RESTART:
                 restart=1;
@@ -533,9 +526,7 @@ RESTART:
                 }
                 break;
             case ALLEGRO_EVENT_TIMER:
-                if (ev.timer.source==timer_second) second_tick=1;
-                else if (b.rule_out)
-			redraw=1;
+                //redraw=1;
                 break;
             case ALLEGRO_EVENT_TOUCH_BEGIN:
                 mouse_button_down = 1;
@@ -664,9 +655,8 @@ RESTART:
                 redraw=1;
                 break;
         }
-       } while(al_get_next_event(event_queue, &ev));
+       }// while(al_get_next_event(event_queue, &ev));
 
-        
         if(resizing){
             if(al_get_time()-resize_time > RESIZE_DELAY){
                 resizing =0; resize_update=1;
@@ -746,7 +736,13 @@ RESTART:
 			second_tick = 0;
             redraw=1;
         }
-            
+        
+        if(b.rule_out && (al_get_time() - blink_time > BLINK_DELAY) ){
+            SWITCH(b.blink);
+            blink_time = al_get_time();
+            redraw=1;
+        }
+        
         if(redraw) {
             redraw = 0;
             time_foo = al_get_time();
@@ -763,7 +759,6 @@ RESTART:
     al_destroy_display(display);
     al_destroy_event_queue(event_queue);
     al_destroy_timer(timer);
-    al_destroy_timer(timer_second);
     return(0);
 }
 

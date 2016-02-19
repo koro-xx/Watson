@@ -23,6 +23,7 @@ typedef struct Board {
     TiledBlock *dragging;
     TiledBlock *highlight;
     TiledBlock *rule_out;
+    int blink;
     int panel_tile_size;
     int clue_unit_size;
     int clue_unit_space;

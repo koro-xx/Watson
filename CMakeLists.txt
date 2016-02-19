@@ -63,12 +63,12 @@ file(GLOB_RECURSE SOURCES "src/*.c")
 file(GLOB_RECURSE HEADERS "src/*.h")
 
 set(RESOURCES
-	"src/fonts"
-	"src/icons"
-	"src/sounds"
-	"src/data"
-	"src/buttons"
-	"src/app_icon.icns"
+	"assets/fonts"
+	"assets/icons"
+	"assets/sounds"
+	"assets/data"
+	"assets/buttons"
+	"assets/app_icon.icns"
 )
 
 # this is for APPLE, what about WIN32 and UNIX?

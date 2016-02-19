@@ -10,8 +10,6 @@
 #include "main.h"
 #include "text.h"
 
-#define GUI_XFACTOR 0.5
-#define GUI_YFACTOR 0.5
 #define GUI_BG_COLOR al_map_rgb(120, 120, 120) //al_map_rgb(108, 122, 137);//(0.1, 0.6, 0.8, 1)
 #define GUI_TEXT_COLOR al_map_rgb(255, 255, 255)
 
@@ -38,6 +36,8 @@ const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle
 "DEBUG KEYS: S: show solution. T: switch font tiles / bitmaps\n"
 "Note: advanced game generation may take a while for large boards.";
 
+float GUI_XFACTOR = MOBILE ? 0.9 : 0.5;
+float GUI_YFACTOR = MOBILE ? 0.9 : 0.5;
 
 enum {
     BUTTON_ROWS_4 = 1,
@@ -132,6 +132,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     WZ_WIDGET *button_mute;
     Settings nset = *set;
 
+    
 #ifdef ALLEGRO_ANDROID
     al_android_set_apk_file_interface();
 #endif
@@ -378,6 +379,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     al_destroy_bitmap(skin_theme.button_down_bitmap);
     wz_destroy_skin_theme(&skin_theme);
     wz_destroy(gui);
+    al_destroy_font(font);
     return 0;
 }
 
@@ -513,6 +515,7 @@ int yes_no_gui(ALLEGRO_USTR *text, int center_x, int center_y, int min_width, AL
     al_destroy_bitmap(skin_theme.button_down_bitmap);
     wz_destroy_skin_theme(&skin_theme);
     wz_destroy(gui);
+    al_destroy_font(font);
     return ret;
 }
 
@@ -539,7 +542,7 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     
     text_h = 1 + get_multiline_text_lines(font, width - 40, text);
     text_h *= al_get_font_line_height(font);
-    text_h += 40;
+    text_h += 40; // should be fixed
     
     gui = wz_create_widget(0, cx - width/2, cy-text_h/2, -1);
     wz_set_theme(gui, (WZ_THEME*)&skin_theme);
@@ -550,10 +553,11 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     wz_update(gui, 1);
     
     wz_draw(gui);
-    draw_multiline_text_bf(font, WHITE_COLOR, cx-width/2 + 20, cy-text_h/2+20, width-40, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, text);
+    al_draw_multiline_text(font, WHITE_COLOR, cx-width/2 + 20, cy-text_h/2+20, width-40, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, text);
     
     al_destroy_bitmap(skin_theme.box_bitmap);
     wz_destroy_skin_theme(&skin_theme);
     wz_destroy(gui);
+    al_destroy_font(font);
 }
 
