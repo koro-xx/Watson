@@ -90,13 +90,21 @@ int confirm_exit(Board *b, ALLEGRO_EVENT_QUEUE *queue)
 }
 
 void draw_center_textbox_wait(const char *text, float width_factor, Board *b, ALLEGRO_EVENT_QUEUE *queue){
+#ifndef ALLEGRO_ANDROID
     ALLEGRO_BITMAP *keep = screenshot();
+#else
+    al_clear_to_color(BLACK_COLOR);
+#endif
     draw_multiline_wz_box(text, b->all.x+b->xsize/2, b->all.y + b->ysize/2, width_factor*b->xsize);
     al_wait_for_vsync();
     al_flip_display();
     wait_for_input(queue);
+#ifndef ALLEGRO_ANDROID
     al_draw_bitmap(keep,0,0,0);
     al_destroy_bitmap(keep);
+#else
+    al_clear_to_color(BLACK_COLOR);
+#endif
 }
 
 
@@ -366,6 +374,9 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
         }
         
         if(!done){
+#ifdef ALLEGRO_ANDROID
+            al_clear_to_color(BLACK_COLOR);
+#endif
             wz_draw(gui);
             al_wait_for_vsync();
             al_flip_display();
@@ -504,6 +515,9 @@ int yes_no_gui(ALLEGRO_USTR *text, int center_x, int center_y, int min_width, AL
          Draw the gui
          */
         if(!done){
+#ifdef ALLEGRO_ANDROID
+            al_clear_to_color(BLACK_COLOR);
+#endif
             wz_draw(gui);
             al_wait_for_vsync();
             al_flip_display();

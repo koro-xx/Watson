@@ -21,24 +21,16 @@ struct Buffer_USTR{
 
 struct Buffer_USTR *buffer_ustr = NULL;
 
-char DEFAULT_FONT_FILE[]="fonts/fixed_font.tga";
-
 int init_fonts(void){
-
-	deblog("will load font now");
-    default_font = al_load_font(DEFAULT_FONT_FILE, 16, 0);
-deblog("load default font passed");
-if(!default_font) errlog("Error loading default font");    
-deblog("will load first memfile");
-text_font_mem = create_memfile(TEXT_FONT_FILE);
-deblog("first memfile passed");
-if(!text_font_mem.mem) errlog("Error creating memfile for tile font");
+    text_font_mem = create_memfile(TEXT_FONT_FILE);
+    if(!text_font_mem.mem){
+        errlog("Error creating memfile for text font");
+        return -1;
+    }
+    
     tile_font_mem = create_memfile(TILE_FONT_FILE);
-if(!tile_font_mem.mem) errlog("Error creating memfile for tile font");
-
-deblog("second memfile passed");
-if(!text_font_mem.mem || !tile_font_mem.mem || !default_font){
-        fprintf(stderr, "Error loading fonts.\n");
+    if(!tile_font_mem.mem){
+        errlog("Error creating memfile for tile font");
         return -1;
     }
     
@@ -122,7 +114,6 @@ MemFile create_memfile(const char* filename){
     MemFile ret = {0};
 
     ALLEGRO_FILE *fp = al_fopen(filename, "r");
-	deblog("al_fopen() ok");
 
     if(!fp){
 	    errlog("Error opening %s", filename);
@@ -142,7 +133,6 @@ MemFile create_memfile(const char* filename){
 #endif
     ret.mem = malloc(ret.size);
     if(!ret.mem) errlog("Error allocating %zd bytes for memfile %s", ret.size, filename);
-	else deblog("memory allocated for memfile");
     if(al_fread(fp, ret.mem, ret.size) != ret.size){
         ret.mem=NULL;
 	errlog("Error reading %s", filename);
@@ -248,11 +238,11 @@ void free_ustr(void){
 }
 
 ALLEGRO_BITMAP *screenshot(){
-    int store = al_get_new_bitmap_format();
+//    int store = al_get_new_bitmap_format();
     ALLEGRO_BITMAP *ret;
-    al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_RGB_888);
+   // al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_RGB_888)
     ret = al_clone_bitmap(al_get_target_bitmap());
-    al_set_new_bitmap_format(store);
+  //  al_set_new_bitmap_format(store);
     return ret;
 }
 

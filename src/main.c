@@ -176,7 +176,7 @@ void draw_stuff(Board *b){
         if(b->highlight) highlight_TiledBlock(b->highlight);
     }
     
-    if(b->dragging){ // redraw tile to get it on top
+    if(!MOBILE && b->dragging){ // redraw tile to get it on top
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
     }
@@ -204,6 +204,7 @@ void draw_generating_puzzle(Game *g, Board *b) {
     int w = al_get_display_width(al_get_current_display());
     int h = al_get_display_height(al_get_current_display());
     snprintf(msg, 999, "Generating %d x %d%s puzzle, please wait...", g->n, g->h, g->advanced ? " advanced" : "");
+    al_clear_to_color(BLACK_COLOR);
     draw_multiline_wz_box(msg, w/2, h/2, 0.4*w);
     al_flip_display();
 }
@@ -265,12 +266,14 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
         display_factor = 0.9;
     }
   
-
+    
     newdisp = al_create_display(desktop_xsize*display_factor, desktop_ysize*display_factor);
     if(!newdisp){
         fprintf(stderr, "Error switching fullscreen mode.\n");
         return 0;
     }
+    
+    init_fonts(); // do this after creating display OK
     
     SWITCH(fullscreen);
     destroy_board(b);
@@ -303,10 +306,10 @@ int main(int argc, char **argv){
     ALLEGRO_EVENT ev;
     ALLEGRO_TIMER *timer = NULL;
     ALLEGRO_DISPLAY *display = NULL;
-    double time_foo, dt, last_draw, resize_time, mouse_button_time, old_time;
-    double blink_time = 0;
-    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit, restart;
-    int mouse_x, mouse_y, mouse_cx, mouse_cy;
+    double time_foo, dt, last_draw, resize_time, mouse_button_time, old_time, touch_time, last_touch_click;
+    double blink_time = 0, play_time = 0;
+    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, request_exit, restart, touch_down;
+    int mouse_x, mouse_y, mouse_cx, mouse_cy, touch_x, touch_y, touch_click, short_touch_click, double_touch_click;
 	float max_display_factor;
     TiledBlock *tb = NULL;
     
@@ -340,10 +343,11 @@ int main(int argc, char **argv){
         }
     } else {
         al_set_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS, ALLEGRO_DISPLAY_ORIENTATION_LANDSCAPE, ALLEGRO_SUGGEST);
+
         al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
         display = al_create_display(desktop_xsize, desktop_ysize);
     }
-    
+        
     
     
     if(!display) {
@@ -351,11 +355,9 @@ int main(int argc, char **argv){
         return -1;
     }
     al_set_target_backbuffer(display);
-    
-    if(init_fonts()) return -1;
-    
+    al_clear_to_color(BLACK_COLOR);
+
     al_set_window_title(display, "Watson");
-    al_clear_to_color(NULL_COLOR);
     al_init_user_event_source(&user_event_src);
 
     if(!load_game_f(&g,&b)) set.saved=1;
@@ -368,7 +370,8 @@ int main(int argc, char **argv){
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
-  
+    g.time = 0;
+    
 	if (!fullscreen && !MOBILE) {
         max_display_factor = 0.9;
     } else
@@ -460,6 +463,11 @@ RESTART:
     b.time_start=al_get_time();
     blink_time = 0;
     b.blink = 0;
+    touch_down = 0;
+    touch_time = 0;
+    short_touch_click=0;
+    last_touch_click=0;
+    touch_click=0;
     
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
@@ -467,13 +475,14 @@ RESTART:
     al_clear_to_color(BLACK_COLOR);
     al_flip_display();
     al_flush_event_queue(event_queue);
-    old_time = al_get_time();
-    
+    play_time = old_time = al_get_time();
+
     while(noexit)
     {
         double dt = al_current_time() - old_time;
         al_rest(fixed_dt - dt); //rest at least fixed_dt
         dt = al_get_time() - old_time;
+        if(game_state == GAME_PLAYING) g.time += dt;
         old_time = al_get_time();
         
        // al_wait_for_event(event_queue, &ev);
@@ -529,11 +538,20 @@ RESTART:
                 //redraw=1;
                 break;
             case ALLEGRO_EVENT_TOUCH_BEGIN:
-                mouse_button_down = 1;
-                mouse_button_time = al_get_time();
-                mouse_cx = ev.touch.x;
-                mouse_cy = ev.touch.y;
-                tb = get_TiledBlock_at(&b, mouse_cx, mouse_cy);
+                if(b.dragging){
+                    mouse_drop(&b, ev.touch.x, ev.touch.y);
+                    break;
+                }
+                //if(touch_down) break;
+                touch_time = al_get_time();
+                if((short_touch_click) && (touch_time - last_touch_click > 0.4)){
+                    short_touch_click = 0;
+                    break;
+                }
+                touch_x = ev.touch.x;
+                touch_y = ev.touch.y;
+                tb = get_TiledBlock_at(&b, touch_x, touch_y);
+                touch_down = 1;
                 break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
@@ -545,24 +563,47 @@ RESTART:
                 break;
             
             case ALLEGRO_EVENT_TOUCH_END:
-                if(!mouse_button_down) break;
-                mouse_button_down=0;
-                if(!tb) break;
-                mouse_cx = ev.touch.x;
-                mouse_cy = ev.touch.y;
-                if(al_get_time() - mouse_button_time > 0.5)
-                    mouse_click=2;
-                else
-                    mouse_click=1;
-                // revert touch-hold/touch in panel tiles
-                if(tb == get_TiledBlock_at(&b, mouse_cx, mouse_cy)){
-                    if(tb->type == TB_PANEL_TILE){
-                        if(mouse_click==2)
-                            mouse_click=1;
-                        else
-                            mouse_click=2;
+                if(!touch_down) break;
+                touch_down=0;
+
+                if(!tb || (tb != get_TiledBlock_at(&b, ev.touch.x, ev.touch.y)) )
+                    break;
+                
+                last_touch_click = al_get_time();
+                mouse_cx = ev.touch.x; mouse_cy = ev.touch.y;
+                
+                if(last_touch_click - touch_time < 0.1){
+                    if(short_touch_click){
+                        mouse_click = 3;
+                        short_touch_click = 0;
+                    }   else {
+                        short_touch_click = 1;
+                        mouse_click = 1;
                     }
+                } else if(last_touch_click - touch_time > 0.5){
+                    mouse_click = 2;
+                    short_touch_click=0;
+                } else {
+                    mouse_click = 1;
+                    short_touch_click = 0;
                 }
+                
+                // revert touch-hold/touch in panel tiles
+                if(tb->type == TB_PANEL_TILE){
+                    if(mouse_click==2)
+                        mouse_click=1;
+                    else
+                        if(mouse_click==1){
+                            mouse_click=2;
+                            short_touch_click = 0;
+                        }
+                } else if((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE)){
+                    if(mouse_click == 3)
+                        mouse_click = 2;
+                    else if (mouse_click == 2)
+                        mouse_click = 3;
+                }
+                    
                 break;
                 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
@@ -636,11 +677,6 @@ RESTART:
                         break;
                 }
                 break;
-            case ALLEGRO_EVENT_KEY_DOWN:
-            case ALLEGRO_EVENT_KEY_UP:
-            case ALLEGRO_EVENT_MOUSE_ENTER_DISPLAY:
-            case ALLEGRO_EVENT_MOUSE_LEAVE_DISPLAY:
-                break;
             case ALLEGRO_EVENT_DISPLAY_RESIZE:
                 if (fullscreen) break;
                 al_acknowledge_resize(display);
@@ -683,7 +719,7 @@ RESTART:
             continue;
         
         if(mouse_button_down){
-            if(!mouse_drag){
+            if(!mouse_drag && !touch_down){
                 if ((al_get_time() - mouse_button_time > CLICK_DELAY) && (tb) && ((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE))){
                     if(mouse_button_down == 1){ //xxx todo: change to mouse_drag = mouse_button_down
                                                 // change how dragging is tracked (mouse_drag_state)
@@ -695,15 +731,16 @@ RESTART:
         }
         
         if(mouse_click){
+            if(!short_touch_click || (mouse_click != 2))
             handle_mouse_click(&g, &b, mouse_cx, mouse_cy, mouse_click);
             mouse_click=0;
             redraw=1;
-            
             if((game_state == GAME_PLAYING) && (g.guessed == g.h*g.n)){
                 win_or_lose(&g, &b); // check if player has won
                 al_flush_event_queue(event_queue);
                 redraw=1;
             }
+            continue; // check events before redrawing
         }
         
         if(game_state == GAME_PLAYING){
@@ -729,12 +766,10 @@ RESTART:
             keypress=0;
         }
         
-        if(second_tick && (game_state == GAME_PLAYING)){ 
-// there is a bug in allegro with display bitmaps after window resize
-// it happens on windows wiht D3D. This is why we use OPENGL.
-            update_timer(&b);
-			second_tick = 0;
-            redraw=1;
+        if( (old_time - play_time > 1) && (game_state == GAME_PLAYING) ){
+            play_time = al_get_time();
+            update_timer((int) g.time, &b); // this draws on a timer bitmap
+            emit_event(EVENT_REDRAW);
         }
         
         if(b.rule_out && (al_get_time() - blink_time > BLINK_DELAY) ){
@@ -826,6 +861,7 @@ TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
 }
 
 void mouse_grab(Board *b, int mx, int my){
+    emit_event(EVENT_REDRAW);
     b->dragging = get_TiledBlock_at(b, mx, my);
     if(b->dragging && b->dragging->bmp){
         if( (b->dragging->type == TB_HCLUE_TILE) || (b->dragging->type == TB_VCLUE_TILE) ){
@@ -841,14 +877,15 @@ void mouse_grab(Board *b, int mx, int my){
     }
     
     b->dragging = NULL;
-    return;
+        return;
 };
 
 
 
 void mouse_drop(Board *b, int mx, int my){
     TiledBlock *t;
-    
+
+    emit_event(EVENT_REDRAW);
     if(!b->dragging) return;
     b->dragging->x = b->dragging_ox;
     b->dragging->y = b->dragging_oy;
@@ -1017,6 +1054,7 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
     t = get_TiledBlock_at(b, mx, my);
     if (!t) return;
     
+    
     if(game_state == GAME_OVER){
         show_info_text(b, "Press R to start a new puzzle.");
     }
@@ -1074,6 +1112,10 @@ void handle_mouse_click(Game *g, Board *b, int mx, int my, int mclick){
 //                    }
                     explain_clue(b, &g->clue[t->index]);
                     b->highlight = t; // highlight clue
+                } else if (mclick == 3) {
+                    b->highlight = t;
+                    show_info_text(b, "Tap somewhere in the clue box to move this clue");
+                    mouse_grab(b, mx, my);
                 }
             }
             break;

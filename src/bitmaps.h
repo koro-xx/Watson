@@ -26,7 +26,7 @@ ALLEGRO_BITMAP *create_title_bmp(void);
 //void explain_clue(Game *g, Board *b, int i);
 void destroy_settings_bitmaps(Board *b);
 void create_settings_bitmaps(Board *b);
-void update_timer(Board *b);
+void update_timer(int t, Board *b);
 void show_info_text(Board *b, const char* msg);
 void show_info_text_b(Board *b, const char*msg, ...);
 void clear_info_panel(Board *b);

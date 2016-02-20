@@ -113,17 +113,16 @@ void destroy_all_bitmaps(Board *b){
         ndestroy_bitmap(b->button_bmp[i]);
         ndestroy_bitmap(b->button_bmp_scaled[i]);
     }
-
+    al_destroy_font(default_font);
     destroy_board_bitmaps(b);
 }
 
-void update_timer(Board *b) {
-	int t;
+void update_timer(int t, Board *b) {
 	ALLEGRO_BITMAP *bmp = al_get_target_bitmap();
 	t=al_get_time()-b->time_start;
 	al_set_target_bitmap(*b->time_panel.b[0]->bmp);
 	al_clear_to_color(b->time_panel.b[0]->bg_color);
-	al_draw_textf(default_font, WHITE_COLOR,  b->time_panel.b[0]->w/2, 0, ALLEGRO_ALIGN_CENTER, "%02d:%02d:%02d", t/3600, t/60, t%60);
+	al_draw_textf(default_font, WHITE_COLOR,  b->time_panel.b[0]->w/2, 0, ALLEGRO_ALIGN_CENTER, "%02d:%02d:%02d", (int)t/3600, (int)t/60, (int)t%60);
 	al_set_target_bitmap(bmp);
 }
 
@@ -173,6 +172,9 @@ int init_bitmaps(Board *b){
     // create buttons
     // xxx todo: improve these
     
+    default_font = al_load_font(DEFAULT_FONT_FILE, 16, 0);
+    if(!default_font) errlog("Error loading default font");
+
     b->info_text_bmp = NULL;
     b->info_panel.bmp = NULL;
     
@@ -450,11 +452,11 @@ void clear_info_panel(Board *b){
     b->info_panel.bmp = NULL;
 }
 
+
 void show_info_text_b(Board *b, const char* msg, ...){
     ALLEGRO_FONT *font;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
     va_list ap;
-    
     font = b->text_font ? b->text_font : default_font;
     ndestroy_bitmap(b->info_text_bmp);
     b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);

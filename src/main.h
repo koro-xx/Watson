@@ -17,6 +17,9 @@
     #define errlog(x, ...) fprintf(stderr, "koro ERROR:%s:%u: "x"\n", __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
+
+#define DEFAULT_FONT_FILE "fonts/fixed_font.tga"
+
 #define BASE_USER_EVENT_TYPE ALLEGRO_GET_EVENT_TYPE('c','c','c','c')
 #define EVENT_REDRAW (BASE_USER_EVENT_TYPE + 1)
 #define EVENT_SWITCH_TILES (BASE_USER_EVENT_TYPE + 2)
@@ -37,6 +40,5 @@ typedef struct Settings{
 } Settings;
 
 void emit_event(int event_type);
-
 
 #endif
