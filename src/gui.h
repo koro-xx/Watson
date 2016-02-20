@@ -2,6 +2,7 @@
 #define __watson_tests__gui__
 
 #include "board.h"
+#include "main.h"
 
 // Prototypes
 void show_help(Board *b, ALLEGRO_EVENT_QUEUE *queue);

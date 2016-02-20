@@ -1,6 +1,8 @@
 #ifndef watson_tests_main_h
 #define watson_tests_main_h
 
+#include "board.h"
+
 #define PRE_VERSION "0.79.3"
 #define PRE_DATE "2016-02-12"
 
@@ -40,5 +42,6 @@ typedef struct Settings{
 } Settings;
 
 void emit_event(int event_type);
+void draw_stuff(Board *b);
 
 #endif

@@ -7,6 +7,7 @@
 #include "dialog.h"
 #include "text.h"
 #include <allegro5/allegro_memfile.h>
+#include "main.h"
 
 typedef enum SYMBOL{
     SYM_FORBIDDEN,

@@ -11,6 +11,7 @@
  by Koro (1/2016)
 
  Todo
+ - create fallback font at update_bitmap time only
  - change main loop to avoid problem with slow refresh in android [empty the queue first]
  - fix time update: should use "game time" to account for saved games
  - change wait_for_input to return key pressed or event type
@@ -176,7 +177,7 @@ void draw_stuff(Board *b){
         if(b->highlight) highlight_TiledBlock(b->highlight);
     }
     
-    if(!MOBILE && b->dragging){ // redraw tile to get it on top
+    if(b->dragging){ // redraw tile to get it on top
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
     }
@@ -490,15 +491,15 @@ RESTART:
         if(game_state == GAME_PLAYING) g.time += dt;
         old_time = al_get_time();
        // al_wait_for_event(event_queue, &ev);
-	while(al_get_next_event(event_queue, &ev)){ // empty out the event queue
+        while(al_get_next_event(event_queue, &ev)){ // empty out the event queue
             switch(ev.type){
-                case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
-                    deblog("RECEIVED RESUME");
-                    al_acknowledge_drawing_resume(display);
-                    al_rest(0.01);
-                    resize_update=1;
-                    break;
-		case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
+//                case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
+//                    deblog("RECEIVED RESUME");
+//                    al_acknowledge_drawing_resume(display);
+//                    al_rest(0.01);
+//                    resize_update=1;
+//                    break;
+                case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
                     //xxx todo: move everything somewhere else
                     deblog("RECEIVED HALT");
                     al_stop_timer(timer);
@@ -541,22 +542,11 @@ RESTART:
                 case ALLEGRO_EVENT_TIMER:
                     //redraw=1;
                     break;
-                case ALLEGRO_EVENT_TOUCH_BEGIN:
-                    if(b.dragging){
-                        mouse_drop(&b, ev.touch.x, ev.touch.y);
-                        break;
-                    }
-                    //if(touch_down) break;
-                    touch_time = al_get_time();
-                    if( (short_touch_click) && (touch_time - last_touch_click > 0.4) ){
-                        short_touch_click = 0;
-                    }
-                    touch_x = ev.touch.x;
-                    touch_y = ev.touch.y;
-                    tb = get_TiledBlock_at(&b, touch_x, touch_y);
-                    touch_down = 1;
-                    break;
                     
+                case ALLEGRO_EVENT_TOUCH_BEGIN:
+                    ev.mouse.x = ev.touch.x;
+                    ev.mouse.y = ev.touch.y;
+                    ev.mouse.button = 1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                     if(mouse_button_down) break;
                     mouse_down_time = ev.any.timestamp;
@@ -571,51 +561,11 @@ RESTART:
                     mouse_button_down = ev.mouse.button;
                     break;
                     
+ 
                 case ALLEGRO_EVENT_TOUCH_END:
-                    if(!touch_down) break;
-                    touch_down=0;
-                    
-                    if( !tb || (tb != get_TiledBlock_at(&b, ev.touch.x, ev.touch.y)) )
-                        break;
-                    
-                    last_touch_click = al_get_time();
-                    mouse_cx = ev.touch.x; mouse_cy = ev.touch.y;
-                    
-                    if(last_touch_click - touch_time < 0.1){
-                        if(short_touch_click){
-                            mouse_click = 3;
-                            short_touch_click = 0;
-                        }   else {
-                            if((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE))
-                                short_touch_click = 1;
-                            else
-                                mouse_click = 1;
-                        }
-                    } else if(last_touch_click - touch_time > 0.5){
-                        mouse_click = 2;
-                        short_touch_click=0;
-                    } else {
-                        mouse_click = 1;
-                        short_touch_click = 0;
-                    }
-                    
-                    // revert touch-hold/touch in panel tiles
-                    if(tb->type == TB_PANEL_TILE){
-                        if(mouse_click==2)
-                            mouse_click=1;
-                        else
-                            if(mouse_click==1){
-                                mouse_click=2;
-                            }
-                    } else if((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE)){
-                        if(mouse_click == 3)
-                            mouse_click = 2;
-                        else if (mouse_click == 2)
-                            mouse_click = 3;
-                    }
-                    
-                    break;
-                    
+                    ev.mouse.x = ev.touch.x;
+                    ev.mouse.y = ev.touch.y;
+                    ev.mouse.button = 1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                     hold_click_check = 0;
                     if(wait_for_double_click) wait_for_double_click = 0;
@@ -623,34 +573,31 @@ RESTART:
                     if(b.dragging){
                         mouse_drop(&b, ev.mouse.x, ev.mouse.y);
                         mouse_button_down = 0;
-                        break;
                     }
                     
                     if(!mouse_button_down) break;
                     
-                    mouse_click = mouse_button_down;
-                    mouse_button_down = 0;
-                    
                     mouse_up_time = ev.any.timestamp;
                     tb_up = get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y);
-                    if(tb_up != tb_down){
-                        mouse_click = 0;
-                        break;
-                    }
-                    
-                    if( (tb_up->type == TB_HCLUE_TILE) || (tb_up->type == TB_VCLUE_TILE) ){
-                        if(mouse_up_time - mouse_down_time < DELTA_SHORT_CLICK){
-                            wait_for_double_click = 1;
-                            mouse_click = 0;
-                            break;
+                    if(tb_up == tb_down){
+                        if( ((tb_up->type == TB_HCLUE_TILE) || (tb_up->type == TB_VCLUE_TILE)) && (mouse_button_down == 1) ){
+                            if(mouse_up_time - mouse_down_time < DELTA_SHORT_CLICK) {
+                                wait_for_double_click = 1;
+                            }
+                        } else {
+                            handle_mouse_click(&g, &b, tb_up, ev.mouse.x, ev.mouse.y, mouse_button_down);
                         }
                     }
+                    mouse_button_down = 0;
                     break;
-                
-		case ALLEGRO_EVENT_MOUSE_AXES:
+                    
+                case ALLEGRO_EVENT_TOUCH_MOVE:
+                    ev.mouse.x = ev.touch.x;
+                    ev.mouse.y = ev.touch.y;
+                case ALLEGRO_EVENT_MOUSE_AXES:
                     if(b.dragging){
-                        b.dragging->x = ev.mouse.x;
-                        b.dragging->y = ev.mouse.y;
+                        b.dragging->x = ev.mouse.x + b.dragging_cx;
+                        b.dragging->y = ev.mouse.y + b.dragging_cy;
                     }
                     mouse_move=1;
                     break;
@@ -658,7 +605,7 @@ RESTART:
                 case ALLEGRO_EVENT_DISPLAY_CLOSE:
                     emit_event(EVENT_EXIT);
                     break;
- 
+                    
                 case ALLEGRO_EVENT_KEY_CHAR:
                     keypress=1;
                     switch(ev.keyboard.keycode){
@@ -738,7 +685,11 @@ RESTART:
         if(resize_update){
             resize_update=0;
 			al_acknowledge_resize(display);
-            destroy_board_bitmaps(&b);
+            if(MOBILE){
+                destroy_all_bitmaps(&b);
+                init_bitmaps(&b);
+            } else
+                destroy_board_bitmaps(&b);
 			b.max_xsize = al_get_display_width(display);
 			b.max_ysize = al_get_display_height(display);
             create_board(&g, &b, 0);
@@ -1078,7 +1029,9 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
     if(b->rule_out){
         b->rule_out=NULL;
     }
-    
+
+    emit_event(EVENT_REDRAW);
+
     if (!t) return;
     
     
@@ -1090,7 +1043,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
         case TB_PANEL_TILE:
             if(game_state != GAME_PLAYING) break;
             k = t->index; j=t->parent->index; i = t->parent->parent->index;
-            if(mclick==2){
+            if(mclick==1){
                 save_state(g);
                 if(g->tile[i][j][k]){ // hide tile
                     hide_tile_and_check(g, i, j, k);
@@ -1101,7 +1054,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
                         if (!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
                     }
                 }
-            } else if (mclick==1){
+            } else if ((mclick==2) || (mclick == 4)){ // hold or right click
                 if(g->tile[i][j][k]){
                     save_state(g);
                     guess_tile(g, i, j, k);
@@ -1113,7 +1066,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 
         case TB_PANEL_BLOCK:
             if(game_state != GAME_PLAYING) break;
-            if ((mclick==2) && (g->guess[t->parent->index][t->index]>=0)){
+            if ( ((mclick == 2) || (mclick == 4)) && (g->guess[t->parent->index][t->index]>=0)){
                 // we found guessed block - unguess it
                 save_state(g);
                 unguess_tile(g, t->parent->index, t->index);
@@ -1127,7 +1080,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             if(game_state != GAME_PLAYING) break;
             // check that this is a real clue
 		    if(t->bmp && (t->index >= 0)){
-                if(mclick==2){ // toggle hide-show clue
+                if((mclick==2) || (mclick==3)){ // toggle hide-show clue on double or right click
                     SWITCH(t->hidden);
                     if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
                 } else if (mclick==1){ // explain clue in info panel
@@ -1139,9 +1092,12 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 //                    }
                     explain_clue(b, &g->clue[t->index]);
                     b->highlight = t; // highlight clue
-                } else if (mclick == 3) {
-                    b->highlight = t;
-                    show_info_text(b, "Tap somewhere in the clue box to move this clue");
+                } else if (mclick == 4) { // hold-click
+                    if(MOBILE){
+                        b->highlight = t;
+                 //       show_info_text(b, "Tap somewhere in the clue box to move this clue");
+                        
+                    }
                     mouse_grab(b, mx, my);
                 }
             }
@@ -1152,11 +1108,13 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             show_hint(g,b);
             break;
         case TB_BUTTON_SETTINGS:
+            if(!set.sound_mute) play_sound(SOUND_CLICK);
             show_settings(&set, b, event_queue);
             emit_event(EVENT_REDRAW);
             break;
     
         case TB_BUTTON_HELP:
+            if(!set.sound_mute) play_sound(SOUND_CLICK);
             show_help(b, event_queue);
             emit_event(EVENT_REDRAW);
             break;
@@ -1205,6 +1163,8 @@ int save_game_f(Game *g, Board *b){
     al_fwrite(fp, &g->tile, sizeof(g->tile));
     al_fwrite(fp, &g->time, sizeof(g->time));
     al_fclose(fp);
+
+    deblog("Saved game at %s.", al_path_cstr(path, '/'));
     al_destroy_path(path);
     return 0;
 }
@@ -1216,16 +1176,21 @@ int load_game_f(Game *g, Board *b){
     ALLEGRO_FS_ENTRY *entry;
     //	int i,j,k;
     
+#ifdef ALLEGRO_ANDROID
+    al_set_standard_file_interface();
+#endif
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
     al_set_path_filename(path, "Watson.sav");
     fp = al_fopen(al_path_cstr(path, '/'), "rb");
     if(!fp){
-        fprintf(stderr, "Couldn't open %s for reading.\n", (char *) al_path_cstr(path, '/') );
+        errlog("Couldn't open %s for reading.", (char *) al_path_cstr(path, '/'));
         al_destroy_path(path);
         return -1;
     }
+    
     if(al_fread(fp, &g->n, sizeof(g->n)) != sizeof(g->n)){
         al_destroy_path(path);
+        errlog("Error reading %s.", (char *) al_path_cstr(path, '/'));
         return -1;
     }
     
@@ -1240,12 +1205,12 @@ int load_game_f(Game *g, Board *b){
     b->n=g->n; b->h=g->h;
     
     update_guessed(g);
-
     /* delete saved game after reading
     entry = al_create_fs_entry(al_path_cstr(path, '/'));
     al_remove_fs_entry(entry);
-    al_destroy_path(path);
     */
+    al_destroy_path(path);
+
     return 0;
 }
 

@@ -6,7 +6,7 @@
 #include "TiledBlock.h"
 #include "macros.h"
 #include <allegro5/allegro_font.h>
-#include "main.h"
+//#include "main.h"
 
 typedef struct Board {
     int n;

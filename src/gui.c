@@ -377,6 +377,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
 #ifdef ALLEGRO_ANDROID
             al_clear_to_color(BLACK_COLOR);
 #endif
+//            draw_stuff(b);
             wz_draw(gui);
             al_wait_for_vsync();
             al_flip_display();
