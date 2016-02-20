@@ -441,6 +441,11 @@ int yes_no_gui(Board *b, ALLEGRO_USTR *text, int center_x, int center_y, int min
     int gui_w = 400;
     ALLEGRO_EVENT event;
     
+    
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
+    
     size = (float)min_width/gui_w;
 
     font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size * size);
@@ -569,6 +574,10 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     ALLEGRO_FONT *font;
     int text_h;
     
+#ifdef ALLEGRO_ANDROID 
+    al_android_set_apk_file_interface();
+#endif
+    
     font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
     
     memset(&skin_theme, 0, sizeof(skin_theme));
@@ -577,7 +586,8 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     skin_theme.theme.color1 = GUI_BG_COLOR;
     skin_theme.theme.color2 = GUI_TEXT_COLOR;
     skin_theme.box_bitmap = al_load_bitmap("data/box.png");
-    
+
+    if(!skin_theme.box_bitmap) errlog("Error loading skin bitmap");
     wz_init_skin_theme(&skin_theme);
     
     text_h = 1 + get_multiline_text_lines(font, width - 40, text);

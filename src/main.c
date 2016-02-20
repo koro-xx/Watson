@@ -601,7 +601,7 @@ RESTART:
                     }
                     mouse_move=1;
                     // don't grab if movement was small
-                    if((abs(ev.mouse.x - mbdown_x) < 5) && ((ev.mouse.y - mbdown_y) < 5)) break;
+                    if((abs(ev.mouse.x - mbdown_x) < 10) && ((ev.mouse.y - mbdown_y) < 10)) break;
                     
                     if(mouse_button_down && !hold_click_check)
                         if(tb_down && ((tb_down->type == TB_HCLUE_TILE) || (tb_down->type == TB_VCLUE_TILE)) )
