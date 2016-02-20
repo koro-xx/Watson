@@ -11,16 +11,14 @@
  by Koro (1/2016)
 
  Todo
- - create fallback font at update_bitmap time only
- - change main loop to avoid problem with slow refresh in android [empty the queue first]
- - fix time update: should use "game time" to account for saved games
- - change wait_for_input to return key pressed or event type
+ - secure a fixed % of display height for panel (not pixels!)
  - show game time at the end of the game
  - offer a restart button at the end
  - add highscore table / input
- - remove tile switch button
  - finish tutorial
- - Mouse click: delay for drag is too long (what's the right way to handle drag/click?)
+ - create fallback font at update_bitmap time only
+ - fix time update: should use "game time" to account for saved games (fixed?)
+ - change wait_for_input to return key pressed or event type
  - add additional clue type
  */
 #include <stdio.h>
