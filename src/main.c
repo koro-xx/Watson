@@ -577,8 +577,10 @@ RESTART:
                         mouse_click = 3;
                         short_touch_click = 0;
                     }   else {
-                        short_touch_click = 1;
-                        mouse_click = 1;
+                        if((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE))
+                            short_touch_click = 1;
+                        else
+                            mouse_click = 1;
                     }
                 } else if(last_touch_click - touch_time > 0.5){
                     mouse_click = 2;
@@ -595,7 +597,6 @@ RESTART:
                     else
                         if(mouse_click==1){
                             mouse_click=2;
-                            short_touch_click = 0;
                         }
                 } else if((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE)){
                     if(mouse_click == 3)
@@ -719,7 +720,7 @@ RESTART:
             continue;
         
         if(mouse_button_down){
-            if(!mouse_drag && !touch_down){
+            if(!mouse_drag){
                 if ((al_get_time() - mouse_button_time > CLICK_DELAY) && (tb) && ((tb->type == TB_HCLUE_TILE) || (tb->type == TB_VCLUE_TILE))){
                     if(mouse_button_down == 1){ //xxx todo: change to mouse_drag = mouse_button_down
                                                 // change how dragging is tracked (mouse_drag_state)
