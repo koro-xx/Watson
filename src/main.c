@@ -306,18 +306,17 @@ int main(int argc, char **argv){
     ALLEGRO_EVENT ev;
     ALLEGRO_TIMER *timer = NULL;
     ALLEGRO_DISPLAY *display = NULL;
-    double time_foo, dt, last_draw, resize_time, mouse_button_time, old_time, touch_time, last_touch_click;
+    double time_foo, last_draw, resize_time, mouse_button_time, old_time, touch_time, last_touch_click;
     double blink_time = 0, play_time = 0;
     int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, restart, touch_down;
-    int mouse_x, mouse_y, mouse_cx, mouse_cy, touch_x, touch_y, touch_click, short_touch_click, double_touch_click;
-	float max_display_factor;
-    TiledBlock *tb = NULL, *tb_down = NULL, *tb_up = NULL;
+    float max_display_factor;
+    TiledBlock  *tb_down = NULL, *tb_up = NULL;
     double mouse_up_time = 0, mouse_down_time = 0;
     int wait_for_double_click = 0, hold_click_check = 0;
-    float DELTA_DOUBLE_CLICK = 0.15;
+    float DELTA_DOUBLE_CLICK = 0.25;
     float DELTA_SHORT_CLICK = 0.1;
     float DELTA_HOLD_CLICK = 0.3;
-    
+    int mbdown_x, mbdown_y;
     
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
@@ -462,17 +461,15 @@ RESTART:
     mouse_drag = 0; mouse_button_down = 0;
     resize_update=0; resize_time = 0;
     second_tick=1; mouse_button_time=0;
-    mouse_cx = mouse_cy = 0;
-    mouse_x = mouse_y = 0;
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
     blink_time = 0;
     b.blink = 0;
     touch_down = 0;
     touch_time = 0;
-    short_touch_click=0;
     last_touch_click=0;
-    touch_click=0;
+    mbdown_x = 0;
+    mbdown_y = 0;
     
     show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
 
@@ -549,6 +546,7 @@ RESTART:
                 case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                     if(mouse_button_down) break;
                     mouse_down_time = ev.any.timestamp;
+                    mbdown_x = ev.mouse.x; mbdown_y = ev.mouse.y;
                     tb_down = get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y);
                     if(wait_for_double_click){
                         wait_for_double_click = 0;
@@ -591,14 +589,27 @@ RESTART:
                     break;
                     
                 case ALLEGRO_EVENT_TOUCH_MOVE:
+                    if(!ev.touch.primary) break;
                     ev.mouse.x = ev.touch.x;
                     ev.mouse.y = ev.touch.y;
+//                    ev.mouse.dx = ev.touch.dx;
+//                    ev.mouse.dy = ev.touch.dy;
                 case ALLEGRO_EVENT_MOUSE_AXES:
                     if(b.dragging){
                         b.dragging->x = ev.mouse.x + b.dragging_cx;
                         b.dragging->y = ev.mouse.y + b.dragging_cy;
                     }
                     mouse_move=1;
+                    // don't grab if movement was small
+                    if((abs(ev.mouse.x - mbdown_x) < 5) && ((ev.mouse.y - mbdown_y) < 5)) break;
+                    
+                    if(mouse_button_down && !hold_click_check)
+                        if(tb_down && ((tb_down->type == TB_HCLUE_TILE) || (tb_down->type == TB_VCLUE_TILE)) )
+                            {
+                                                            //if(get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y) == tb_down)
+                                handle_mouse_click(&g, &b, tb_down, mbdown_x, mbdown_y, 4);
+                                hold_click_check = 1;
+                            }
                     break;
                     
                 case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -628,11 +639,6 @@ RESTART:
                         case ALLEGRO_KEY_T:
                             emit_event(EVENT_SWITCH_TILES);
                             break;
-                        case ALLEGRO_KEY_SPACE:
-                            mouse_click=2;
-                            mouse_cx = mouse_x;
-                            mouse_cy = mouse_y;
-                            break;
                         case ALLEGRO_KEY_H:
                             show_help(&b, event_queue);
                             redraw=1;
@@ -660,6 +666,7 @@ RESTART:
                     }
                     break;
                 case ALLEGRO_EVENT_DISPLAY_RESIZE:
+                    if(b.dragging) mouse_drop(&b, -1,-1);
                     if (fullscreen) break;
                     al_acknowledge_resize(display);
                     resizing=1; resize_time=al_get_time();
@@ -868,7 +875,7 @@ void mouse_drop(Board *b, int mx, int my){
     b->dragging->y = b->dragging_oy;
  
     t = get_TiledBlock_at(b, mx, my);
-    if(t->type == b->dragging->type){
+    if(t && (t->type == b->dragging->type)){
         swap_clues(b, b->dragging, t);
         if(b->highlight == b->dragging) b->highlight = t;
         else if(b->highlight == t) b->highlight = b->dragging;
@@ -1093,12 +1100,12 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
                     explain_clue(b, &g->clue[t->index]);
                     b->highlight = t; // highlight clue
                 } else if (mclick == 4) { // hold-click
-                    if(MOBILE){
-                        b->highlight = t;
-                 //       show_info_text(b, "Tap somewhere in the clue box to move this clue");
-                        
-                    }
                     mouse_grab(b, mx, my);
+//                    if(MOBILE){
+//                        b->highlight = t;
+//                        show_info_text(b, "Tap somewhere in the clue box to move this clue");
+//                        
+//                    }
                 }
             }
             break;
