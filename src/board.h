@@ -6,6 +6,8 @@
 #include "TiledBlock.h"
 #include "macros.h"
 #include <allegro5/allegro_font.h>
+#include "widgetz/widgetz.h"
+
 //#include "main.h"
 
 typedef struct Board {
@@ -45,6 +47,8 @@ typedef struct Board {
     ALLEGRO_BITMAP *time_bmp;
     ALLEGRO_BITMAP *info_text_bmp;
     ALLEGRO_FONT *text_font;
+    WZ_WIDGET *gui[10]; // max 10 gui windows
+    int gui_n;
 } Board;
 
 

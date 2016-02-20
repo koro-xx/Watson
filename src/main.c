@@ -47,11 +47,7 @@
 #include "gui.h"
 #include "main.h"
 
-#ifndef ALLEGRO_ANDROID
-	#define FPS 30
-#else
-	#define FPS 5
-#endif
+#define FPS 60.0
 
 // defaults:
 Settings set = {
@@ -72,10 +68,9 @@ ALLEGRO_EVENT_SOURCE user_event_src;
 
 ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 
-float fixed_dt = 1.0/60;
+float fixed_dt = 1.0/FPS;
 float RESIZE_DELAY = 0.04;
 float BLINK_DELAY = .3; float BLINK_TIME = .5;
-float CLICK_DELAY = 0.2;
 int swap_mouse_buttons=0;
 
 GAME_STATE game_state;
@@ -164,6 +159,7 @@ void emit_event(int event_type){
 
 void draw_stuff(Board *b){
     int x, y;
+    int i;
     
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     draw_TiledBlock(&b->all,0,0);
@@ -180,6 +176,9 @@ void draw_stuff(Board *b){
     if(b->dragging){ // redraw tile to get it on top
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
+    }
+    for(i=0; i<b->gui_n; i++){
+        wz_draw(b->gui[i]);
     }
 };
 
@@ -315,9 +314,9 @@ int main(int argc, char **argv){
     TiledBlock *tb = NULL, *tb_down = NULL, *tb_up = NULL;
     double mouse_up_time = 0, mouse_down_time = 0;
     int wait_for_double_click = 0, hold_click_check = 0;
-    float DELTA_DOUBLE_CLICK = 0.2;
+    float DELTA_DOUBLE_CLICK = 0.15;
     float DELTA_SHORT_CLICK = 0.1;
-    float DELTA_HOLD_CLICK = 0.4;
+    float DELTA_HOLD_CLICK = 0.3;
     
     
     // seed random number generator. comment out for debug
@@ -1090,6 +1089,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 //                        snprintf(str, 999, "Clue number %d", t->index);
 //                    show_info_text_b(b,str);
 //                    }
+                    if(!set.sound_mute) play_sound(SOUND_CLICK);
                     explain_clue(b, &g->clue[t->index]);
                     b->highlight = t; // highlight clue
                 } else if (mclick == 4) { // hold-click

@@ -72,10 +72,32 @@ void wz_set_text_own(WZ_WIDGET* wgt, ALLEGRO_USTR* text){
     al_ustr_free(text);
 }
 
+void register_gui(Board *b, WZ_WIDGET *gui){
+        b->gui[b->gui_n] = gui;
+        b->gui_n++;
+}
+
+void unregister_gui(Board *b, WZ_WIDGET *gui){
+    int i,j;
+    
+    // find gui index
+    for(i=b->gui_n-1; b>=0; i--)
+        if(b->gui[i] == gui)
+            break;
+    
+    // in case not found
+    if(i < 0)
+        return;
+    
+    // shift remaining guis
+    b->gui_n--;
+    for(j=i; j<b->gui_n; j++)
+        b->gui[j] = b->gui[j+1];
+}
 
 int confirm_restart(Board *b, Settings *set, ALLEGRO_EVENT_QUEUE *queue)
 {
-    if(yes_no_gui(al_ustr_newf("Start new %dx%d%s game?", set->n, set->h, set->advanced ? " advanced" : ""), b->all.x+b->xsize/2, b->all.y+b->ysize/2, max(b->xsize*0.5*GUI_XFACTOR, 300), queue))
+    if(yes_no_gui(b, al_ustr_newf("Start new %dx%d%s game?", set->n, set->h, set->advanced ? " advanced" : ""), b->all.x+b->xsize/2, b->all.y+b->ysize/2, max(b->xsize*0.5*GUI_XFACTOR, 300), queue))
         return 1;
     else
         return 0;
@@ -83,28 +105,29 @@ int confirm_restart(Board *b, Settings *set, ALLEGRO_EVENT_QUEUE *queue)
 
 int confirm_exit(Board *b, ALLEGRO_EVENT_QUEUE *queue)
 {
-    if(yes_no_gui(al_ustr_newf("Exit game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, max(b->xsize*0.5*GUI_XFACTOR, 300), queue))
+    if(yes_no_gui(b, al_ustr_newf("Exit game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, max(b->xsize*0.5*GUI_XFACTOR, 300), queue))
         return 1;
     else
         return 0;
 }
 
 void draw_center_textbox_wait(const char *text, float width_factor, Board *b, ALLEGRO_EVENT_QUEUE *queue){
-#ifndef ALLEGRO_ANDROID
-    ALLEGRO_BITMAP *keep = screenshot();
-#else
-    al_clear_to_color(BLACK_COLOR);
-#endif
+//#ifndef ALLEGRO_ANDROID
+//    ALLEGRO_BITMAP *keep = screenshot();
+//#else
+//    al_clear_to_color(BLACK_COLOR);
+//#endif
+    draw_stuff(b);
     draw_multiline_wz_box(text, b->all.x+b->xsize/2, b->all.y + b->ysize/2, width_factor*b->xsize);
     al_wait_for_vsync();
     al_flip_display();
     wait_for_input(queue);
-#ifndef ALLEGRO_ANDROID
-    al_draw_bitmap(keep,0,0,0);
-    al_destroy_bitmap(keep);
-#else
-    al_clear_to_color(BLACK_COLOR);
-#endif
+//#ifndef ALLEGRO_ANDROID
+//    al_draw_bitmap(keep,0,0,0);
+//    al_destroy_bitmap(keep);
+//#else
+//    al_clear_to_color(BLACK_COLOR);
+//#endif
 }
 
 
@@ -170,7 +193,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     // main gui
     gui = wz_create_widget(0, b->all.x + (b->xsize-size*gui_w)/2, b->all.y + (b->ysize-size*470)/2, -1);
     wz_set_theme(gui, (WZ_THEME*)&skin_theme);
-
+    
     // about button
     wz_create_fill_layout(gui, 0, 0, gui_w * size, 50 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
     wz_create_button(gui, 0, 0, 200 * size, 40 * size, al_ustr_new("About Watson"), 1, BUTTON_ABOUT);
@@ -231,6 +254,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     
 
     wz_register_sources(gui, queue);
+    register_gui(b, gui);
     
     while(!done)
     {
@@ -343,7 +367,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                 
                             case BUTTON_SAVE:
                                 if(set->saved)
-                                    if(!yes_no_gui(al_ustr_new("Save game? This will overwrite\na previous save."), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue))
+                                    if(!yes_no_gui(b, al_ustr_new("Save game? This will overwrite\na previous save."), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue))
                                         break;
                                 emit_event(EVENT_SAVE);
                                 cancel=1;
@@ -351,7 +375,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                 break;
                                 
                             case BUTTON_LOAD:
-                                if( !set->saved || !yes_no_gui(al_ustr_new("Discard current game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue) )
+                                if( !set->saved || !yes_no_gui(b, al_ustr_new("Discard current game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue) )
                                 {
                                     {
                                         ((WZ_BUTTON*) event.user.data2)->down = 1;
@@ -378,7 +402,8 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
             al_clear_to_color(BLACK_COLOR);
 #endif
 //            draw_stuff(b);
-            wz_draw(gui);
+            draw_stuff(b);
+//            wz_draw(gui);
             al_wait_for_vsync();
             al_flip_display();
         }
@@ -390,13 +415,14 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     al_destroy_bitmap(skin_theme.button_up_bitmap);
     al_destroy_bitmap(skin_theme.button_down_bitmap);
     wz_destroy_skin_theme(&skin_theme);
+    unregister_gui(b, gui);
     wz_destroy(gui);
     al_destroy_font(font);
     return 0;
 }
 
 
-int yes_no_gui(ALLEGRO_USTR *text, int center_x, int center_y, int min_width, ALLEGRO_EVENT_QUEUE *queue)
+int yes_no_gui(Board *b, ALLEGRO_USTR *text, int center_x, int center_y, int min_width, ALLEGRO_EVENT_QUEUE *queue)
 {
     // Initialize Allegro 5 and the font routines
     int refresh_rate;
@@ -453,6 +479,7 @@ int yes_no_gui(ALLEGRO_USTR *text, int center_x, int center_y, int min_width, AL
     wz_set_shortcut(wgt, ALLEGRO_KEY_ESCAPE, 0);
 
     wz_register_sources(gui, queue);
+    register_gui(b, gui);
     
     while(!done)
     {
@@ -516,10 +543,7 @@ int yes_no_gui(ALLEGRO_USTR *text, int center_x, int center_y, int min_width, AL
          Draw the gui
          */
         if(!done){
-#ifdef ALLEGRO_ANDROID
-            al_clear_to_color(BLACK_COLOR);
-#endif
-            wz_draw(gui);
+            draw_stuff(b);
             al_wait_for_vsync();
             al_flip_display();
         }
@@ -529,6 +553,7 @@ int yes_no_gui(ALLEGRO_USTR *text, int center_x, int center_y, int min_width, AL
     al_destroy_bitmap(skin_theme.button_up_bitmap);
     al_destroy_bitmap(skin_theme.button_down_bitmap);
     wz_destroy_skin_theme(&skin_theme);
+    unregister_gui(b, gui);
     wz_destroy(gui);
     al_destroy_font(font);
     return ret;
@@ -566,7 +591,7 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
     wgt->flags &= !WZ_STYLE_FOCUSED;
     wz_update(gui, 1);
-    
+
     wz_draw(gui);
     al_draw_multiline_text(font, WHITE_COLOR, cx-width/2 + 20, cy-text_h/2+20, width-40, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, text);
     
