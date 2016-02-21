@@ -164,13 +164,20 @@ void destroy_board_bitmaps(Board *b){
     al_destroy_font(b->text_font);
 }
 
+void unload_basic_bmps(Board *b, int jj, int kk){
+    int j,k;
+    
+    for(j=0;j<=jj; j++){
+        for(k=0;k<b->n; k++){
+            if((j==jj) && (k==kk)) return;
+            ndestroy_bitmap(basic_bmp[j][k]);
+        }
+    }
+}
 
 int init_bitmaps(Board *b){
     // will load bitmaps from folders named 0, 1,..., 7
     // inside the folder "icons", each containing 8 square bitmaps
-    ALLEGRO_FS_ENTRY *dir = NULL;
-    ALLEGRO_FS_ENTRY *file;
-    ALLEGRO_FILE *fp;
     int i,j, k=0;
     char pathname[1000];
     ALLEGRO_PATH *path;
@@ -207,35 +214,23 @@ int init_bitmaps(Board *b){
         return init_bitmaps_classic(b);
     
     if(b->type_of_tiles == 1){ // use bitmaps
+#ifndef ALLEGRO_ANDROID
         path = al_get_standard_path(ALLEGRO_RESOURCES_PATH);
         al_path_cstr(path, '/');
-        
-        
+#else
+        path = al_create_path("");
+#endif
         for(j=0; j<b->h; j++){
-            snprintf(pathname, 999, "%s/icons/%d", al_path_cstr(path, '/'), j);
-            if(al_filename_exists(pathname)){
-                dir = al_create_fs_entry(pathname);
-                if(al_open_directory(dir)){
-                    k=0;
-                    while((file = al_read_directory(dir)) ){
-                        fp = al_open_fs_entry(file, "rb");
-                        basic_bmp[j][k] = al_load_bitmap_f(fp, ".png");
-                        al_fclose(fp);
-						if (!basic_bmp[j][k]) continue;
-                        k++;
-                    }
-                }
-                if(k<b->n){
-                    fprintf(stderr, "Error loading 8 bitmaps in folder %d\n", j);
-                    return -1;
-                }
-            } else {
-                if(k<b->n){
-                    fprintf(stderr, "Bitmap folder \"%s\" not found\n", pathname);
+            for(k=0; k<b->n; k++){
+                snprintf(pathname, 999, "%sicons/%d/%d.png", al_path_cstr(path, '/'), j, k);
+                basic_bmp[j][k] = al_load_bitmap(pathname);
+                if(!basic_bmp[j][k]){
+                    errlog("Error loading %s.", pathname);
+                    unload_basic_bmps(b, j,k-1);
+                    al_destroy_path(path);
                     return -1;
                 }
             }
-            al_destroy_fs_entry(dir);
         }
         al_destroy_path(path);
     }
