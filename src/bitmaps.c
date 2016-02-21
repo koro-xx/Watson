@@ -172,6 +172,7 @@ int init_bitmaps(Board *b){
     char pathname[1000];
     ALLEGRO_PATH *path;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
+    al_set_target_bitmap(NULL);
     
 #ifdef ALLEGRO_ANDROID
     al_android_set_apk_file_interface();
@@ -287,6 +288,8 @@ int update_font_bitmaps(Game *g, Board *b){
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
     int bbx, bby, bbw, bbh;
     
+    al_set_target_bitmap(NULL);
+    
     s=min(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h);
     tile_font1 = load_font_mem(tile_font_mem, TILE_FONT_FILE, -s*FONT_FACTOR);
     tile_font2 = load_font_mem(tile_font_mem, TILE_FONT_FILE, -b->panel_tile_size*FONT_FACTOR);
@@ -391,7 +394,8 @@ int update_font_bitmaps(Game *g, Board *b){
 int make_clue_bitmaps(Game *g, Board *b){
     int i;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-
+    al_set_target_bitmap(NULL);
+    
     for(i=0;i<g->clue_n; i++){
         b->clue_bmp[i] = al_create_bitmap(b->clue_tiledblock[i]->w, b->clue_tiledblock[i]->h);
         if(!b->clue_bmp[i]){
@@ -450,9 +454,9 @@ int make_clue_bitmaps(Game *g, Board *b){
 
 void show_info_text(Board *b, ALLEGRO_USTR *msg){
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-    
-    ndestroy_bitmap(b->info_text_bmp);
-    b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
+    al_set_target_bitmap(NULL);
+    //ndestroy_bitmap(b->info_text_bmp);
+    //b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
     al_draw_multiline_ustr(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-2*al_get_font_line_height(b->text_font), al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
@@ -490,7 +494,7 @@ void clear_info_panel(Board *b){
 int update_bitmaps(Game *g, Board *b){
     int i, j, s;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-    
+    al_set_target_bitmap(NULL);
     // reload text fonts
     // estimate font size for panel:
     if(!(b->text_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -min(b->info_panel.h/2.2, sqrt(b->info_panel.w*b->info_panel.h)/10))) ){
@@ -513,7 +517,7 @@ int update_bitmaps(Game *g, Board *b){
 	}
 
     // else update normal bitmaps:
-    
+    al_set_target_bitmap(NULL);
     s=min(b->panel.b[0]->b[0]->w, b->panel.b[0]->b[0]->h);
     for(i=0;i<b->h;i++){
         for(j=0;j<b->n;j++){
@@ -609,7 +613,7 @@ int init_bitmaps_classic(Board *b){
     ALLEGRO_BITMAP *test_bmp;
     int i,j;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-    
+    al_set_target_bitmap(NULL);
     
     // tile_file.bmp should be a bmp with 80x80 tiles, 10 rows of 8 tiles
     // the first row of tiles is ignored. Rows 2 to 9 are the game tiles
@@ -684,7 +688,7 @@ ALLEGRO_BITMAP *get_clue_bitmap(Board *b, Clue *clue){
     int size = b->clue_unit_size;
     if(is_vclue(clue->rel)){ w = size; h = 3*size; } else {w = 3*size; h = size; }
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-
+    
     ALLEGRO_BITMAP *clue_bmp = al_create_bitmap(w, h);
     al_set_target_bitmap(clue_bmp);
     al_clear_to_color(NULL_COLOR);
@@ -745,7 +749,7 @@ void create_font_symbols(Board *b){
     int bh = al_get_bitmap_height(b->clue_unit_bmp[0][0]);
     int nbw, nbh;
     int range[2];
-
+    al_set_target_bitmap(NULL);
     nbw = bw*(float)texth/bh;
     nbh = texth;
     

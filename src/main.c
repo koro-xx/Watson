@@ -20,6 +20,10 @@
  - fix time update: should use "game time" to account for saved games (fixed?)
  - change wait_for_input to return key pressed or event type
  - add additional clue type
+ 
+ 
+ NOTE: in android, to draw text to a bitmap without issues we need the bitmap to be created detached from the screen.
+ so we set a null target bitmap before creating them and then we use al_convert_bitmaps
  */
 #include <stdio.h>
 #include <stdlib.h>
