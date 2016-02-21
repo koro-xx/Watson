@@ -18,7 +18,7 @@
 #define max(x,y) ((x)>(y)?(x):(y))
 
 #define nfree(x) do { free((x)); (x) = NULL; } while(0)
-#define ndestroy_bitmap(x) do { al_destroy_bitmap((x)); (x) = NULL; al_set_target_bitmap(NULL); } while(0)
+#define ndestroy_bitmap(x) do { al_destroy_bitmap((x)); (x) = NULL; } while(0)
 
 #endif
 

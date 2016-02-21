@@ -54,7 +54,7 @@ Settings set = {
     0, // advanced
     0, // sound_mute
     0, // type_of_tiles
-    1, // fat_fingers
+    0, // fat_fingers
     0,  // restart
     0 // saved
 };
@@ -168,14 +168,15 @@ void draw_stuff(Board *b){
         get_TiledBlock_offset(b->dragging->parent, &x, &y);
         draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
     }
-    for(i=0; i<b->gui_n; i++){
-        wz_draw(b->gui[i]);
-    }
     
     if(b->zoom){
         al_use_transform(&b->zoom_transform);
         draw_TiledBlock(b->zoom,0,0);
         al_use_transform(&b->identity_transform);
+    }
+
+    for(i=0; i<b->gui_n; i++){
+        wz_draw(b->gui[i]);
     }
     
 };
@@ -318,6 +319,7 @@ int main(int argc, char **argv){
     float DELTA_SHORT_CLICK = 0.1;
     float DELTA_HOLD_CLICK = 0.3;
     int mbdown_x, mbdown_y;
+    int drop_next = 0;
     
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
@@ -352,8 +354,8 @@ int main(int argc, char **argv){
 
         al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
         display = al_create_display(desktop_xsize, desktop_ysize);
+        set.fat_fingers = 1;
     }
-        
     
     
     if(!display) {
@@ -523,15 +525,15 @@ RESTART:
                     
                 case EVENT_SAVE:
                     if(!save_game_f(&g, &b)){
-                        show_info_text(&b, "Game saved");
+                        show_info_text(&b, al_ustr_new("Game saved"));
                         set.saved = 1;
                     } else {
-                        show_info_text(&b, "Error: game could not be saved.");
+                        show_info_text(&b, al_ustr_new("Error: game could not be saved."));
                     }
                     break;
                 case EVENT_LOAD:
                     if(load_game_f(&g, &b)){
-                        show_info_text(&b, "Error game could not be loaded.");
+                        show_info_text(&b, al_ustr_new("Error game could not be loaded."));
                     } else {
                         restart = 2;
                         goto RESTART;
@@ -539,6 +541,9 @@ RESTART:
                     break;
                 case ALLEGRO_EVENT_TIMER:
                     //redraw=1;
+                    break;
+                case EVENT_DROP_NEXT:
+//                    drop_next = 1;
                     break;
                     
                 case ALLEGRO_EVENT_TOUCH_BEGIN:
@@ -567,20 +572,30 @@ RESTART:
                     mouse_button_down = ev.mouse.button;
                     break;
                     
- 
                 case ALLEGRO_EVENT_TOUCH_END:
                     ev.mouse.x = ev.touch.x;
                     ev.mouse.y = ev.touch.y;
                     ev.mouse.button = 1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
-                    hold_click_check = 0;
                     if(wait_for_double_click) wait_for_double_click = 0;
+                    if(drop_next){
+                        drop_next = 0;
+                        break;
+                    }
+                    
                     
                     if(b.dragging){
                         mouse_drop(&b, ev.mouse.x, ev.mouse.y);
                         mouse_button_down = 0;
                     }
                     
+                    if(hold_click_check == 2){
+                        hold_click_check = 0;
+                        mouse_button_down = 0;
+                        break;
+                    }
+                    hold_click_check = 0;
+                   
                     if(!mouse_button_down) break;
                     
                     mouse_up_time = ev.any.timestamp;
@@ -591,9 +606,10 @@ RESTART:
                                 wait_for_double_click = 1;
                             }
                         }
+                        if(!wait_for_double_click)
+                            handle_mouse_click(&g, &b, tb_up, ev.mouse.x, ev.mouse.y, mouse_button_down);
+
                     }
-                    if(!wait_for_double_click)
-                        handle_mouse_click(&g, &b, tb_up, ev.mouse.x, ev.mouse.y, mouse_button_down);
                     mouse_button_down = 0;
                     break;
                     
@@ -736,14 +752,16 @@ RESTART:
 
         if(mouse_button_down && !hold_click_check && !b.dragging ){
             if (al_get_time() - mouse_down_time > DELTA_HOLD_CLICK){
+                hold_click_check = 1;
                 if(tb_down){
                     ALLEGRO_MOUSE_STATE mouse;
                     al_get_mouse_state(&mouse);
                     tb_up = get_TiledBlock_at(&b, mouse.x, mouse.y);
-                    if(tb_up == tb_down)
+                    if(tb_up == tb_down){
                         handle_mouse_click(&g, &b, tb_up, mouse.x, mouse.y, 4); // hold click
+                        hold_click_check = 2;
+                    }
                 }
-                hold_click_check = 1;
             }
         }
 
@@ -862,7 +880,7 @@ TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
         al_transform_coordinates(&b->zoom_transform_inv, &xx, &yy);
         t = get_TiledBlock(b->zoom, xx, yy);
         if(t && (t->parent == b->zoom)) return t;
-        else return NULL;
+        else return get_TiledBlock(&b->all, x, y);
     }
     
     return get_TiledBlock(&b->all, x, y);
@@ -1066,7 +1084,7 @@ void zoom_TB(Board *b, TiledBlock *t){
     b->zoom_transform_inv  = b->zoom_transform;
     al_invert_transform(&b->zoom_transform_inv);
     b->zoom = t;
-    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
+    if(!set.sound_mute) play_sound(SOUND_CLICK);
 }
 
 void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mclick){
@@ -1096,17 +1114,22 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
     }
     
     if(set.fat_fingers){
-        if(b->zoom){
-            b->zoom = NULL;
-        } else if( ((t->parent) && (t->parent->type == TB_TIME_PANEL)) || (t->type == TB_TIME_PANEL) ) {
-            zoom_TB(b, &b->time_panel);
-            return;
-        } else if(t->type == TB_PANEL_TILE){
-            zoom_TB(b, b->zoom = t->parent);
-           return;
+        if(!b->zoom || (t->parent != b->zoom)){
+            if( ((t->parent) && (t->parent->type == TB_TIME_PANEL)) || (t->type == TB_TIME_PANEL) ) {
+                zoom_TB(b, &b->time_panel);
+                if(mclick == 4) emit_event(EVENT_DROP_NEXT);
+                return;
+            } else if(t->type == TB_PANEL_TILE){
+                zoom_TB(b, b->zoom = t->parent);
+                if(mclick == 4) emit_event(EVENT_DROP_NEXT);
+                return;
+            }
         }
     }
-           
+
+    if(b->zoom)
+        b->zoom = NULL;
+
     switch(t->type){ // which board component was clicked
         case TB_PANEL_TILE:
             if(game_state != GAME_PLAYING) break;

@@ -61,7 +61,8 @@ enum {
     GROUP_COLS,
     GROUP_ROWS,
     BUTTON_SAVE,
-    BUTTON_LOAD
+    BUTTON_LOAD,
+    BUTTON_ZOOM
     
 };
 
@@ -222,6 +223,9 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     
     // Sound + Advanced buttons
     wz_create_fill_layout(gui, 0, 190 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    wgt = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, 80 * size, 50 * size, al_ustr_new("zoom"), 1, -1, BUTTON_ZOOM);
+    ((WZ_BUTTON*) wgt)->down = set->fat_fingers;
+    
     wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Sound:"), 1, -1);
     button_mute = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, 50 * size, 50 * size, set->sound_mute ? al_ustr_new("off") : al_ustr_new("on"), 1, -1, BUTTON_SOUND);
     ((WZ_BUTTON*) button_mute)->down = !set->sound_mute;
@@ -344,6 +348,9 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                 emit_event(EVENT_SWITCH_TILES);
                                 done=1;
                                 break;
+                            case BUTTON_ZOOM:
+                                SWITCH(nset.fat_fingers);
+                                break;
                                 
                             case BUTTON_ABOUT:
                                 show_about(b, queue);
@@ -359,6 +366,12 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                 break;
                                 
                             case BUTTON_ADVANCED:
+                                if(!nset.advanced){
+                                    if(!yes_no_gui(b,al_ustr_new("Are you sure? Advanced mode is untested and not recommended."), b->all.x+b->all.w/2, b->all.y+b->all.h/2, 0.3*b->max_xsize, queue)){
+                                        ((WZ_BUTTON*) event.user.data2)->down = 0;
+                                        break;
+                                    }
+                                }
                                 SWITCH(nset.advanced);
                                 if(!nset.advanced)
                                     wz_set_text_own((WZ_WIDGET *) event.user.data2, al_ustr_new("off"));
