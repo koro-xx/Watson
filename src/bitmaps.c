@@ -125,6 +125,7 @@ void destroy_all_bitmaps(Board *b){
 //    }
 }
 
+
 void update_timer(int t, Board *b) {
 	ALLEGRO_BITMAP *bmp = al_get_target_bitmap();
 	t=al_get_time()-b->time_start;
@@ -455,8 +456,8 @@ int make_clue_bitmaps(Game *g, Board *b){
 void show_info_text(Board *b, ALLEGRO_USTR *msg){
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
     al_set_target_bitmap(NULL);
-    //ndestroy_bitmap(b->info_text_bmp);
-    //b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
+    ndestroy_bitmap(b->info_text_bmp);
+    b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
     al_draw_multiline_ustr(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-2*al_get_font_line_height(b->text_font), al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
@@ -505,6 +506,9 @@ int update_bitmaps(Game *g, Board *b){
     b->time_bmp = al_create_bitmap(b->time_panel.b[0]->w, b->time_panel.b[0]->h);
 	al_set_target_bitmap(b->time_bmp);
 	al_clear_to_color(b->time_panel.b[0]->bg_color);
+    
+    // this should go here, but by android problems we have to recreate the bitmap on every new text drawing:
+    // b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     
     for(i=0; i<4; i++){
         b->button_bmp_scaled[i] = scaled_clone_bitmap(b->button_bmp[i], b->time_panel.b[i+1]->w, b->time_panel.b[i+1]->h);

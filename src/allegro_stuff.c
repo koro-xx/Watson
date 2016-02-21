@@ -269,3 +269,18 @@ ALLEGRO_BITMAP *scaled_clone_bitmap(ALLEGRO_BITMAP *source, int w, int h){
     al_set_target_bitmap(currbuf);
     return ret;
 }
+
+// unused
+void convert_memory_bitmap(ALLEGRO_BITMAP *bmp){
+    int bflags = al_get_new_bitmap_flags();
+    al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+    al_convert_bitmap(bmp);
+    al_set_new_bitmap_flags(bflags);
+}
+
+void convert_video_bitmap(ALLEGRO_BITMAP *bmp){
+    int bflags = al_get_new_bitmap_flags();
+    al_set_new_bitmap_flags(ALLEGRO_CONVERT_BITMAP);
+    al_convert_bitmap(bmp);
+    al_set_new_bitmap_flags(bflags);
+}
