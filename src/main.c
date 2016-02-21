@@ -137,6 +137,21 @@ void  explain_clue(Board *b, Clue *clue);
 //al_identity_transform(&T);
 //al_use_transform(&T);
 
+void halt(ALLEGRO_EVENT_QUEUE *queue){
+    ALLEGRO_DISPLAY *disp =al_get_current_display();
+    al_acknowledge_drawing_halt(disp);
+    deblog("ACKNOWLEDGED HALT");
+    ALLEGRO_EVENT ev;
+    
+    do{
+        al_wait_for_event(queue, &ev);
+    }while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
+ 
+    al_acknowledge_drawing_resume(disp);
+    deblog("ACKNOWLEDGED RESUME");
+    al_rest(0.01);
+    al_flush_event_queue(queue);
+}
 
 // debug: show solution
 void switch_solve_puzzle(Game *g, Board *b){
@@ -189,20 +204,45 @@ void draw_stuff(Board *b){
 };
 
 void animate_win(Board *b) {
-	int i, j, k=0;
-
-    al_pause_event_queue(event_queue,1);
-	for (j = 0; j < b->h; j++) {
-		for (i = 0; i < b->n; i++) {
-			k++;
-			convert_grayscale(b->guess_bmp[i][j]);
-			draw_stuff(b);
-            al_flip_display();
-			if (!set.sound_mute) { play_sound(SOUND_STONE); }
-			al_rest(0.5*(1 - sqrt((float) k / (b->h*b->n))));
-		}
-	}
-    al_pause_event_queue(event_queue,0);
+	int k, ii, jj, kk=0;
+    int x,y;
+    ALLEGRO_BITMAP *currbuf = al_get_target_bitmap();
+    ALLEGRO_BITMAP *bmp = al_clone_bitmap(currbuf);
+    ALLEGRO_EVENT ev;
+    int a[64];
+    
+    al_set_target_bitmap(bmp);
+    al_clear_to_color(BLACK_COLOR);
+    draw_stuff(b);
+    al_set_target_bitmap(currbuf);
+    
+    for(k=0;k<b->n*b->h; k++){
+        a[k] = k;
+    }
+    
+    shuffle(a, b->n*b->h);
+    
+    for(k=0;k<b->n*b->h; k++){
+        al_clear_to_color(BLACK_COLOR);
+        al_draw_bitmap(bmp,0,0,0);
+        for(kk=0;kk<=k; kk++){
+            ii = a[kk] / b->h;
+            jj = a[kk] % b->h;
+            get_TiledBlock_offset(b->panel.b[ii]->b[jj], &x, &y);
+            al_draw_filled_rectangle(x,y, x+b->panel.b[ii]->b[jj]->w, y+b->panel.b[ii]->b[jj]->h, al_premul_rgba(0,0,0,200));
+        }
+        al_flip_display();
+        if (!set.sound_mute) { play_sound(SOUND_STONE); }
+        while(al_get_next_event(event_queue, &ev)){
+            if(ev.type == ALLEGRO_EVENT_DISPLAY_HALT_DRAWING){
+                halt(event_queue);
+                al_acknowledge_resize(al_get_current_display());
+                return;
+                // should do something else here
+            }
+        }
+        al_rest(max(0.15, 0.6*(1 - sqrt((float) k / (b->h*b->n)))));
+    }
 }
 
 void draw_generating_puzzle(Game *g, Board *b) {
@@ -250,7 +290,7 @@ void win_or_lose(Game *g, Board *b){
         animate_win(b);
         if (!set.sound_mute) play_sound(SOUND_WIN);
     } else {
-        show_info_text(b, al_ustr_new("Something is wrong. Try again, or press R to start a new puzzle."));
+        show_info_text(b, al_ustr_new("Something is wrong. Try again, go to settings to start a new puzzle."));
         if (!set.sound_mute) play_sound(SOUND_WRONG);
     }
 }
@@ -501,18 +541,9 @@ RESTART:
 //                    resize_update=1;
 //                    break;
                 case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
-                    //xxx todo: move everything somewhere else
                     deblog("RECEIVED HALT");
                     al_stop_timer(timer);
-                    al_acknowledge_drawing_halt(display);
-                    deblog("ACKNOWLEDGED HALT");
-                    do{
-                        al_rest(0.01);
-                        al_wait_for_event(event_queue, &ev);
-                    }while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
-                    al_acknowledge_drawing_resume(display);
-                    al_rest(0.01);
-                    al_flush_event_queue(event_queue);
+                    halt(event_queue);
                     resize_update=1;
                     al_start_timer(timer);
                     break;
@@ -1204,6 +1235,8 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             break;
 
         case TB_BUTTON_UNDO:
+            switch_solve_puzzle(g,b);
+            animate_win(b);
             execute_undo(g);
             update_board(g,b);
             break;
