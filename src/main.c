@@ -11,12 +11,8 @@
  by Koro (1/2016)
 
  Todo
- - See what's wrong with ndestroy_bitmap (null target? if we disable it, we lose fonts)
- - show game time at the end of the game
- - offer a restart button at the end
  - add highscore table / input
  - finish tutorial
- - create fallback font at update_bitmap time only
  - fix time update: should use "game time" to account for saved games (fixed?)
  - change wait_for_input to return key pressed or event type
  - add additional clue type
@@ -427,7 +423,8 @@ int main(int argc, char **argv){
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
-    g.time = 0;
+    
+    if(restart == 1) g.time = 0; // new game, otherwise it's a load game
     
 	if (!fullscreen && !MOBILE) {
         max_display_factor = 0.9;

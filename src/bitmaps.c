@@ -128,7 +128,6 @@ void destroy_all_bitmaps(Board *b){
 
 void update_timer(int t, Board *b) {
 	ALLEGRO_BITMAP *bmp = al_get_target_bitmap();
-	t=al_get_time()-b->time_start;
 	al_set_target_bitmap(*b->time_panel.b[0]->bmp);
 	al_clear_to_color(b->time_panel.b[0]->bg_color);
 	al_draw_textf(default_font, WHITE_COLOR,  b->time_panel.b[0]->w/2, 0, ALLEGRO_ALIGN_CENTER, "%02d:%02d:%02d", (int)t/3600, (int)t/60, (int)t%60);
