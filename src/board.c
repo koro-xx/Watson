@@ -8,7 +8,7 @@
 #include "main.h"
 
 // spacing, in fraction of corresponding display dimensions
-float INFO_PANEL_PORTION = 0.07;
+float INFO_PANEL_PORTION = 0.1;
 float VCLUEBOX_PORTION = .25;
 float HCLUEBOX_PORTION = .25;
 int VCLUEBOX_MARGIN = 4; // pixels for now
@@ -472,6 +472,10 @@ int create_board(Game *g, Board *b, int mode){
     if(mode)
         if(init_bitmaps(b)) return -1;
     
-    return update_bitmaps(g, b);
+    if(update_bitmaps(g, b)) return -1;
+
+    create_font_symbols(b);
+
+    return 0;
 }
 

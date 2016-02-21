@@ -27,14 +27,21 @@ ALLEGRO_BITMAP *create_title_bmp(void);
 void destroy_settings_bitmaps(Board *b);
 void create_settings_bitmaps(Board *b);
 void update_timer(int t, Board *b);
-void show_info_text(Board *b, const char* msg);
+void show_info_text(Board *b, ALLEGRO_USTR * msg); //msg will be freed
 void show_info_text_b(Board *b, const char*msg, ...);
 void clear_info_panel(Board *b);
 void draw_title(void);
 void convert_grayscale(ALLEGRO_BITMAP *bmp);
+void create_font_symbols(Board *b);
+
+
+// globals
+extern char symbol_char[9][8][6];
+
 
 // debug
 ALLEGRO_BITMAP *get_clue_bitmap(Board *b, Clue *clue);
+
 
 
 #endif /* defined(__watson__bitmaps__) */

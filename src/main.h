@@ -30,6 +30,8 @@
 #define EVENT_LOAD (BASE_USER_EVENT_TYPE + 5)
 #define EVENT_SAVE (BASE_USER_EVENT_TYPE + 6)
 
+#define BF_CODEPOINT_START 0x0860
+
 typedef struct Settings{
     int n;
     int h;

@@ -11,7 +11,7 @@
  by Koro (1/2016)
 
  Todo
- - secure a fixed % of display height for panel (not pixels!)
+ - fix indices in symbol_char[][]
  - show game time at the end of the game
  - offer a restart button at the end
  - add highscore table / input
@@ -82,21 +82,6 @@ struct Panel_State{
 
 struct Panel_State *undo = NULL;
 
-
-const char *CLUE_TEXT[NUMBER_OF_RELATIONS] = {
-    [NEXT_TO] = "The two items are in adjacent columns, on either side.",
-    [NOT_NEXT_TO] = "The two items are not in adjacent columns",
-    [ONE_SIDE] = "The first item's column is to the left of the second item's.",
-    [CONSECUTIVE] = "The middle item's column is between the columns of the other two, in any order",
-    [NOT_MIDDLE] = "The first and last items have one column between them, and the middle item is not in that column.",
-    [TOGETHER_2] = "The two items are on the same column.",
-    [TOGETHER_3] = "The three items are on the same column.",
-    [NOT_TOGETHER] = "The two items are not on the same column.",
-    [TOGETHER_NOT_MIDDLE] = "The first and last item are on the same column, and the middle item is not there.",
-    [TOGETHER_FIRST_WITH_ONLY_ONE] = "Add description later.",
-    [REVEAL] = "This message should not be showing up."
-};
-
 // Prototypes
 void draw_stuff(Board *b);
 void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int x, int y, int mclick);
@@ -139,6 +124,14 @@ void  explain_clue(Board *b, Clue *clue);
 //}
 
 
+//ALLEGRO_TRANSFORM T;
+//al_identity_transform(&T);
+//al_scale_transform(&T, 5, 5);
+//al_use_transform(&T);
+//al_draw_filled_rectangle(0,0,80, 20, BLACK_COLOR);
+//al_draw_textf(default_font, WHITE_COLOR, 0,0, ALLEGRO_ALIGN_LEFT, "%d, %d | %d, %d", nset.n, nset.h, set->n, set->h);
+//al_identity_transform(&T);
+//al_use_transform(&T);
 
 
 // debug: show solution
@@ -158,7 +151,8 @@ void emit_event(int event_type){
 void draw_stuff(Board *b){
     int x, y;
     int i;
-    
+
+
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     draw_TiledBlock(&b->all,0,0);
     
@@ -311,7 +305,7 @@ int main(int argc, char **argv){
     TiledBlock  *tb_down = NULL, *tb_up = NULL;
     double mouse_up_time = 0, mouse_down_time = 0;
     int wait_for_double_click = 0, hold_click_check = 0;
-    float DELTA_DOUBLE_CLICK = 0.25;
+    float DELTA_DOUBLE_CLICK = 0.15;
     float DELTA_SHORT_CLICK = 0.1;
     float DELTA_HOLD_CLICK = 0.3;
     int mbdown_x, mbdown_y;
@@ -469,8 +463,8 @@ RESTART:
     mbdown_x = 0;
     mbdown_y = 0;
     
-    show_info_text_b(&b, "Click on clue for info. Click %b for help, %b for settings, or %b for a hint at any time. Press R to start a new game.", b.button_bmp[0], b.button_bmp[2], b.button_bmp[1]);
-
+    show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[0][b.h], symbol_char[2][b.h], symbol_char[1][b.h]));
+    
     al_set_target_backbuffer(display);
     al_clear_to_color(BLACK_COLOR);
     al_flip_display();
@@ -622,6 +616,11 @@ RESTART:
                                 noexit=0;
                             else
                                 redraw=1;
+                            break;
+                        case ALLEGRO_KEY_BACK: // debug
+                            if((set.n > 6) || (set.h > 6)) confirm_exit(&b, event_queue);
+                            show_settings(&set, &b, event_queue);
+                            emit_event(EVENT_REDRAW);
                             break;
                         case ALLEGRO_KEY_R:
                             if(confirm_restart(&b, &set, event_queue)){
@@ -853,7 +852,7 @@ void mouse_grab(Board *b, int mx, int my){
             b->dragging_cy = b->dragging->y - my+5;
             b->dragging->x = mx + b->dragging_cx;
             b->dragging->y = my + b->dragging_cy;
-            if(!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
+           // if(!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
             return;
         }
     }
@@ -917,38 +916,38 @@ void save_state(Game *g){
 
 void explain_clue(Board *b, Clue *clue)
 {
-    ALLEGRO_BITMAP *b0, *b1, *b2;
-    b0 = b->clue_unit_bmp[clue->j[0]][clue->k[0]];
-    b1 = b->clue_unit_bmp[clue->j[1]][clue->k[1]];
-    b2 = b->clue_unit_bmp[clue->j[2]][clue->k[2]];
+    char *b0, *b1, *b2;
+    b0 = symbol_char[clue->j[0]][clue->k[0]];
+    b1 = symbol_char[clue->j[1]][clue->k[1]];
+    b2 = symbol_char[clue->j[2]][clue->k[2]];
  
     switch(clue->rel){
         case CONSECUTIVE:
-            show_info_text_b(b, "The column of %b is between %b and %b, but they could be on either side.", b1, b0, b2);
+            show_info_text(b, al_ustr_newf("The column of %s is between %s and %s, but they could be on either side.", b1, b0, b2));
             break;
         case NEXT_TO:
-            show_info_text_b(b, "The columns of %b and %b are next to each other, but they could be on either side.", b0, b1);
+            show_info_text(b, al_ustr_newf("The columns of %s and %s are next to each other, but they could be on either side.", b0, b1));
             break;
         case NOT_NEXT_TO:
-            show_info_text_b(b, "The column of %b is NOT next to the column of %b.", b0, b1);
+            show_info_text(b, al_ustr_newf("The column of %s is NOT next to the column of %s.", b0, b1));
             break;
         case NOT_MIDDLE:
-            show_info_text_b(b, "There is exactly one column between %b and %b, and %b is NOT in that column.", b0, b2, b1);
+            show_info_text(b, al_ustr_newf("There is exactly one column between %s and %s, and %s is NOT in that column.", b0, b2, b1));
             break;
         case ONE_SIDE:
-            show_info_text_b(b, "The column of %b is strictly to the left of %b.", b0, b1);
+            show_info_text(b, al_ustr_newf("The column of %s is strictly to the left of %s.", b0, b1));
             break;
         case TOGETHER_2:
-            show_info_text_b(b, "%b and %b are on the same column.", b0, b1);
+            show_info_text(b, al_ustr_newf("%s and %s are on the same column.", b0, b1));
             break;
         case TOGETHER_3:
-            show_info_text_b(b, "%b, %b and %b are on the same column.", b0, b1, b2);
+            show_info_text(b, al_ustr_newf("%s, %s and %s are on the same column.", b0, b1, b2));
             break;
         case NOT_TOGETHER:
-            show_info_text_b(b, "%b and %b are NOT on the same column.", b0, b1);
+            show_info_text(b, al_ustr_newf("%s and %s are NOT on the same column.", b0, b1));
             break;
         case TOGETHER_NOT_MIDDLE:
-            show_info_text_b(b, "%b and %b are on the same column, and %b is NOT in that column.", b0, b2, b1);
+            show_info_text(b, al_ustr_newf("%s and %s are on the same column, and %s is NOT in that column.", b0, b2, b1));
             break;
         default:
             break;
@@ -956,60 +955,55 @@ void explain_clue(Board *b, Clue *clue)
 }
 
 void show_hint(Game *g, Board *b){
-    ALLEGRO_BITMAP *b0, *b1, *b2, *b3;
-    char hint[1000] = "";
+    char *b0, *b1, *b2, *b3;
     int i;
     
     if(!check_panel_correctness(g)){
-        show_info_text(b, "Something is wrong. An item was ruled out incorrectly.");
+        show_info_text(b, al_ustr_new("Something is wrong. An item was ruled out incorrectly."));
         return;
     }
     
     i=get_hint(g);
     if(!i){
-        show_info_text(b, "No hint available.");
+        show_info_text(b, al_ustr_new("No hint available."));
         return;
     }
     
     b->highlight = b->clue_tiledblock[i & 255];
     b->rule_out = b->panel.b[(i>>15) & 7]->b[(i>>12) & 7]->b[(i>>9) & 7];
-    strcat(hint, CLUE_TEXT[g->clue[i & 255].rel]);
-    strcat(hint, " So we can rule out the blinking tile.");
-    show_info_text(b, hint);
-    emit_event(EVENT_REDRAW);
 
-    b0 = b->clue_unit_bmp[g->clue[i & 255].j[0]][g->clue[i & 255].k[0]];
-    b1 = b->clue_unit_bmp[g->clue[i & 255].j[1]][g->clue[i & 255].k[1]];
-    b2 = b->clue_unit_bmp[g->clue[i & 255].j[2]][g->clue[i & 255].k[2]];
-    b3 = b->clue_unit_bmp[(i>>12) & 7][(i>>9) & 7];
+    b0 = symbol_char[g->clue[i & 255].j[0]][g->clue[i & 255].k[0]];
+    b1 = symbol_char[g->clue[i & 255].j[1]][g->clue[i & 255].k[1]];
+    b2 = symbol_char[g->clue[i & 255].j[2]][g->clue[i & 255].k[2]];
+    b3 = symbol_char[(i>>12) & 7][(i>>9) & 7];
     
     switch(g->clue[i & 255].rel){
         case CONSECUTIVE:
-            show_info_text_b(b, "The column of %b is between %b and %b, so we can rule out %b from here.", b1, b0, b2, b3);
+            show_info_text(b, al_ustr_newf("The column of %s is between %s and %s, so we can rule out %s from here.", b1, b0, b2, b3));
             break;
         case NEXT_TO:
-            show_info_text_b(b, "The columns of %b and %b are next to each other, so we can rule out %b from here.", b0, b1, b3);
+            show_info_text(b, al_ustr_newf("The columns of %s and %s are next to each other, so we can rule out %s from here.", b0, b1, b3));
             break;
         case NOT_NEXT_TO:
-            show_info_text_b(b, "The column of %b is NOT next to the column of %b, so we can rule out %b from here.", b0, b1, b3);
+            show_info_text(b, al_ustr_newf("The column of %s is NOT next to the column of %s, so we can rule out %s from here.", b0, b1, b3));
             break;
         case NOT_MIDDLE:
-            show_info_text_b(b, "There is exactly one column between %b and %b, and %b is NOT in that column, so we can rule out %b from here.", b0, b2, b1, b3);
+            show_info_text(b, al_ustr_newf("There is exactly one column between %s and %s, and %s is NOT in that column, so we can rule out %s from here.", b0, b2, b1, b3));
             break;
         case ONE_SIDE:
-            show_info_text_b(b, "The column of %b is strictly to the left of %b, so we can rule out %b from here.", b0, b1, b3);
+            show_info_text(b, al_ustr_newf("The column of %s is strictly to the left of %s, so we can rule out %s from here.", b0, b1, b3));
             break;
         case TOGETHER_2:
-            show_info_text_b(b, "%b and %b are on the same column, so we can rule out %b from here.", b0, b1,b3);
+            show_info_text(b, al_ustr_newf("%s and %s are on the same column, so we can rule out %s from here.", b0, b1,b3));
             break;
         case TOGETHER_3:
-            show_info_text_b(b, "%b, %b and %b are on the same column, so we can rule out %b from here.", b0, b1, b2, b3);
+            show_info_text(b, al_ustr_newf("%s, %s and %s are on the same column, so we can rule out %s from here.", b0, b1, b2, b3));
             break;
         case NOT_TOGETHER:
-            show_info_text_b(b, "%b and %b are NOT on the same column, so we can rule out %b from here.", b0, b1, b3);
+            show_info_text(b, al_ustr_newf("%s and %s are NOT on the same column, so we can rule out %s from here.", b0, b1, b3));
             break;
         case TOGETHER_NOT_MIDDLE:
-            show_info_text_b(b, "%b and %b are on the same column, and %b is NOT in that column, so we can rule out %b from here.", b0, b2, b1, b3);
+            show_info_text(b, al_ustr_newf("%s and %s are on the same column, and %s is NOT in that column, so we can rule out %s from here.", b0, b2, b1, b3));
             break;
         default:
             break;
@@ -1110,6 +1104,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             
         case TB_BUTTON_CLUE: // time panel
             if(game_state != GAME_PLAYING) break;
+            if(!set.sound_mute) play_sound(SOUND_CLICK);
             show_hint(g,b);
             break;
         case TB_BUTTON_SETTINGS:

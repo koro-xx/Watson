@@ -26,6 +26,7 @@ ALLEGRO_BITMAP *symbol_bmp[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 
 int TILE_SHADOWS = 1;
 int GLYPH_SHADOWS = 0;
+char symbol_char[9][8][6];
 
 const float SHADOW_ALPHA = 0.3;
 //const char *TEXT_FONT_FILE = "fonts/aileron-regular.otf";
@@ -116,6 +117,11 @@ void destroy_all_bitmaps(Board *b){
     }
     al_destroy_font(default_font);
     destroy_board_bitmaps(b);
+//    for(i=0;i<b->h+1;i++){
+//        for(j=0;j<b->n;j++){
+//            al_ustr_free(symbol_char[i][j]);
+//        }
+//    }
 }
 
 void update_timer(int t, Board *b) {
@@ -161,7 +167,7 @@ int init_bitmaps(Board *b){
     ALLEGRO_FS_ENTRY *dir = NULL;
     ALLEGRO_FS_ENTRY *file;
     ALLEGRO_FILE *fp;
-    int j, k=0;
+    int i,j, k=0;
     char pathname[1000];
     ALLEGRO_PATH *path;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
@@ -170,12 +176,19 @@ int init_bitmaps(Board *b){
     al_android_set_apk_file_interface();
 #endif
 
+    for(i=0;i<b->h;i++){
+        for(j=0;j<b->n+1; j++){
+            al_utf8_encode(symbol_char[i][j], BF_CODEPOINT_START+ i + j*b->n);
+            symbol_char[i][j][al_utf8_width(BF_CODEPOINT_START+ i + j*b->n)] = '\0';
+        }
+    }
+    
     // create buttons
     // xxx todo: improve these
     
     default_font = al_load_font(DEFAULT_FONT_FILE, 16, 0);
     if(!default_font) errlog("Error loading default font");
-
+    
     b->info_text_bmp = NULL;
     b->info_panel.bmp = NULL;
     
@@ -434,7 +447,7 @@ int make_clue_bitmaps(Game *g, Board *b){
 }
 
 
-void show_info_text(Board *b, const char* msg){
+void show_info_text(Board *b, ALLEGRO_USTR *msg){
     ALLEGRO_FONT *font;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
     
@@ -443,10 +456,11 @@ void show_info_text(Board *b, const char* msg){
     b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
-    draw_multiline_text_bf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-30, al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
+    al_draw_multiline_ustr(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-al_get_font_line_height(b->text_font), al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
     
     b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
     al_set_target_bitmap(dispbuf);
+    al_ustr_free(msg);
 }
 
 void clear_info_panel(Board *b){
@@ -587,6 +601,7 @@ int update_bitmaps(Game *g, Board *b){
     
     al_set_target_bitmap(dispbuf);
     // create clue tile bmps
+
     return make_clue_bitmaps(g, b);
 }
 
@@ -594,7 +609,8 @@ int init_bitmaps_classic(Board *b){
     ALLEGRO_BITMAP *test_bmp;
     int i,j;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-
+    
+    
     // tile_file.bmp should be a bmp with 80x80 tiles, 10 rows of 8 tiles
     // the first row of tiles is ignored. Rows 2 to 9 are the game tiles
     // the last row should contain the extra symbols
@@ -718,6 +734,53 @@ ALLEGRO_BITMAP *get_clue_bitmap(Board *b, Clue *clue){
     al_set_target_bitmap(dispbuf);
     return clue_bmp;
 }
+
+void create_font_symbols(Board *b){
+    ALLEGRO_BITMAP *bmp = NULL, *currbuf = al_get_target_bitmap();
+    ALLEGRO_FONT *newfont=NULL;
+    int i, j;
+    int texth = al_get_font_line_height(b->text_font);
+    int bitmap_w, bitmap_h;
+    int bw = al_get_bitmap_width(b->clue_unit_bmp[0][0]);
+    int bh = al_get_bitmap_height(b->clue_unit_bmp[0][0]);
+    int nbw, nbh;
+    int range[2];
+
+    nbw = bw*(float)texth/bh;
+    nbh = texth;
+    
+    bitmap_w = 4 + b->h*(2+nbw); // extra column for buttons, n>=4
+    bitmap_h = 4 + (b->n+1)*(2+nbh);
+    
+    bmp = al_create_bitmap(bitmap_w, bitmap_h);
+    al_set_target_bitmap(bmp);
+    al_clear_to_color(NULL_COLOR);
+    for(j=0; j<b->n; j++){
+        for(i=0; i<b->h; i++){
+        // the rectangle is to guarantee the right height for al_grab_font
+            al_draw_scaled_bitmap(b->clue_unit_bmp[i][j], 0, 0, bw, bh, 2+i*(2+nbw), 2+ j*(2+nbh), nbw, nbh, 0);
+            al_draw_rectangle( 2+i*(2+nbw)+0.5, 2+ j*(2+nbh) + 0.5,  2+i*(2+nbw) + nbw -0.5, 2+j*(2+nbh) + nbh- 0.5, al_map_rgba(1,1,1,1),1);
+        }
+    }
+    
+ //    draw the buttons. now j= b->h
+    for(i=0;i<b->h;i++){
+        bw=al_get_bitmap_width(b->button_bmp[i%4]);
+        bh=al_get_bitmap_height(b->button_bmp[i%4]);
+        al_draw_scaled_bitmap(b->button_bmp[i%4], 0, 0, bw, bh, 2+i*(2+nbw), 2+ j*(2+nbh), nbw, nbh, 0);
+        al_draw_rectangle( 2+i*(2+nbw)+0.5, 2+ j*(2+nbh) + 0.5,  2+i*(2+nbw) + nbw -0.5, 2+j*(2+nbh) + nbh- 0.5, al_map_rgba(1,1,1,1),1);
+    }
+    
+    
+    range[0] = BF_CODEPOINT_START;
+    range[1] = BF_CODEPOINT_START + b->n*b->h-1 + 4;
+    newfont = al_grab_font_from_bitmap(bmp, 1, range);
+    al_set_fallback_font(b->text_font, newfont);
+    al_set_target_bitmap(currbuf);
+    al_destroy_bitmap(bmp);
+}
+
+
 
 
 void convert_grayscale(ALLEGRO_BITMAP *bmp) {

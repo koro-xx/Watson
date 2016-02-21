@@ -95,9 +95,9 @@ void unregister_gui(Board *b, WZ_WIDGET *gui){
         b->gui[j] = b->gui[j+1];
 }
 
-int confirm_restart(Board *b, Settings *set, ALLEGRO_EVENT_QUEUE *queue)
+int confirm_restart(Board *b, Settings *newset, ALLEGRO_EVENT_QUEUE *queue)
 {
-    if(yes_no_gui(b, al_ustr_newf("Start new %dx%d%s game?", set->n, set->h, set->advanced ? " advanced" : ""), b->all.x+b->xsize/2, b->all.y+b->ysize/2, max(b->xsize*0.5*GUI_XFACTOR, 300), queue))
+    if(yes_no_gui(b, al_ustr_newf("Start new %dx%d%s game?", newset->n, newset->h, newset->advanced ? " advanced" : ""), b->all.x+b->xsize/2, b->all.y+b->ysize/2, max(b->xsize*0.5*GUI_XFACTOR, 300), queue))
         return 1;
     else
         return 0;
@@ -233,7 +233,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     // Save + Load buttons
     wz_create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
 //    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Sound:"), 1, -1);
-    wz_create_toggle_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Save game"), 1, -1, BUTTON_SAVE);
+    wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Save game"), 1, BUTTON_SAVE);
 //    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Advanced:"), 1, -1);
     wgt = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Load game"), 1, -1, BUTTON_LOAD);
     ((WZ_BUTTON*) wgt)->down = !set->saved;
@@ -294,13 +294,14 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
             
                 switch(event.type)
                 {
+                    case ALLEGRO_EVENT_KEY_CHAR:
+                        if(event.keyboard.keycode == ALLEGRO_KEY_BACK){
+                            cancel = 1;
+                            done = 1;
+                        }
+                        break;
                     case WZ_BUTTON_PRESSED:
                     {
-                        if( ((WZ_TOGGLE *) event.user.data2)->group == GROUP_ROWS)
-                            nset.n = (int) event.user.data1;
-                        else if( ((WZ_TOGGLE *) event.user.data2)->group == GROUP_COLS)
-                            nset.h = (int) event.user.data1;
-                        
                         switch((int)event.user.data1)
                         {
                             case BUTTON_CANCEL:
@@ -375,18 +376,31 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                 break;
                                 
                             case BUTTON_LOAD:
-                                if( !set->saved || !yes_no_gui(b, al_ustr_new("Discard current game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue) )
+                                if( !set->saved )
                                 {
-                                    {
-                                        ((WZ_BUTTON*) event.user.data2)->down = 1;
-                                        break;
-                                    }
+                                    ((WZ_BUTTON*) event.user.data2)->down = 1;
+                                    break;
                                 }
+                                if (!yes_no_gui(b, al_ustr_new("Discard current game?"), b->all.x+b->xsize/2, b->all.y+b->ysize/2, b->xsize*0.33, queue) )
+                                {
+                                    ((WZ_BUTTON*) event.user.data2)->down = !set->saved;
+                                    break;
+                                }
+                                
                                 emit_event(EVENT_LOAD);
                                 cancel=1;
                                 done=1;
                                 break;
-
+                            default: // check for toggles
+                            {
+                                int i;
+                                for(i=0; i<5; i++){
+                                    if((WZ_WIDGET*) event.user.data2 == button_rows[i])
+                                        nset.n = (int) event.user.data1;
+                                    else if((WZ_WIDGET*) event.user.data2 == button_cols[i])
+                                        nset.h = (int) event.user.data1;
+                                }
+                            }
                         }
                         break;
                     }
@@ -401,7 +415,6 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
 #ifdef ALLEGRO_ANDROID
             al_clear_to_color(BLACK_COLOR);
 #endif
-//            draw_stuff(b);
             draw_stuff(b);
 //            wz_draw(gui);
             al_wait_for_vsync();
