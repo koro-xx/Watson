@@ -334,7 +334,7 @@ int main(int argc, char **argv){
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
      al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
-#endifa
+#endif
     
     fullscreen = 0;
     
