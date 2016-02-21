@@ -78,7 +78,7 @@ void highlight_TiledBlock(TiledBlock *t){
     for(i=0; i<8;i++){
         al_draw_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba_f(1,0,0,0.2), i);
     }
-    al_draw_filled_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba_f(1,1,1,0.2));
+    al_draw_filled_rectangle(x,y, x+t->w, y+t->h, al_premul_rgba_f(1,1,1,0.3));
 }
 
 

@@ -11,7 +11,7 @@
  by Koro (1/2016)
 
  Todo
- - fix indices in symbol_char[][]
+ - See what's wrong with ndestroy_bitmap (null target? if we disable it, we lose fonts)
  - show game time at the end of the game
  - offer a restart button at the end
  - add highscore table / input
@@ -170,7 +170,10 @@ void draw_stuff(Board *b){
     }
     
     if(b->zoom){
+        al_draw_filled_rectangle(0,0,b->max_xsize, b->max_ysize, al_premul_rgba(0,0,0,150));
         al_use_transform(&b->zoom_transform);
+        // draw dark background in case of transparent elements
+        al_draw_filled_rectangle(b->zoom->x,b->zoom->y, b->zoom->x + b->zoom->w, b->zoom->y + b->zoom->h, b->zoom->parent->bg_color);
         draw_TiledBlock(b->zoom,0,0);
         al_use_transform(&b->identity_transform);
     }
@@ -315,11 +318,10 @@ int main(int argc, char **argv){
     TiledBlock  *tb_down = NULL, *tb_up = NULL;
     double mouse_up_time = 0, mouse_down_time = 0;
     int wait_for_double_click = 0, hold_click_check = 0;
-    float DELTA_DOUBLE_CLICK = 0.15;
+    float DELTA_DOUBLE_CLICK = 0.2;
     float DELTA_SHORT_CLICK = 0.1;
     float DELTA_HOLD_CLICK = 0.3;
     int mbdown_x, mbdown_y;
-    int drop_next = 0;
     
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
@@ -542,9 +544,6 @@ RESTART:
                 case ALLEGRO_EVENT_TIMER:
                     //redraw=1;
                     break;
-                case EVENT_DROP_NEXT:
-//                    drop_next = 1;
-                    break;
                     
                 case ALLEGRO_EVENT_TOUCH_BEGIN:
                     ev.mouse.x = ev.touch.x;
@@ -578,10 +577,6 @@ RESTART:
                     ev.mouse.button = 1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                     if(wait_for_double_click) wait_for_double_click = 0;
-                    if(drop_next){
-                        drop_next = 0;
-                        break;
-                    }
                     
                     
                     if(b.dragging){
@@ -880,7 +875,7 @@ TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
         al_transform_coordinates(&b->zoom_transform_inv, &xx, &yy);
         t = get_TiledBlock(b->zoom, xx, yy);
         if(t && (t->parent == b->zoom)) return t;
-        else return get_TiledBlock(&b->all, x, y);
+        else return NULL; // else return get_TiledBlock(&b->all, x, y);
     }
     
     return get_TiledBlock(&b->all, x, y);
@@ -1117,11 +1112,9 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
         if(!b->zoom || (t->parent != b->zoom)){
             if( ((t->parent) && (t->parent->type == TB_TIME_PANEL)) || (t->type == TB_TIME_PANEL) ) {
                 zoom_TB(b, &b->time_panel);
-                if(mclick == 4) emit_event(EVENT_DROP_NEXT);
                 return;
             } else if(t->type == TB_PANEL_TILE){
                 zoom_TB(b, b->zoom = t->parent);
-                if(mclick == 4) emit_event(EVENT_DROP_NEXT);
                 return;
             }
         }
@@ -1139,17 +1132,17 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
                 if(g->tile[i][j][k]){ // hide tile
                     hide_tile_and_check(g, i, j, k);
                     if (!set.sound_mute) play_sound(SOUND_HIDE_TILE);
-                } else { // tile was hidden, unhide
-                    if(!is_guessed(g, j, k)){
-                        g->tile[i][j][k]=1;
-                        if (!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
-                    }
                 }
             } else if ((mclick==2) || (mclick == 4)){ // hold or right click
                 if(g->tile[i][j][k]){
                     save_state(g);
                     guess_tile(g, i, j, k);
                     if (!set.sound_mute) play_sound(SOUND_GUESS_TILE);
+                } else { // tile was hidden, unhide
+                    if(!is_guessed(g, j, k)){
+                        g->tile[i][j][k]=1;
+                        if (!set.sound_mute) play_sound(SOUND_UNHIDE_TILE);
+                    }
                 }
             }
             update_board(g, b);
@@ -1181,9 +1174,11 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 //                        snprintf(str, 999, "Clue number %d", t->index);
 //                    show_info_text_b(b,str);
 //                    }
-                    if(!set.sound_mute) play_sound(SOUND_CLICK);
-                    explain_clue(b, &g->clue[t->index]);
-                    b->highlight = t; // highlight clue
+                    if(!t->hidden){
+                        if(!set.sound_mute) play_sound(SOUND_CLICK);
+                        explain_clue(b, &g->clue[t->index]);
+                        b->highlight = t; // highlight clue
+                    }
                 } else if (mclick == 4) { // hold-click
                     mouse_grab(b, mx, my);
 //                    if(MOBILE){
