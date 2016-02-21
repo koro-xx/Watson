@@ -62,7 +62,8 @@ enum {
     GROUP_ROWS,
     BUTTON_SAVE,
     BUTTON_LOAD,
-    BUTTON_ZOOM
+    BUTTON_ZOOM,
+    BUTTON_SETTINGS
     
 };
 
@@ -445,6 +446,145 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     wz_destroy(gui);
     al_destroy_font(font);
     return 0;
+}
+
+void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
+{
+    // Initialize Allegro 5 and the font routines
+    int refresh_rate;
+    float size = 2.0;
+    int font_size = 25;
+    double fixed_dt;
+    double old_time;
+    double game_time;
+    double start_time;
+    WZ_WIDGET* gui;
+    WZ_SKIN_THEME skin_theme;
+    WZ_WIDGET* wgt;
+    bool done = false;
+    ALLEGRO_FONT *font;
+    int ret=0;
+    int gui_w = 600;
+    int gui_h = 600;
+    ALLEGRO_EVENT event;
+    int cx = b->xsize/2 + b->all.x;
+    int cy = b->ysize/2 + b->all.y;
+    
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
+    
+    size = (float)b->xsize*0.5/gui_w;
+    
+    font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size * size);
+  
+    refresh_rate = 60;
+    fixed_dt = 1.0f / refresh_rate;
+    old_time = al_current_time();
+    game_time = al_current_time();
+    
+    memset(&skin_theme, 0, sizeof(skin_theme));
+    memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
+    skin_theme.theme.font = font;
+    skin_theme.theme.color1 = GUI_BG_COLOR;
+    skin_theme.theme.color2 = GUI_TEXT_COLOR;
+    skin_theme.button_up_bitmap = al_load_bitmap("data/button_up.png");
+    skin_theme.button_down_bitmap =al_load_bitmap("data/button_down.png");
+    skin_theme.box_bitmap = al_load_bitmap("data/box.png");
+    
+    wz_init_skin_theme(&skin_theme);
+    
+    gui = wz_create_widget(0, cx-size*gui_w/2, cy-size*gui_h/2, -1);
+    wz_set_theme(gui, (WZ_THEME*)&skin_theme);
+    
+//    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, gui_w * size, 200 * size, -1);
+//    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+    wgt = (WZ_WIDGET *) wz_create_fill_layout(gui, 0, 0, gui_w * size, gui_h * size, 80*size, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+
+    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, 100 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)g->time/ 3600, (int)g->time/60, (int)g->time %60 ), 1, -1);
+    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size*size*10, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("Highscores will go here"), 1, -1); //xxx todo: get_high_scores(g)
+    wz_create_button(gui, 0, 0, 150 * size, 80 * size, al_ustr_new("New Game"), 1, BUTTON_RESTART);
+    wz_create_button(gui, 0, 0, 150 * size, 80 * size, al_ustr_new("Settings"), 1, BUTTON_SETTINGS);
+    
+    wz_register_sources(gui, queue);
+    register_gui(b, gui);
+    
+    al_flush_event_queue(queue);
+    while(!done)
+    {
+        double dt = al_current_time() - old_time;
+        al_rest(fixed_dt - dt); //rest at least fixed_dt
+        dt = al_current_time() - old_time;
+        old_time = al_current_time();
+        
+        if(old_time - game_time > dt)    //eliminate excess overflow
+        {
+            game_time += fixed_dt * floor((old_time - game_time) / fixed_dt);
+        }
+        
+        start_time = al_current_time();
+        
+        while(old_time - game_time >= 0)
+        {
+            game_time += fixed_dt;
+            wz_update(gui, fixed_dt);
+            
+            while(!done && al_peek_next_event(queue, &event))
+            {
+                if((event.type == ALLEGRO_EVENT_DISPLAY_RESIZE) || (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) || (event.type == ALLEGRO_EVENT_DISPLAY_HALT_DRAWING)){ // any other values that require returning?
+                    done=1;
+                    break;
+                }
+                al_drop_next_event(queue);
+                /*
+                 Give the gui the event, in case it wants it
+                 */
+                wz_send_event(gui, &event);
+                
+                switch(event.type)
+                {
+                    case WZ_BUTTON_PRESSED:
+                    {
+                        switch((int)event.user.data1)
+                        {
+                            case BUTTON_SETTINGS:
+                            {
+                                done = true;
+                                emit_event(EVENT_SETTINGS);
+                                break;
+                            }
+                                
+                            case BUTTON_RESTART:
+                                done = true;
+                                emit_event(EVENT_RESTART);
+                                break;
+                        }
+                    }
+                }
+            }
+            
+            if(al_current_time() - start_time > fixed_dt) //break if we start taking too long
+                break;
+        }
+        
+        //al_clear_to_color(al_map_rgba_f(0.5, 0.5, 0.7, 1));
+        /*
+         Draw the gui
+         */
+        if(!done){
+            draw_stuff(b);
+            al_wait_for_vsync();
+            al_flip_display();
+        }
+    }
+    
+    al_destroy_bitmap(skin_theme.box_bitmap);
+    al_destroy_bitmap(skin_theme.button_up_bitmap);
+    al_destroy_bitmap(skin_theme.button_down_bitmap);
+    wz_destroy_skin_theme(&skin_theme);
+    unregister_gui(b, gui);
+    wz_destroy(gui);
+    al_destroy_font(font);
 }
 
 

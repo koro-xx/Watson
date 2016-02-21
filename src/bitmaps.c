@@ -159,6 +159,8 @@ void destroy_board_bitmaps(Board *b){
     
     ndestroy_bitmap(b->time_bmp);
     ndestroy_bitmap(b->info_text_bmp);
+    
+    al_destroy_font(al_get_fallback_font(b->text_font));
     al_destroy_font(b->text_font);
 }
 

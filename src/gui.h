@@ -15,6 +15,7 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width, int max_
 int yes_no_gui(Board *b, ALLEGRO_USTR *text, int center_x, int center_y, int min_width, ALLEGRO_EVENT_QUEUE *queue);
 int confirm_restart(Board *b, Settings *set, ALLEGRO_EVENT_QUEUE *queue);
 int confirm_exit(Board *b, ALLEGRO_EVENT_QUEUE *queue);
+void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue);
 
 // wrapper for WidgetZ gui to use cstr instead of ustr
 

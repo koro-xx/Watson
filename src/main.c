@@ -292,6 +292,9 @@ void win_or_lose(Game *g, Board *b){
     } else {
         show_info_text(b, al_ustr_new("Something is wrong. Try again, go to settings to start a new puzzle."));
         if (!set.sound_mute) play_sound(SOUND_WRONG);
+        execute_undo(g);
+        update_board(g, b);
+        emit_event(EVENT_REDRAW);
     }
 }
 
@@ -534,12 +537,6 @@ RESTART:
        // al_wait_for_event(event_queue, &ev);
         while(al_get_next_event(event_queue, &ev)){ // empty out the event queue
             switch(ev.type){
-//                case ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING:
-//                    deblog("RECEIVED RESUME");
-//                    al_acknowledge_drawing_resume(display);
-//                    al_rest(0.01);
-//                    resize_update=1;
-//                    break;
                 case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
                     deblog("RECEIVED HALT");
                     al_stop_timer(timer);
@@ -570,6 +567,10 @@ RESTART:
                         restart = 2;
                         goto RESTART;
                     }
+                    break;
+                case EVENT_SETTINGS:
+                    show_settings(&set, &b, event_queue);
+                    emit_event(EVENT_REDRAW);
                     break;
                 case ALLEGRO_EVENT_TIMER:
                     //redraw=1;
@@ -656,7 +657,6 @@ RESTART:
                     if(mouse_button_down && !hold_click_check)
                         if(tb_down && ((tb_down->type == TB_HCLUE_TILE) || (tb_down->type == TB_VCLUE_TILE)) )
                             {
-                                                            //if(get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y) == tb_down)
                                 handle_mouse_click(&g, &b, tb_down, mbdown_x, mbdown_y, 4);
                                 hold_click_check = 1;
                             }
@@ -675,8 +675,7 @@ RESTART:
                             else
                                 redraw=1;
                             break;
-                        case ALLEGRO_KEY_BACK: // debug
-                            if((set.n > 6) || (set.h > 6)) confirm_exit(&b, event_queue);
+                        case ALLEGRO_KEY_BACK: // android: back key
                             show_settings(&set, &b, event_queue);
                             emit_event(EVENT_REDRAW);
                             break;
@@ -716,7 +715,6 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_ENTER:
-                            //tutorial(&g, &b, event_queue);
                             break;
                     }
                     break;
@@ -817,6 +815,10 @@ RESTART:
             SWITCH(b.blink);
             blink_time = al_get_time();
             redraw=1;
+        }
+        
+        if(game_state == GAME_OVER){
+            win_gui(&g, &b, event_queue);
         }
         
         if(redraw) {
@@ -1235,8 +1237,6 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             break;
 
         case TB_BUTTON_UNDO:
-            switch_solve_puzzle(g,b);
-            animate_win(b);
             execute_undo(g);
             update_board(g,b);
             break;
