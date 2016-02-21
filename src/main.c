@@ -1204,6 +1204,8 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             break;
 
         case TB_BUTTON_UNDO:
+            switch_solve_puzzle(g,b);
+            animate_win(b);
             execute_undo(g);
             update_board(g,b);
             break;
