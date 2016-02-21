@@ -8,6 +8,7 @@
 #include "text.h"
 #include <allegro5/allegro_memfile.h>
 #include "main.h"
+#include "math.h"
 
 typedef enum SYMBOL{
     SYM_FORBIDDEN,
@@ -193,8 +194,8 @@ int init_bitmaps(Board *b){
     b->info_panel.bmp = NULL;
     
     // if this fails, buttons will be created anyway at update_bitmaps
-    b->button_bmp[0] = al_load_bitmap("buttons/question.png");
-    b->button_bmp[1] = al_load_bitmap("buttons/light-bulb.png");
+    b->button_bmp[0] = al_load_bitmap("buttons/light-bulb.png");
+    b->button_bmp[1] = al_load_bitmap("buttons/question.png");
     b->button_bmp[2] = al_load_bitmap("buttons/gear.png");
     b->button_bmp[3] = al_load_bitmap("buttons/undo.png");
     
@@ -456,7 +457,7 @@ void show_info_text(Board *b, ALLEGRO_USTR *msg){
     b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
     al_clear_to_color(b->info_panel.bg_color);
-    al_draw_multiline_ustr(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-al_get_font_line_height(b->text_font), al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
+    al_draw_multiline_ustr(b->text_font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-2*al_get_font_line_height(b->text_font), al_get_font_line_height(b->text_font), ALLEGRO_ALIGN_LEFT, msg);
     
     b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
     al_set_target_bitmap(dispbuf);
@@ -490,10 +491,10 @@ void show_info_text_b(Board *b, const char* msg, ...){
 int update_bitmaps(Game *g, Board *b){
     int i, j, s;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-
     
     // reload text fonts
-    if(!(b->text_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -min(b->info_panel.h/2.2, (float)b->info_panel.w/30)))){
+    // estimate font size for panel:
+    if(!(b->text_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -min(b->info_panel.h/2.2, sqrt(b->info_panel.w*b->info_panel.h)/10))) ){
         fprintf(stderr, "Error loading font %s.\n", TEXT_FONT_FILE);
     }
     

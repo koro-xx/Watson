@@ -118,7 +118,7 @@ void draw_center_textbox_wait(const char *text, float width_factor, Board *b, AL
 //    al_clear_to_color(BLACK_COLOR);
 //#endif
     draw_stuff(b);
-    draw_multiline_wz_box(text, b->all.x+b->xsize/2, b->all.y + b->ysize/2, width_factor*b->xsize);
+    draw_multiline_wz_box(text, b->all.x+b->xsize/2, b->all.y + b->ysize/2, width_factor*b->xsize, b->max_ysize);
     al_wait_for_vsync();
     al_flip_display();
     wait_for_input(queue);
@@ -577,22 +577,53 @@ int yes_no_gui(Board *b, ALLEGRO_USTR *text, int center_x, int center_y, int min
     return ret;
 }
 
-
-void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
+// width is preferred, max_height is enforced
+void draw_multiline_wz_box(const char *text, int cx, int cy, int width, int max_height)
 {
     // Initialize Allegro 5 and the font routines
     int font_size = 30;
     WZ_WIDGET *gui, *wgt;
     WZ_SKIN_THEME skin_theme;
     ALLEGRO_FONT *font;
-    int text_h;
+    int text_h, text_w = width - 40;
+    int len, lines;
+    int MAX_FONT_SIZE = 50;
     
 #ifdef ALLEGRO_ANDROID 
     al_android_set_apk_file_interface();
 #endif
     
+    // rough estimate of text size using 0.5 aspect ratio, assuming 80% text per line and attempting height around max_height/2: (strlen*0.5*font_height/0.8) < width * 0.5*max_height/font_height
+    len = strlen(text);
+    font_size = -sqrt(max_height*text_w*0.8/len); // negative for load_font = height in pixels
+    if(font_size > MAX_FONT_SIZE) font_size = MAX_FONT_SIZE;
     font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
+    lines = 1+get_multiline_text_lines(font, text_w, text);
     
+    if(-font_size * lines > max_height){
+        // new estimate
+        font_size = -sqrt(-((float)max_height*font_size)/lines);
+        al_destroy_font(font);
+        font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
+        lines = 1+get_multiline_text_lines(font, text_w, text);
+    
+        if(-font_size * lines > max_height){//this time be drastic
+            font_size/=2;
+            al_destroy_font(font);
+            font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
+            lines = 1+get_multiline_text_lines(font, text_w, text);
+            if(-font_size * lines > max_height){
+                // if this still doesn't work, use a fixed font size and let it overflow
+                font_size = 15;
+                al_destroy_font(font);
+                font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
+                lines = 1+get_multiline_text_lines(font, text_w, text);
+            }
+        }
+    }
+    
+    text_h = -font_size*lines;
+            
     memset(&skin_theme, 0, sizeof(skin_theme));
     memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
     skin_theme.theme.font = font;
@@ -603,20 +634,16 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width)
     if(!skin_theme.box_bitmap) errlog("Error loading skin bitmap");
     wz_init_skin_theme(&skin_theme);
     
-    text_h = 1 + get_multiline_text_lines(font, width - 40, text);
-    text_h *= al_get_font_line_height(font);
-    text_h += 40; // should be fixed
-    
-    gui = wz_create_widget(0, cx - width/2, cy-text_h/2, -1);
+    gui = wz_create_widget(0, cx - width/2, cy-(text_h+40)/2, -1);
     wz_set_theme(gui, (WZ_THEME*)&skin_theme);
     
-    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, width, text_h, -1);
+    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, width, text_h+40, -1);
     wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
     wgt->flags &= !WZ_STYLE_FOCUSED;
     wz_update(gui, 1);
 
     wz_draw(gui);
-    al_draw_multiline_text(font, WHITE_COLOR, cx-width/2 + 20, cy-text_h/2+20, width-40, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, text);
+    al_draw_multiline_text(font, WHITE_COLOR, cx-width/2 + 20, cy-text_h/2, width-40, -font_size, ALLEGRO_ALIGN_LEFT, text);
     
     al_destroy_bitmap(skin_theme.box_bitmap);
     wz_destroy_skin_theme(&skin_theme);

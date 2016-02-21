@@ -29,7 +29,7 @@ TiledBlock* get_TiledBlock(TiledBlock *t, int x, int y){
     if( (x >= t->x) && (x < t->x + t->w) && (y >= t->y) && (y < t->y + t->h) ) {
         for(m=0 ; m < t->sb ; m++){
             rt = get_TiledBlock(t->b[m], x-t->x, y-t->y);
-            if(rt) return rt;
+            if(rt && (rt->hidden != -1)) return rt;
         }
         return t;
     } else
@@ -41,7 +41,7 @@ TiledBlock* get_TiledBlock(TiledBlock *t, int x, int y){
 void draw_TiledBlock(TiledBlock *t, int x, int y){
     int i;
     
-    if(t->bmp){
+    if(t->bmp && (t->hidden != -1)){
         if(t->hidden){
             al_draw_tinted_bitmap(*(t->bmp), al_map_rgba_f(0.1, 0.1, 0.1, 0.1), t->x+x, t->y+y, 0);
         } else {

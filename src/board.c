@@ -429,8 +429,8 @@ int create_board(Game *g, Board *b, int mode){
         b->time_panel.b[i+1]->hidden=0;
     }
     
-    b->time_panel.b[1]->type = TB_BUTTON_HELP;
-    b->time_panel.b[2]->type = TB_BUTTON_CLUE;
+    b->time_panel.b[1]->type = TB_BUTTON_CLUE;
+    b->time_panel.b[2]->type = TB_BUTTON_HELP;
     b->time_panel.b[3]->type = TB_BUTTON_SETTINGS;
     b->time_panel.b[4]->type = TB_BUTTON_UNDO;
     

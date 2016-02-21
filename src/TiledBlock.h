@@ -16,7 +16,7 @@ typedef struct TiledBlock {
     struct TiledBlock *parent;
     int type; // a descriptor
     int index; // a number identifying it among same-type blocks
-    int hidden;
+    int hidden; // 1 for semi-hidden, -1 for totally hidden.
     ALLEGRO_BITMAP **bmp; // set to NULL for filled background
 } TiledBlock;
 

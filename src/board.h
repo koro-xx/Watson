@@ -25,6 +25,10 @@ typedef struct Board {
     TiledBlock *dragging;
     TiledBlock *highlight;
     TiledBlock *rule_out;
+    TiledBlock *zoom;
+    ALLEGRO_TRANSFORM zoom_transform;
+    ALLEGRO_TRANSFORM zoom_transform_inv;
+    ALLEGRO_TRANSFORM identity_transform;
     int blink;
     int panel_tile_size;
     int clue_unit_size;

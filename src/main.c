@@ -54,7 +54,7 @@ Settings set = {
     0, // advanced
     0, // sound_mute
     0, // type_of_tiles
-    0, // fat_fingers
+    1, // fat_fingers
     0,  // restart
     0 // saved
 };
@@ -151,8 +151,7 @@ void emit_event(int event_type){
 void draw_stuff(Board *b){
     int x, y;
     int i;
-
-
+    
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     draw_TiledBlock(&b->all,0,0);
     
@@ -172,6 +171,13 @@ void draw_stuff(Board *b){
     for(i=0; i<b->gui_n; i++){
         wz_draw(b->gui[i]);
     }
+    
+    if(b->zoom){
+        al_use_transform(&b->zoom_transform);
+        draw_TiledBlock(b->zoom,0,0);
+        al_use_transform(&b->identity_transform);
+    }
+    
 };
 
 void animate_win(Board *b) {
@@ -195,9 +201,12 @@ void draw_generating_puzzle(Game *g, Board *b) {
     char msg[1000];
     int w = al_get_display_width(al_get_current_display());
     int h = al_get_display_height(al_get_current_display());
-    snprintf(msg, 999, "Generating %d x %d%s puzzle, please wait...", g->n, g->h, g->advanced ? " advanced" : "");
+    if(!g->advanced)
+        snprintf(msg, 999, "Generating %d x %d puzzle, please wait...", g->n, g->h);
+    else
+        snprintf(msg, 999, "Generating %d x %d advanced puzzle, please wait (this could take a while)...", g->n, g->h);
     al_clear_to_color(BLACK_COLOR);
-    draw_multiline_wz_box(msg, w/2, h/2, 0.4*w);
+    draw_multiline_wz_box(msg, w/2, h/2, 0.4*w, 0.2*w);
     al_flip_display();
 }
 
@@ -462,6 +471,7 @@ RESTART:
     last_touch_click=0;
     mbdown_x = 0;
     mbdown_y = 0;
+    tb_down = tb_up = NULL;
     
     show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[b.h][0], symbol_char[b.h][2], symbol_char[b.h][1]));
     
@@ -540,6 +550,13 @@ RESTART:
                     mouse_down_time = ev.any.timestamp;
                     mbdown_x = ev.mouse.x; mbdown_y = ev.mouse.y;
                     tb_down = get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y);
+                    
+                    if(b.zoom && !tb_down){
+                        b.zoom = NULL;
+                        redraw = 1;
+                        break;
+                    }
+                    
                     if(wait_for_double_click){
                         wait_for_double_click = 0;
                         if( (tb_up == tb_down) && (mouse_down_time - mouse_up_time < DELTA_DOUBLE_CLICK) ){
@@ -568,7 +585,7 @@ RESTART:
                     
                     mouse_up_time = ev.any.timestamp;
                     tb_up = get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y);
-                    if(tb_up == tb_down){
+                    if((tb_up) && (tb_up == tb_down)){
                         if( ((tb_up->type == TB_HCLUE_TILE) || (tb_up->type == TB_VCLUE_TILE)) && (mouse_button_down == 1) ){
                             if(mouse_up_time - mouse_down_time < DELTA_SHORT_CLICK) {
                                 wait_for_double_click = 1;
@@ -838,7 +855,17 @@ void swap_clues(Board *b, TiledBlock *c1, TiledBlock *c2){
 };
 
 TiledBlock *get_TiledBlock_at(Board *b, int x, int y){
-        return get_TiledBlock(&b->all, x, y);
+    float xx =x, yy=y;
+    TiledBlock *t;
+    
+    if(b->zoom){
+        al_transform_coordinates(&b->zoom_transform_inv, &xx, &yy);
+        t = get_TiledBlock(b->zoom, xx, yy);
+        if(t && (t->parent == b->zoom)) return t;
+        else return NULL;
+    }
+    
+    return get_TiledBlock(&b->all, x, y);
 }
 
 void mouse_grab(Board *b, int mx, int my){
@@ -1010,6 +1037,38 @@ void show_hint(Game *g, Board *b){
     }
 }
 
+void zoom_TB(Board *b, TiledBlock *t){
+    float c = 2.5;
+    int x,y, dw = al_get_display_width(al_get_current_display()), dh = al_get_display_height(al_get_current_display());
+    int tr_x, tr_y;
+    
+    if(!t) return;
+    get_TiledBlock_offset(t, &x, &y);
+
+    tr_x = -(c-1)*(x+t->w/2);
+    if(c*x+tr_x < 0)
+        tr_x = -c*x;
+    else if(c*(x+t->w) + tr_x > dw)
+        tr_x = dw - c*(x+t->w);
+    
+    tr_y = -(c-1)*(y+t->h/2);
+    if(c*y + tr_y < 0)
+        tr_y = -c*y;
+    else if(c*(y+t->h) + tr_y > dh)
+        tr_y = dh - c*(y+t->h);
+        
+    al_identity_transform(&b->identity_transform);
+    al_identity_transform(&b->zoom_transform);
+    al_build_transform(&b->zoom_transform, tr_x, tr_y, c, c, 0);
+    if(t->parent)
+        get_TiledBlock_offset(t->parent, &x, &y);
+    al_translate_transform(&b->zoom_transform, c*x, c*y);
+    b->zoom_transform_inv  = b->zoom_transform;
+    al_invert_transform(&b->zoom_transform_inv);
+    b->zoom = t;
+    if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
+}
+
 void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mclick){
     int i,j,k;
     
@@ -1032,11 +1091,22 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 
     if (!t) return;
     
-    
     if(game_state == GAME_OVER){
-        show_info_text(b, "Press R to start a new puzzle.");
+        show_info_text(b, al_ustr_new("Press R to start a new puzzle."));
     }
     
+    if(set.fat_fingers){
+        if(b->zoom){
+            b->zoom = NULL;
+        } else if( ((t->parent) && (t->parent->type == TB_TIME_PANEL)) || (t->type == TB_TIME_PANEL) ) {
+            zoom_TB(b, &b->time_panel);
+            return;
+        } else if(t->type == TB_PANEL_TILE){
+            zoom_TB(b, b->zoom = t->parent);
+           return;
+        }
+    }
+           
     switch(t->type){ // which board component was clicked
         case TB_PANEL_TILE:
             if(game_state != GAME_PLAYING) break;
