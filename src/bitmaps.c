@@ -660,22 +660,23 @@ int init_bitmaps_classic(Board *b){
 void draw_title(void) {
 	ALLEGRO_FONT *font = NULL;
 	int w;
-	int dw = (al_get_display_width(al_get_current_display())-500)/2;
-	int dh = (al_get_display_height(al_get_current_display()) - 250) / 2;
-
-	if (!(font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -64))) {
+	int dw = (al_get_display_width(al_get_current_display()))/4;
+	int dh = (al_get_display_height(al_get_current_display())) / 4;
+    int fonth = dh*0.4;
+    
+	if (!(font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -fonth))) {
 		fprintf(stderr, "Error loading font %s.\n", TEXT_FONT_FILE);
 		return;
 	}
 
 	al_clear_to_color(BLACK_COLOR);
 	for (w = 0; w<150; w++) {
-		al_draw_filled_rectangle(w+dw, w / 2 + dh, 500 - w+dw, 250 - w / 2+dh, al_map_rgba_f(0.03, 0.01, 0.01, 0.04));
+		al_draw_filled_rectangle(w+dw, w / 2 + dh, 2*dw - w+dw, 2*dh - w / 2+dh, al_map_rgba_f(0.03, 0.01, 0.01, 0.04));
 	}
-    al_draw_rectangle(dw, dh, dw+500, dh+250, al_map_rgba_f(.5, .5, 0, 1), 2);
+    al_draw_rectangle(dw, dh, dw+2*dw, dh+2*dh, al_map_rgba_f(.4, .15, .1, 1), 3);
 	w = al_get_text_width(font, "WATSON");
-	al_draw_textf(font, al_color_html("#576220"), (500 - w) / 2+dw, (250 - 64) / 2+dh, ALLEGRO_ALIGN_LEFT, "WATSON");
-	al_draw_textf(font, al_color_html("#F0C010"), (500 - w) / 2 - 3+dw, (250 - 64) / 2 - 3+dh, ALLEGRO_ALIGN_LEFT, "WATSON");
+	al_draw_textf(font, al_color_html("#576220"), (2*dw - w) / 2+dw, (2*dh - fonth) / 2+dh, ALLEGRO_ALIGN_LEFT, "WATSON");
+	al_draw_textf(font, al_color_html("#F0C010"), (2*dw - w) / 2 - (fonth*1.0/64)+dw, (2*dh - fonth) / 2 - (fonth*3.0/64)+dh, ALLEGRO_ALIGN_LEFT, "WATSON");
 	al_destroy_font(font);
 
 }

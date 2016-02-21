@@ -25,16 +25,21 @@ const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
 
 
 const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
-"The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \nTO GET STARTED: If you don't know how to play, click on the lightbulb to get a hint (or press C).\n"
+"The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \n"
 "\n"
-"Left-click on a clue tile to see an explanation of the clue. Right-click to hide the clue (in case you don't need it anymore). Click and drag the clues to rearrange.\n"
-"Right click on an item in the main panel to rule it out (right-click again to bring it back). Left-click on the same item to assign it to its column (and right-click on an assigned item to unassign).\n"
+"QUICK REFERENCE\n"
+"Press the lightbulb for a hint. You can understand the game logic from it.\n"
+"Click/tap on a clue to read about its meaning.\n"
+"Click/tap on a panel tile to rule it out. Hold-click on hidden tiles to bring them back.\n"
+"Hold-click on a panel tile to assign it to a given column.\n"
+"Double-click/tap on a clue to hide/show (if you don't need it anymore).\n"
+"Drag the clues to rearrange.\n"
 "\n"
-"Press R to restart or ESC to quit. You can resize the window or press F to go fullscreen.\n"
-"Choose \"advanced\" in the settings for a more difficult game (really hard - not recommended).\n"
+"There is an undo button avialable. Go to settings to switch the tileset and other additional options."
 "\n"
-"DEBUG KEYS: S: show solution. T: switch font tiles / bitmaps\n"
-"Note: advanced game generation may take a while for large boards.";
+"Keyboard shortcuts: R to start again, ESC to quit, U to undo, C to get a hint, T to switch tiles. You can resize the window or press F to go fullscreen.\n"
+"\n"
+"DEBUG: S: show/hide solution.\n";
 
 float GUI_XFACTOR = MOBILE ? 0.9 : 0.5;
 float GUI_YFACTOR = MOBILE ? 0.9 : 0.5;
@@ -134,11 +139,11 @@ void draw_center_textbox_wait(const char *text, float width_factor, Board *b, AL
 
 
 void show_help(Board *b, ALLEGRO_EVENT_QUEUE *queue){
-    draw_center_textbox_wait(HELP_TEXT, min(0.96,max(0.5, 800.0/b->xsize)), b, queue);
+    draw_center_textbox_wait(HELP_TEXT, min(0.96,max(0.6, 800.0/b->xsize)), b, queue);
 }
 
 void show_about(Board *b, ALLEGRO_EVENT_QUEUE *queue){
-    draw_center_textbox_wait(ABOUT_TEXT, min(0.96,max(0.5, 800.0/b->xsize)), b, queue);
+    draw_center_textbox_wait(ABOUT_TEXT, min(0.96,max(0.6, 800.0/b->xsize)), b, queue);
 }
 
 int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
@@ -740,7 +745,7 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width, int max_
     ALLEGRO_FONT *font;
     int text_h, text_w = width - 40;
     int len, lines;
-    int MAX_FONT_SIZE = 50;
+    int MAX_FONT_SIZE = 60;
     
 #ifdef ALLEGRO_ANDROID 
     al_android_set_apk_file_interface();
