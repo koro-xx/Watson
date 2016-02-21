@@ -463,7 +463,7 @@ RESTART:
     mbdown_x = 0;
     mbdown_y = 0;
     
-    show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[0][b.h], symbol_char[2][b.h], symbol_char[1][b.h]));
+    show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[b.h][0], symbol_char[b.h][2], symbol_char[b.h][1]));
     
     al_set_target_backbuffer(display);
     al_clear_to_color(BLACK_COLOR);

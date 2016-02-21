@@ -176,10 +176,10 @@ int init_bitmaps(Board *b){
     al_android_set_apk_file_interface();
 #endif
 
-    for(i=0;i<b->h;i++){
-        for(j=0;j<b->n+1; j++){
-            al_utf8_encode(symbol_char[i][j], BF_CODEPOINT_START+ i + j*b->n);
-            symbol_char[i][j][al_utf8_width(BF_CODEPOINT_START+ i + j*b->n)] = '\0';
+    for(i=0;i<b->h+1;i++){
+        for(j=0;j<b->n; j++){
+            al_utf8_encode(symbol_char[i][j], BF_CODEPOINT_START+ j + i*b->n);
+            symbol_char[i][j][al_utf8_width(BF_CODEPOINT_START+ j + i*b->n)] = '\0';
         }
     }
     
@@ -749,22 +749,22 @@ void create_font_symbols(Board *b){
     nbw = bw*(float)texth/bh;
     nbh = texth;
     
-    bitmap_w = 4 + b->h*(2+nbw); // extra column for buttons, n>=4
-    bitmap_h = 4 + (b->n+1)*(2+nbh);
+    bitmap_w = 4 + b->n*(2+nbw); // extra column for buttons, n>=4
+    bitmap_h = 4 + (b->h+1)*(2+nbh);
     
     bmp = al_create_bitmap(bitmap_w, bitmap_h);
     al_set_target_bitmap(bmp);
     al_clear_to_color(NULL_COLOR);
-    for(j=0; j<b->n; j++){
-        for(i=0; i<b->h; i++){
+    for(j=0; j<b->h; j++){
+        for(i=0; i<b->n; i++){
         // the rectangle is to guarantee the right height for al_grab_font
-            al_draw_scaled_bitmap(b->clue_unit_bmp[i][j], 0, 0, bw, bh, 2+i*(2+nbw), 2+ j*(2+nbh), nbw, nbh, 0);
+            al_draw_scaled_bitmap(b->clue_unit_bmp[j][i], 0, 0, bw, bh, 2+i*(2+nbw), 2+ j*(2+nbh), nbw, nbh, 0);
             al_draw_rectangle( 2+i*(2+nbw)+0.5, 2+ j*(2+nbh) + 0.5,  2+i*(2+nbw) + nbw -0.5, 2+j*(2+nbh) + nbh- 0.5, al_map_rgba(1,1,1,1),1);
         }
     }
     
  //    draw the buttons. now j= b->h
-    for(i=0;i<b->h;i++){
+    for(i=0;i<b->n;i++){
         bw=al_get_bitmap_width(b->button_bmp[i%4]);
         bh=al_get_bitmap_height(b->button_bmp[i%4]);
         al_draw_scaled_bitmap(b->button_bmp[i%4], 0, 0, bw, bh, 2+i*(2+nbw), 2+ j*(2+nbh), nbw, nbh, 0);
