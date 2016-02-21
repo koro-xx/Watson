@@ -573,10 +573,10 @@ RESTART:
                             if(mouse_up_time - mouse_down_time < DELTA_SHORT_CLICK) {
                                 wait_for_double_click = 1;
                             }
-                        } else {
-                            handle_mouse_click(&g, &b, tb_up, ev.mouse.x, ev.mouse.y, mouse_button_down);
                         }
                     }
+                    if(!wait_for_double_click)
+                        handle_mouse_click(&g, &b, tb_up, ev.mouse.x, ev.mouse.y, mouse_button_down);
                     mouse_button_down = 0;
                     break;
                     
