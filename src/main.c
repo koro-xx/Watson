@@ -242,11 +242,11 @@ int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
 void win_or_lose(Game *g, Board *b){
     if(check_solution(g)){
         game_state = GAME_OVER;
-        show_info_text(b, "Elementary, watson!");
+        show_info_text(b, al_ustr_new("Elementary, watson!"));
         animate_win(b);
         if (!set.sound_mute) play_sound(SOUND_WIN);
     } else {
-        show_info_text(b, "Something is wrong. Try again, or press R to start a new puzzle.");
+        show_info_text(b, al_ustr_new("Something is wrong. Try again, or press R to start a new puzzle."));
         if (!set.sound_mute) play_sound(SOUND_WRONG);
     }
 }
@@ -311,9 +311,9 @@ int main(int argc, char **argv){
     ALLEGRO_EVENT ev;
     ALLEGRO_TIMER *timer = NULL;
     ALLEGRO_DISPLAY *display = NULL;
-    double time_foo, last_draw, resize_time, mouse_button_time, old_time, touch_time, last_touch_click;
+    double resize_time, old_time;
     double blink_time = 0, play_time = 0;
-    int noexit, mouse_click,redraw, mouse_move,keypress, second_tick, resizing, mouse_drag, resize_update, mouse_button_down, mouse_button_up, restart, touch_down;
+    int noexit, mouse_click,redraw, mouse_move,keypress, resizing, resize_update, mouse_button_down, restart;
     float max_display_factor;
     TiledBlock  *tb_down = NULL, *tb_up = NULL;
     double mouse_up_time = 0, mouse_down_time = 0;
@@ -334,7 +334,7 @@ int main(int argc, char **argv){
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
      al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
-#endif
+#endifa
     
     fullscreen = 0;
     
@@ -458,21 +458,16 @@ RESTART:
 //    al_start_timer(timer);
 
 //  initialize flags
-    mouse_button_up=0;
     redraw=1; mouse_click=0;
     noexit=1; mouse_move=0;
     restart=0; keypress=0;
-    last_draw=0; resizing=0;
-    mouse_drag = 0; mouse_button_down = 0;
+    resizing=0;
+    mouse_button_down = 0;
     resize_update=0; resize_time = 0;
-    second_tick=1; mouse_button_time=0;
     game_state = GAME_PLAYING;
     b.time_start=al_get_time();
     blink_time = 0;
     b.blink = 0;
-    touch_down = 0;
-    touch_time = 0;
-    last_touch_click=0;
     mbdown_x = 0;
     mbdown_y = 0;
     tb_down = tb_up = NULL;
@@ -791,12 +786,9 @@ RESTART:
         
         if(redraw) {
             redraw = 0;
-            time_foo = al_get_time();
-            dt = time_foo-last_draw;
             al_set_target_backbuffer(display);
             draw_stuff(&b);
             al_flip_display();
-            last_draw=time_foo;
         }
 
     }// end of game loop

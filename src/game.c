@@ -616,16 +616,14 @@ int check_panel_correctness(Game *g){
 
 
 int check_clues_for_solution(Game *g){
-    int m, ret, info;
+    int m, info;
 
     init_game(g);
 
-    ret=0;
     do{ // repeat until no more information remains in clues
         info=0;
         for(m=0; m<g->clue_n; m++){
             if(check_this_clue(g, &g->clue[m])){
-                ret=1;
                 info=1;
             }
         }

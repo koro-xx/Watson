@@ -449,10 +449,8 @@ int make_clue_bitmaps(Game *g, Board *b){
 
 
 void show_info_text(Board *b, ALLEGRO_USTR *msg){
-    ALLEGRO_FONT *font;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
     
-    font = b->text_font ? b->text_font : default_font;
     ndestroy_bitmap(b->info_text_bmp);
     b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
     al_set_target_bitmap(b->info_text_bmp);
@@ -469,21 +467,22 @@ void clear_info_panel(Board *b){
 }
 
 
-void show_info_text_b(Board *b, const char* msg, ...){
-    ALLEGRO_FONT *font;
-    ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-    va_list ap;
-    font = b->text_font ? b->text_font : default_font;
-    ndestroy_bitmap(b->info_text_bmp);
-    b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
-    al_set_target_bitmap(b->info_text_bmp);
-    al_clear_to_color(b->info_panel.bg_color);
-    va_start(ap, msg);
-    draw_multiline_text_vbf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-30, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, msg, ap);
-    va_end(ap);
-    b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
-    al_set_target_bitmap(dispbuf);
-}
+// unused
+//void show_info_text_b(Board *b, const char* msg, ...){
+//    ALLEGRO_FONT *font;
+//    ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
+//    va_list ap;
+//    font = b->text_font ? b->text_font : default_font;
+//    ndestroy_bitmap(b->info_text_bmp);
+//    b->info_text_bmp = al_create_bitmap(b->info_panel.w, b->info_panel.h);
+//    al_set_target_bitmap(b->info_text_bmp);
+//    al_clear_to_color(b->info_panel.bg_color);
+//    va_start(ap, msg);
+//    draw_multiline_text_vbf(font, INFO_TEXT_COLOR, 10, 3, b->info_panel.w-30, al_get_font_line_height(font), ALLEGRO_ALIGN_LEFT, msg, ap);
+//    va_end(ap);
+//    b->info_panel.bmp = &b->info_text_bmp; // make it show in the info_panel
+//    al_set_target_bitmap(dispbuf);
+//}
 
 
 

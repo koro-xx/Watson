@@ -178,7 +178,7 @@ int create_board(Game *g, Board *b, int mode){
                 b->panel.b[i]->b[j]->bg_color = NULL_COLOR;
                 b->panel.b[i]->b[j]->bd = 0;
                 b->panel.b[i]->b[j]->sb = b->n;
-                b->panel.b[i]->b[j]->b = malloc(b->n*sizeof(struct Tiledblock *));
+                b->panel.b[i]->b[j]->b = malloc(b->n*sizeof(struct TiledBlock *));
                 b->panel.b[i]->b[j]->parent = b->panel.b[i];
                 b->panel.b[i]->b[j]->type = TB_PANEL_BLOCK;
                 b->panel.b[i]->b[j]->index = j;
@@ -325,14 +325,14 @@ int create_board(Game *g, Board *b, int mode){
     j=0; k=0;
     for(i=0; i<g->clue_n; i++){
         if(is_vclue(g->clue[i].rel)) {
-            b->vclue.b[j]->index=i;
+            b->vclue.b[j]->index = i;
             b->vclue.b[j]->bmp = &(b->clue_bmp[i]);
-            b->clue_tiledblock[i]=b->vclue.b[j];
+            b->clue_tiledblock[i] = b->vclue.b[j];
             j++;
         } else{
-            b->hclue.b[k]->index=i;
+            b->hclue.b[k]->index = i;
             b->hclue.b[k]->bmp = &(b->clue_bmp[i]);
-            b->clue_tiledblock[i]=b->hclue.b[k];
+            b->clue_tiledblock[i] = b->hclue.b[k];
             k++;
         }
     }
@@ -390,7 +390,7 @@ int create_board(Game *g, Board *b, int mode){
     b->time_panel.bmp = NULL;
 
     if(mode){ // if board is being created
-        b->time_panel.b = malloc(6*sizeof(struct Tiledblock *));
+        b->time_panel.b = malloc(6*sizeof(struct TiledBlock *));
         for(i=0;i<5;i++)
             b->time_panel.b[i] = malloc(sizeof(struct TiledBlock));
     }
