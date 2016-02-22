@@ -17,12 +17,14 @@ const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
 "\n"
 "Watson is an open source clone of \"Sherlock\", an old game by Evertt Kaser which is itself based on the a classic puzzle known as \"Zebra puzzle\" or \"Einstein's riddle\".\n"
 "\n"
-"Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from Freenode #allegro for all the tips and advice.\n"
+"The game has been compiled in Windows, Mac OS, Linux and Android thanks to the amazing Allegro 5 library. Big thanks to the friendly folks from Freenode #allegro for all the tips and advice. The game GUI uses the WidgetZ library by SiegeLord.\n"
 "\n"
-"The tile set is rendered from TTF fonts obtained from fontlibrary.org. Pressing the game will switch to custom tiles, which sould be stored in <appdir>/icons into 8 separate folders numbered 0 to 7, each with 8 square tiles in .png format. Of course, these won't look as nice as the fonts due to the anti-aliasing. The tiles provided here were downloaded from www.icons8.com.\n"
+"The tile set is rendered from TTF fonts obtained from fontlibrary.org. The icons are from www.icons8.com. These icons are located in <appdir>/icons and can be replaced. The sounds are from freesound.org. The text font is Linux Libertine by Philipp H. Poll. All these assets can be found in their corresponding directories."
 "\n"
-"The \"advanced\" mode generates (much) harder puzzles, to the point of being almost impossible, so it needs to be tuned.";
-
+"Watson is licensed under the GPLv3 (this does not include the artwork cited above). The source code and some binary releases can be found at https://github.com/koro-xx/Watson"
+"\n"
+"\n"
+"Note: the \"advanced\" mode generates (much) harder puzzles, which require indirect logic and hasn't been properly tested.\n";
 
 const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
 "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \n"
