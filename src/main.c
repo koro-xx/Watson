@@ -169,7 +169,9 @@ void draw_stuff(Board *b){
     int i;
     
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
-    draw_TiledBlock(&b->all,0,0);
+    
+    if(game_state == GAME_INTRO) draw_title();
+    else draw_TiledBlock(&b->all,0,0);
     
     if(b->rule_out){
         if(b->blink){
@@ -246,6 +248,8 @@ void draw_generating_puzzle(Game *g, Board *b) {
     char msg[1000];
     int w = al_get_display_width(al_get_current_display());
     int h = al_get_display_height(al_get_current_display());
+    if(game_state == GAME_INTRO) return;
+    
     if(!g->advanced)
         snprintf(msg, 999, "Generating %d x %d puzzle, please wait...", g->n, g->h);
     else
@@ -415,10 +419,11 @@ int main(int argc, char **argv){
 
     if(!load_game_f(&g,&b)) set.saved=1;
     
-    draw_title();
-    al_flip_display();
-    wait_for_input(NULL);
+//    draw_title();
+//    al_flip_display();
+//    wait_for_input(NULL);
     restart=0;
+    game_state = GAME_INTRO;
     
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
@@ -500,7 +505,7 @@ RESTART:
     resizing=0;
     mouse_button_down = 0;
     resize_update=0; resize_time = 0;
-    game_state = GAME_PLAYING;
+    if(game_state != GAME_INTRO) game_state = GAME_PLAYING;
     b.time_start=al_get_time();
     blink_time = 0;
     b.blink = 0;
@@ -540,6 +545,7 @@ RESTART:
                     break;
                     
                 case EVENT_SAVE:
+                    if(game_state != GAME_PLAYING) break;
                     if(!save_game_f(&g, &b)){
                         show_info_text(&b, al_ustr_new("Game saved"));
                         set.saved = 1;
@@ -592,7 +598,6 @@ RESTART:
                     ev.mouse.button = 1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                     if(wait_for_double_click) wait_for_double_click = 0;
-                    
                     
                     if(b.dragging){
                         mouse_drop(&b, ev.mouse.x, ev.mouse.y);
@@ -671,6 +676,7 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
+                            if(game_state != GAME_PLAYING) break;
                             switch_solve_puzzle(&g, &b);
                             redraw=1;
                             break;
@@ -693,6 +699,7 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_U:
+                            if(game_state != GAME_PLAYING) break;
                             execute_undo(&g);
                             update_board(&g, &b);
                             al_flush_event_queue(event_queue);
@@ -779,6 +786,7 @@ RESTART:
         }
     
         if(keypress){
+            if(game_state == GAME_INTRO) game_state == GAME_PLAYING;
             keypress=0;
         }
 
@@ -1010,6 +1018,7 @@ void show_hint(Game *g, Board *b){
     char *b0, *b1, *b2, *b3;
     int i;
     
+    if(game_state != GAME_PLAYING) return;
     if(!check_panel_correctness(g)){
         show_info_text(b, al_ustr_new("Something is wrong. An item was ruled out incorrectly."));
         return;
@@ -1096,6 +1105,11 @@ void zoom_TB(Board *b, TiledBlock *t){
 
 void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mclick){
     int i,j,k;
+    
+    if(game_state == GAME_INTRO){
+        game_state = GAME_PLAYING;
+        return;
+    }
     
     if(swap_mouse_buttons){
         if(mclick==1) mclick=2;
