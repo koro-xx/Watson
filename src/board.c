@@ -326,11 +326,13 @@ int create_board(Game *g, Board *b, int mode){
     for(i=0; i<g->clue_n; i++){
         if(is_vclue(g->clue[i].rel)) {
             b->vclue.b[j]->index = i;
+            b->vclue.b[j]->hidden = g->clue[i].hidden;
             b->vclue.b[j]->bmp = &(b->clue_bmp[i]);
             b->clue_tiledblock[i] = b->vclue.b[j];
             j++;
         } else{
             b->hclue.b[k]->index = i;
+            b->hclue.b[k]->hidden = g->clue[i].hidden;
             b->hclue.b[k]->bmp = &(b->clue_bmp[i]);
             b->clue_tiledblock[i] = b->hclue.b[k];
             k++;

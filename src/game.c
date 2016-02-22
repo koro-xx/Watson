@@ -475,7 +475,10 @@ void create_game_with_clues(Game *g){
             i--;
         }
     }
-
+    
+    // mark clues unhidden
+    for(i=0;i<g->clue_n;i++)
+        g->clue[i].hidden = 0;
 }
 
 

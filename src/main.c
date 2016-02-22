@@ -140,6 +140,7 @@ void halt(ALLEGRO_EVENT_QUEUE *queue){
     ALLEGRO_EVENT ev;
     
     do{
+        al_rest(0.05); // without a rest this loop uses 4-5% cpu on android. Why?
         al_wait_for_event(queue, &ev);
     }while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
  
@@ -352,7 +353,6 @@ int main(int argc, char **argv){
     Game g = {0};
     Board b = {0};
     ALLEGRO_EVENT ev;
-    ALLEGRO_TIMER *timer = NULL;
     ALLEGRO_DISPLAY *display = NULL;
     double resize_time, old_time;
     double blink_time = 0, play_time = 0;
@@ -479,13 +479,6 @@ RESTART:
         return -1;
     }
 
-    //this timer is here just in case
-
-	if (!(timer = al_create_timer(1.0 / FPS))) {
-		fprintf(stderr, "failed to create timer!\n");
-		return -1;
-	}
-    al_register_event_source(event_queue, al_get_timer_event_source(timer));
 
     al_register_event_source(event_queue, al_get_display_event_source(display));
     if(al_is_keyboard_installed())
@@ -499,7 +492,6 @@ RESTART:
 
     update_board(&g,&b);
     al_set_target_backbuffer(display);
-//    al_start_timer(timer);
 
 //  initialize flags
     redraw=1; mouse_click=0;
@@ -536,10 +528,8 @@ RESTART:
             switch(ev.type){
                 case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
                     deblog("RECEIVED HALT");
-                    al_stop_timer(timer);
                     halt(event_queue);
                     resize_update=1;
-                    al_start_timer(timer);
                     break;
                 case EVENT_RESTART:
                     restart=1;
@@ -568,9 +558,6 @@ RESTART:
                 case EVENT_SETTINGS:
                     show_settings(&set, &b, event_queue);
                     emit_event(EVENT_REDRAW);
-                    break;
-                case ALLEGRO_EVENT_TIMER:
-                    //redraw=1;
                     break;
                     
                 case ALLEGRO_EVENT_TOUCH_BEGIN:
@@ -830,7 +817,6 @@ RESTART:
     destroy_everything(&b);
     al_destroy_display(display);
     al_destroy_event_queue(event_queue);
-    al_destroy_timer(timer);
     return(0);
 }
 
@@ -1192,6 +1178,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 		    if(t->bmp && (t->index >= 0)){
                 if((mclick==2) || (mclick==3)){ // toggle hide-show clue on double or right click
                     SWITCH(t->hidden);
+                    SWITCH(g->clue[t->index].hidden);
                     if(!set.sound_mute) play_sound(SOUND_HIDE_TILE);
                 } else if (mclick==1){ // explain clue in info panel
 //                    {
