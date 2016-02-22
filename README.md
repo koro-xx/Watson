@@ -1,8 +1,6 @@
 #Watson, a puzzle game
 
 Watson is a clone of “Sherlock”, an old game by Everett Kaser which is itself based on the a classic puzzle known as ["Zebra puzzle"](https://en.wikipedia.org/wiki/Zebra_Puzzle) or “Einstein's riddle”.
-
-Watson is programmed in plain C with the Allegro 5 library. Big thanks to the friendly folks from #allegro in Freenode for all the tips and advice.
    
 <p align="center">
 <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-1.png" width="400" />  <img src="https://github.com/koro-xx/Watson/blob/master/screenshots/watson-screenshot-2.png" width="400"/>
@@ -19,10 +17,16 @@ The default board size is 6 x 6, but you can change it in the settings to any si
 
 #Assets
 
-The main text font is [Linux Libertine](http://linuxlibertine.sf.net/) by Philipp H. Poll, licensed under the GPL. The TTF tiles used are a combination of symbols from different fonts downloaded from www.fontlibrary.org.
-The sounds are from www.freesound.org. Button icons are by [Yusuke Kamiyamane](http://p.yusukekamiyamane.com/) licensed under [Creative Commons CC BY 3.0](http://creativecommons.org/licenses/by/3.0/), and bitmap tiles are from www.icons8.com, also licensed under [Creative Commons CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/).
+Watson is programmed in plain C and uses the Allegro 5 library. Big thanks to the friendly folks from #allegro in Freenode for all the tips and advice.
 
-The tile set is rendered from TTF fonts, but there is also an option to load custom bitmap tiles (pressing 'T'). If you want to change them, they should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles in .png format. 
+The GUI uses SiegeLord's [WidgetZ library](https://github.com/SiegeLord/WidgetZ) (included with the sources).
+
+The main text font is [Linux Libertine](http://linuxlibertine.sf.net/) by Philipp H. Poll, licensed under the GPL. The TTF tiles used are a combination of symbols from different fonts downloaded from www.fontlibrary.org.
+The sounds are from www.freesound.org. Button icons and bitmap tiles are from www.icons8.com, licensed under [Creative Commons CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/).
+
+The code itself is licensed under the GPLv3 (this excludes the above items).
+
+Note: The tile set is rendered from TTF fonts, but there is also an option to load custom bitmap tiles in the settings. If you want to change the tiles, they should be stored in <APPDIR>/icons into 8 separate folders named 0 to 7, each with 8 square tiles name 0.png to 7.png. 
 
 ##Build instructions:
 
@@ -30,9 +34,7 @@ You need Allegro 5 (>= 5.1.9) and cmake.
 
 For Mac OS X (tested with Xcode 5):
 
-	cd watson
-	mkdir build
-	cd build
+	cd watson && mkdir build && cd build
 	cmake -G Xcode ..
 	xcodebuild -config Release
 
@@ -51,6 +53,8 @@ or open the project in Visual Studio and compile for release. After that we need
 For Linux: 
 
 	It should work similarly, just remember to copy the /fonts and /sounds folders to the app dir.
+
+For Android: The game now works on Android devices as well. Compile instructions will come later.
 
 ## TODO
 
