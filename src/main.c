@@ -449,9 +449,9 @@ RESTART:
         g.h = b.h = set.h;
         draw_generating_puzzle(&g, &b);
         create_game_with_clues(&g);
-    } else {
-        set.n = g.n;
-        set.h = g.h;
+    } else { // b should be updated only after destroying the board
+        set.n = b.n = g.n;
+        set.h = b.h = g.h;
     }
     
     restart = 0;
@@ -1245,14 +1245,14 @@ int save_game_f(Game *g, Board *b){
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
     if(!al_make_directory(al_path_cstr(path, '/'))){
-        fprintf(stderr, "could not open or create path %s.\n", al_path_cstr(path, '/'));
+        errlog("could not open or create path %s.\n", al_path_cstr(path, '/'));
         return -1;
     }
     
     al_set_path_filename(path, "Watson.sav");
     fp = al_fopen(al_path_cstr(path, '/'), "wb");
     if(!fp){
-        fprintf(stderr, "Couldn't open %s for writing.\n", (char *) al_path_cstr(path, '/'));
+        errlog("Couldn't open %s for writing.\n", (char *) al_path_cstr(path, '/'));
         al_destroy_path(path);
         return -1;
     }
@@ -1274,8 +1274,7 @@ int save_game_f(Game *g, Board *b){
 int load_game_f(Game *g, Board *b){
     ALLEGRO_PATH *path;
     ALLEGRO_FILE *fp;
-    ALLEGRO_FS_ENTRY *entry;
-    //	int i,j,k;
+//    ALLEGRO_FS_ENTRY *entry;
     
 #ifdef ALLEGRO_ANDROID
     al_set_standard_file_interface();
@@ -1302,8 +1301,6 @@ int load_game_f(Game *g, Board *b){
     al_fread(fp, &g->tile, sizeof(g->tile));
     al_fread(fp, &g->time, sizeof(g->time));
     al_fclose(fp);
-    
-    b->n=g->n; b->h=g->h;
     
     update_guessed(g);
     /* delete saved game after reading
