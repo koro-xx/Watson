@@ -470,12 +470,14 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     WZ_WIDGET* wgt;
     bool done = false;
     ALLEGRO_FONT *font;
-    int ret=0;
     int gui_w = 600;
     int gui_h = 600;
     ALLEGRO_EVENT event;
     int cx = b->xsize/2 + b->all.x;
     int cy = b->ysize/2 + b->all.y;
+    char hi_name[10][64];
+    double hi_score[10];
+    int i,j, hi_pos;
     
 #ifdef ALLEGRO_ANDROID
     al_android_set_apk_file_interface();
@@ -498,7 +500,7 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     skin_theme.button_up_bitmap = al_load_bitmap("data/button_up.png");
     skin_theme.button_down_bitmap =al_load_bitmap("data/button_down.png");
     skin_theme.box_bitmap = al_load_bitmap("data/box.png");
-    
+    skin_theme.editbox_bitmap = al_load_bitmap("data/editbox.png");
     wz_init_skin_theme(&skin_theme);
     
     gui = wz_create_widget(0, cx-size*gui_w/2, cy-size*gui_h/2, -1);
@@ -506,10 +508,50 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     
 //    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, gui_w * size, 200 * size, -1);
 //    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-    wgt = (WZ_WIDGET *) wz_create_fill_layout(gui, 0, 0, gui_w * size, gui_h * size, 80*size, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    wgt = (WZ_WIDGET *) wz_create_fill_layout(gui, 0, 0, gui_w * size, gui_h * size, 40*size, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
 
-    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, 100 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)g->time/ 3600, (int)g->time/60, (int)g->time %60 ), 1, -1);
-    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size*size*10, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("Highscores will go here"), 1, -1); //xxx todo: get_high_scores(g)
+    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size* 1.5 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)g->time/ 3600, (int)g->time/60, (int)g->time %60 ), 1, -1);
+//    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size* 1.5 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("Type your name below:"), 1, -1);
+
+    
+    
+    //xxx work in progress. check types?
+    get_highscores(g, hi_name, (double *)hi_score);
+    for(i=0; i<10; i++)
+    {
+        if(hi_score[i]>g->time) break;
+    }
+    
+//    if(i<10){
+//        wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size*size*1.5, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("You got a best time!"), 1, -1);
+//    }
+    
+    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size*size*1.5, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("Best times for %d x %d board:", b->n, b->h), 1, -1);
+    
+    for(j=0;j<i;j++)
+    {
+        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1); // get_highscores(g);
+        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)hi_score[j]/3600, ((int)hi_score[j]/60)%60, (int)hi_score[j] % 60), 1, -1);
+    }
+
+    if(i<10){
+        hi_pos = i;
+        wgt = (WZ_WIDGET*)wz_create_editbox(gui, 0, 0, gui_w*0.3*size, font_size * size*1.2, al_ustr_new("your name"), 1, -1);
+        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)g->time/3600, ((int)g->time/60)%60, (int)g->time % 60), 1, -1);
+
+        for(j=i;j<9;j++)
+        {
+            wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1); // get_highscores(g);
+            wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)hi_score[j]/3600, ((int)hi_score[j]/60)%60, (int)hi_score[j] % 60), 1, -1);
+        }
+        memcpy(&hi_name[i+1], &hi_name[i], 64*sizeof(char)*(9-i));
+        memcpy(&hi_score[i+1], &hi_score[i], sizeof(double)*(9-i));
+        hi_score[i] = g->time;
+        hi_name[i][0] = '\0';
+    }
+    
+    wz_create_textbox(gui, 0, 0, gui_w*0.9*size, font_size*1.2* size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+    
     wz_create_button(gui, 0, 0, 150 * size, 80 * size, al_ustr_new("New Game"), 1, BUTTON_RESTART);
     wz_create_button(gui, 0, 0, 150 * size, 80 * size, al_ustr_new("Settings"), 1, BUTTON_SETTINGS);
     
@@ -550,6 +592,15 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                 
                 switch(event.type)
                 {
+                    case WZ_TEXT_CHANGED: // hiscore name entered
+                    {
+                        strncpy(hi_name[hi_pos], al_cstr(((WZ_TEXTBOX *) wgt)->text), 63);
+                        wgt->flags &= ~WZ_STATE_HAS_FOCUS;
+                        wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+                        save_highscores(g, hi_name, hi_score);
+                        // can i destroy a widget on the fly?
+                    }
+                        
                     case WZ_BUTTON_PRESSED:
                     {
                         switch((int)event.user.data1)
@@ -588,6 +639,7 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     al_destroy_bitmap(skin_theme.box_bitmap);
     al_destroy_bitmap(skin_theme.button_up_bitmap);
     al_destroy_bitmap(skin_theme.button_down_bitmap);
+    al_destroy_bitmap(skin_theme.editbox_bitmap);
     wz_destroy_skin_theme(&skin_theme);
     unregister_gui(b, gui);
     wz_destroy(gui);

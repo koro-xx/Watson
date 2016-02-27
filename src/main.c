@@ -13,10 +13,8 @@
  Todo
  - add highscore table / input
  - finish tutorial
- - fix time update: should use "game time" to account for saved games (fixed?)
  - change wait_for_input to return key pressed or event type
  - add additional clue type
- 
  
  NOTE: in android, to draw text to a bitmap without issues we need the bitmap to be created detached from the screen.
  so we set a null target bitmap before creating them and then we use al_convert_bitmaps
@@ -31,6 +29,7 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_color.h>
+#include <allegro5/allegro_audio.h>
 #include <string.h>
 #include "macros.h"
 #include "game.h"
@@ -138,12 +137,11 @@ void halt(ALLEGRO_EVENT_QUEUE *queue){
     al_acknowledge_drawing_halt(disp);
     deblog("ACKNOWLEDGED HALT");
     ALLEGRO_EVENT ev;
-    
+    al_set_default_voice(NULL); // otherwise it keeps streaming when the app is on background
     do{
-        al_rest(0.05); // without a rest this loop uses 4-5% cpu on android. Why?
         al_wait_for_event(queue, &ev);
     }while(ev.type != ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING);
- 
+     al_restore_default_mixer();
     al_acknowledge_drawing_resume(disp);
     deblog("ACKNOWLEDGED RESUME");
     al_rest(0.01);
@@ -452,6 +450,7 @@ RESTART:
     if(restart != 2){ // 2 is for loaded game
         g.n = b.n = set.n;
         g.h = b.h = set.h;
+        g.time = 0;
         draw_generating_puzzle(&g, &b);
         create_game_with_clues(&g);
     } else { // b should be updated only after destroying the board
@@ -705,7 +704,8 @@ RESTART:
                             al_flush_event_queue(event_queue);
                             redraw=1;
                             break;
-                        case ALLEGRO_KEY_ENTER:
+                        case ALLEGRO_KEY_SPACE:
+                            win_gui(&g, &b, event_queue);
                             break;
                     }
                     break;
@@ -809,7 +809,7 @@ RESTART:
             redraw=1;
         }
         
-        if(game_state == GAME_OVER){
+        if((game_state == GAME_OVER) && noexit){
             win_gui(&g, &b, event_queue);
         }
         
@@ -1247,6 +1247,73 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             break;
     }
 }
+
+// work in progress
+// actually highscores must include string + int. Maybe do one file for each mode.
+void get_highscores(Game *g, char (*name)[64], double *score){
+    ALLEGRO_PATH *path;
+    ALLEGRO_FILE *fp;
+    char filename[100];
+    int i;
+    
+#ifdef ALLEGRO_ANDROID
+    al_set_standard_file_interface();
+#endif
+
+    path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    snprintf(filename, 99, "Watson%dx%d-%d.hi", g->n, g->h, g->advanced);
+    al_set_path_filename(path,filename);
+    
+    fp = al_fopen(al_path_cstr(path, '/'), "rb");
+    if( !fp || !(al_fread(fp, name, 64*sizeof(char)*10) == 64*sizeof(char)*10)
+            || !(al_fread(fp, score, 10*sizeof(double)) == 10*sizeof(double)) )
+    {
+        errlog("Error reading %s.", (char *) al_path_cstr(path, '/'));
+        memset(name, 0, 64*sizeof(char)*10);
+        for(i = 0 ; i < 10 ; i++ )
+        {
+            score[i] = 600;
+        }
+    }
+    
+    al_fclose(fp);
+    al_destroy_path(path);
+}
+                                 
+void save_highscores(Game *g, char (*name)[64], double *score){
+    ALLEGRO_PATH *path;
+    ALLEGRO_FILE *fp;
+    char filename[100];
+    
+#ifdef ALLEGRO_ANDROID
+    al_set_standard_file_interface();
+#endif
+    
+    path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    if(!al_make_directory(al_path_cstr(path, '/'))){
+        errlog("could not open or create path %s.\n", al_path_cstr(path, '/'));
+        al_destroy_path(path);
+        return;
+    }
+    
+    snprintf(filename, 99, "Watson%dx%d-%d.hi", g->n, g->h, g->advanced);
+    al_set_path_filename(path, filename);
+    fp = al_fopen(al_path_cstr(path, '/'), "wb");
+    if(!fp){
+        errlog("Couldn't open %s for writing.\n", (char *) al_path_cstr(path, '/'));
+        al_destroy_path(path);
+        al_fclose(fp);
+        return;
+    }
+    
+    al_fwrite(fp, name, 64*sizeof(char)*10);
+    al_fwrite(fp, score, sizeof(double)*10);
+    al_fclose(fp);
+
+    deblog("Saved highscores at %s.", al_path_cstr(path, '/'));
+    al_destroy_path(path);
+}
+
 
 // work in progress
 int save_game_f(Game *g, Board *b){
