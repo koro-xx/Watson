@@ -171,7 +171,6 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     WZ_WIDGET *button_advanced;
     WZ_WIDGET *button_mute;
     Settings nset = *set;
-
     
 #ifdef ALLEGRO_ANDROID
     al_android_set_apk_file_interface();
@@ -303,7 +302,6 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                  */
                 wz_send_event(gui, &event);
                 
-            
                 switch(event.type)
                 {
                     case ALLEGRO_EVENT_KEY_CHAR:
@@ -536,9 +534,13 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
 
     if(i<10){
         hi_pos = i;
+#ifdef ALLEGRO_ANDROID
+        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Android user"), 1, -1); // get_highscores(g);
+        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)g->time/3600, ((int)g->time/60)%60, (int)g->time % 60), 1, -1);
+#else
         wgt = (WZ_WIDGET*)wz_create_editbox(gui, 0, 0, gui_w*0.3*size, font_size * size*1.2, al_ustr_new("your name"), 1, -1);
         wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)g->time/3600, ((int)g->time/60)%60, (int)g->time % 60), 1, -1);
-
+#endif
         for(j=i;j<9;j++)
         {
             wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1); // get_highscores(g);
@@ -592,6 +594,7 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                 
                 switch(event.type)
                 {
+#ifndef ALLEGRO_ANDROID
                     case WZ_TEXT_CHANGED: // hiscore name entered
                     {
                         strncpy(hi_name[hi_pos], al_cstr(((WZ_TEXTBOX *) wgt)->text), 63);
@@ -600,7 +603,7 @@ void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                         save_highscores(g, hi_name, hi_score);
                         // can i destroy a widget on the fly?
                     }
-                        
+#endif
                     case WZ_BUTTON_PRESSED:
                     {
                         switch((int)event.user.data1)

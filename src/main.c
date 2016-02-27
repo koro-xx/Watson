@@ -11,7 +11,7 @@
  by Koro (1/2016)
 
  Todo
- - add highscore table / input
+ - add android keyboard input to highscore table
  - finish tutorial
  - change wait_for_input to return key pressed or event type
  - add additional clue type
@@ -512,7 +512,7 @@ RESTART:
     mbdown_y = 0;
     tb_down = tb_up = NULL;
     
-    show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[b.h][0], symbol_char[b.h][2], symbol_char[b.h][1]));
+    show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[b.h][1], symbol_char[b.h][2], symbol_char[b.h][0]));
     
     al_set_target_backbuffer(display);
     al_clear_to_color(BLACK_COLOR);
@@ -705,6 +705,7 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_SPACE:
+                            //win_gui(&g, &b, event_queue);
                             break;
                     }
                     break;
