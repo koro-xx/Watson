@@ -113,7 +113,7 @@ int init_allegro(void){
 MemFile create_memfile(const char* filename){
     MemFile ret = {0};
 
-    ALLEGRO_FILE *fp = al_fopen(filename, "r");
+    ALLEGRO_FILE *fp = al_fopen(filename, "rb");
 
     if(!fp){
 	    errlog("Error opening %s", filename);
