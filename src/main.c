@@ -705,7 +705,6 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_SPACE:
-                            win_gui(&g, &b, event_queue);
                             break;
                     }
                     break;
