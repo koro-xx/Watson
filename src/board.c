@@ -258,7 +258,7 @@ int create_board(Game *g, Board *b, int mode){
     
     cus = min(b->hclue.w - 2*CLUE_TILE_MARGIN - 2*CLUE_UNIT_SPACE, b->vclue.h - 2*CLUE_TILE_MARGIN - 2*CLUE_UNIT_SPACE)/3;
     cus = min(cus, (b->panel.h + 2*CLUE_UNIT_SPACE + 2*CLUE_TILE_MARGIN + VCLUEBOX_MARGIN +b->panel.margin-2*CLUE_TILE_MARGIN*b->hclue_n)/(max(b->hclue_n-3, 1)));
-    b->clue_unit_size = min(cus, (b->panel.w/b->vclue_n - 2*CLUE_TILE_MARGIN));
+    b->clue_unit_size = min(cus, (b->panel.w/(max(b->vclue_n,1)) - 2*CLUE_TILE_MARGIN));
     
 //    b->clue_unit_size = min((b->hclue.h - 2*b->hclue_n*CLUE_TILE_MARGIN)/b->hclue_n, (b->vclue.w - 2*b->vclue_n*CLUE_TILE_MARGIN)/b->vclue_n);
 //    b->clue_unit_size = min(cus, b->clue_unit_size);

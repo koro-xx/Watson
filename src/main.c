@@ -422,6 +422,7 @@ int main(int argc, char **argv){
 //    wait_for_input(NULL);
     restart=0;
     game_state = GAME_INTRO;
+
     
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
@@ -705,6 +706,7 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_SPACE:
+                            //params_gui(&g, &b, event_queue);
                             //win_gui(&g, &b, event_queue);
                             break;
                     }

@@ -86,4 +86,8 @@ int is_vclue(RELATION rel); // is this relation a vertical clue?
 // debug
 int is_clue_valid(Game *g, Clue *clue);
 
+
+
+// globals
+extern int REL_PERCENT[NUMBER_OF_RELATIONS];
 #endif

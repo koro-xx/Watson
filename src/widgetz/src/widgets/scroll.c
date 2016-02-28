@@ -34,13 +34,13 @@ static int set_scroll_pos(WZ_SCROLL* scl, float x, float y)
 	{
 		float max_size = 0.9f * wgt->h;
 		float slider_size = scl->slider_size > max_size ? max_size : scl->slider_size;
-		fraction = ((float)(y - wgt->y - slider_size / 2)) / ((float)wgt->h - slider_size);
+		fraction = ((float)(y - wgt->local_y - slider_size / 2)) / ((float)wgt->h - slider_size);
 	}
 	else
 	{
 		float max_size = 0.9f * wgt->w;
 		float slider_size = scl->slider_size > max_size ? max_size : scl->slider_size;
-		fraction = ((float)(x - wgt->x - slider_size / 2)) / ((float)wgt->w - slider_size);
+		fraction = ((float)(x - wgt->local_x - slider_size / 2)) / ((float)wgt->w - slider_size);
 	}
 
 	old_pos = scl->cur_pos;

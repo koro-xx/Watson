@@ -9,6 +9,7 @@
 #include "allegro_stuff.h"
 #include "main.h"
 #include "text.h"
+#include "game.h"
 
 #define GUI_BG_COLOR al_map_rgb(120, 120, 120) //al_map_rgb(108, 122, 137);//(0.1, 0.6, 0.8, 1)
 #define GUI_TEXT_COLOR al_map_rgb(255, 255, 255)
@@ -70,7 +71,8 @@ enum {
     BUTTON_SAVE,
     BUTTON_LOAD,
     BUTTON_ZOOM,
-    BUTTON_SETTINGS
+    BUTTON_SETTINGS,
+    BUTTON_PARAMS
     
 };
 
@@ -244,6 +246,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     // Save + Load buttons
     wz_create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
 //    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Sound:"), 1, -1);
+    wz_create_button(gui, 0, 0, 50 * size, 50 * size, al_ustr_new("tune"), 1, BUTTON_PARAMS);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Save game"), 1, BUTTON_SAVE);
 //    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Advanced:"), 1, -1);
     wgt = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Load game"), 1, -1, BUTTON_LOAD);
@@ -410,6 +413,11 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
                                 cancel=1;
                                 done=1;
                                 break;
+                                
+                            case BUTTON_PARAMS:
+                                params_gui(b,queue);
+                                break;
+                                
                             default: // check for toggles
                             {
                                 int i;
@@ -865,4 +873,179 @@ void draw_multiline_wz_box(const char *text, int cx, int cy, int width, int max_
     wz_destroy(gui);
     al_destroy_font(font);
 }
+
+void params_gui(Board *b, ALLEGRO_EVENT_QUEUE *queue)
+{
+    // Initialize Allegro 5 and the font routines
+    int refresh_rate;
+    float size = 2.0;
+    int font_size = 15;
+    double fixed_dt;
+    double old_time;
+    double game_time;
+    double start_time;
+    WZ_WIDGET* gui;
+    WZ_SKIN_THEME skin_theme;
+    WZ_WIDGET* wgt[NUMBER_OF_RELATIONS];
+    WZ_WIDGET* tmp;
+    bool done = false;
+    ALLEGRO_FONT *font;
+    int gui_w = 800;
+    int gui_h = 600;
+    ALLEGRO_EVENT event;
+    int cx = b->xsize/2 + b->all.x;
+    int cy = b->ysize/2 + b->all.y;
+    int i;
+    ALLEGRO_USTR *rel[NUMBER_OF_RELATIONS];
+    
+    rel[0] = al_ustr_new("NEXT_TO");
+    rel[1] = al_ustr_new("NOT_NEXT_TO");
+    rel[2] = al_ustr_new("ONE_SIDE");
+    rel[3] = al_ustr_new("CONSECUTIVE");
+    rel[4] = al_ustr_new("NOT_MIDDLE");
+    rel[5] = al_ustr_new("TOGETHER_2");
+    rel[6] = al_ustr_new("TOGETHER_3");
+    rel[7] = al_ustr_new("NOT_TOGETHER");
+    rel[8] = al_ustr_new("TOGETHER_NOT_MIDDLE");
+    rel[9] = al_ustr_new("TFWOO (disabled)");
+    rel[10] = al_ustr_new("REVEAL");
+    
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
+    
+    size = (float)b->xsize*0.6/gui_w;
+    
+    font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size * size);
+    
+    refresh_rate = 60;
+    fixed_dt = 1.0f / refresh_rate;
+    old_time = al_current_time();
+    game_time = al_current_time();
+    
+    memset(&skin_theme, 0, sizeof(skin_theme));
+    memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
+    skin_theme.theme.font = font;
+    skin_theme.theme.color1 = GUI_BG_COLOR;
+    skin_theme.theme.color2 = GUI_TEXT_COLOR;
+    skin_theme.button_up_bitmap = al_load_bitmap("data/button_up.png");
+    skin_theme.button_down_bitmap =al_load_bitmap("data/button_down.png");
+    skin_theme.box_bitmap = al_load_bitmap("data/box.png");
+    skin_theme.editbox_bitmap = al_load_bitmap("data/editbox.png");
+    skin_theme.scroll_track_bitmap = al_load_bitmap("data/scroll_track.png");
+    skin_theme.slider_bitmap = al_load_bitmap("data/slider.png");
+    
+    wz_init_skin_theme(&skin_theme);
+    
+    gui = wz_create_widget(0, cx-size*gui_w/2, cy-size*gui_h/2, -1);
+    wz_set_theme(gui, (WZ_THEME*)&skin_theme);
+    
+    //    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, gui_w * size, 200 * size, -1);
+    //    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+    wz_create_fill_layout(gui, 0, 0, gui_w * size, gui_h * size, 10*size, 20*size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+
+    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size* 1.5 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("Clue type distribution for puzzle creation:"), 1, -1);
+    
+    for(i=0; i< NUMBER_OF_RELATIONS; i++)
+    {
+        wz_create_textbox(gui, 0, 0, gui_w*0.2 * size, font_size* 1.3 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, rel[i], 1, -1);
+        wgt[i] = (WZ_WIDGET*) wz_create_scroll(gui, 0, 0, 0.6 * gui_w * size, font_size* 1.3 * size, 50, 50 * size, i);
+        ((WZ_SCROLL*)wgt[i])->cur_pos = REL_PERCENT[i];
+    }
+        
+    wz_create_button(gui, 0, 0, 150 * size, 3*font_size*size, al_ustr_new("OK"), 1, BUTTON_OK);
+    wz_create_textbox(gui, 0, 0, 100 * size, 3*font_size*size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+
+    tmp = (WZ_WIDGET *) wz_create_button(gui, 0, 0, 150 * size, 3*font_size*size, al_ustr_new("Cancel"), 1, BUTTON_CANCEL);
+    wz_set_shortcut(tmp, ALLEGRO_KEY_ESCAPE, 0);
+
+    wz_register_sources(gui, queue);
+    register_gui(b, gui);
+    
+    al_flush_event_queue(queue);
+    while(!done)
+    {
+        double dt = al_current_time() - old_time;
+        al_rest(fixed_dt - dt); //rest at least fixed_dt
+        dt = al_current_time() - old_time;
+        old_time = al_current_time();
+        
+        if(old_time - game_time > dt)    //eliminate excess overflow
+        {
+            game_time += fixed_dt * floor((old_time - game_time) / fixed_dt);
+        }
+        
+        start_time = al_current_time();
+        
+        while(old_time - game_time >= 0)
+        {
+            game_time += fixed_dt;
+            wz_update(gui, fixed_dt);
+            
+            while(!done && al_peek_next_event(queue, &event))
+            {
+                if((event.type == ALLEGRO_EVENT_DISPLAY_RESIZE) || (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) || (event.type == ALLEGRO_EVENT_DISPLAY_HALT_DRAWING)){ // any other values that require returning?
+                    done=1;
+                    break;
+                }
+                al_drop_next_event(queue);
+                /*
+                 Give the gui the event, in case it wants it
+                 */
+                wz_send_event(gui, &event);
+                
+                switch(event.type)
+                {
+
+                    case WZ_BUTTON_PRESSED:
+                    {
+                        switch((int)event.user.data1)
+                        {
+                            case BUTTON_OK:
+                            {
+                                done = true;
+                                for(i = 0 ; i < NUMBER_OF_RELATIONS ; i++)
+                                {
+                                    REL_PERCENT[i] = ((WZ_SCROLL*)wgt[i])->cur_pos;
+                                }
+                                break;
+                            }
+                                
+                            case BUTTON_CANCEL:
+                                done = true;
+                                break;
+// xxx todo:               case BUTTON_DEFAULTS:  (restore defaults)
+                        }
+                    }
+                }
+            }
+            
+            if(al_current_time() - start_time > fixed_dt) //break if we start taking too long
+                break;
+        }
+        
+        //al_clear_to_color(al_map_rgba_f(0.5, 0.5, 0.7, 1));
+        /*
+         Draw the gui
+         */
+        if(!done){
+            draw_stuff(b);
+            al_wait_for_vsync();
+            al_flip_display();
+        }
+    }
+    
+    al_destroy_bitmap(skin_theme.box_bitmap);
+    al_destroy_bitmap(skin_theme.button_up_bitmap);
+    al_destroy_bitmap(skin_theme.button_down_bitmap);
+    al_destroy_bitmap(skin_theme.editbox_bitmap);
+    al_destroy_bitmap(skin_theme.scroll_track_bitmap);
+    al_destroy_bitmap(skin_theme.slider_bitmap);
+    wz_destroy_skin_theme(&skin_theme);
+    unregister_gui(b, gui);
+    wz_destroy(gui);
+    al_destroy_font(font);
+}
+
+
 
