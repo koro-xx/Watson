@@ -1,7 +1,3 @@
-#ifdef _WIN32
-    #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 // INTEGRATION WITH ANDROID
 //#define _DEBUG
 
@@ -788,7 +784,7 @@ RESTART:
         }
     
         if(keypress){
-            if(game_state == GAME_INTRO) game_state == GAME_PLAYING;
+            if(game_state == GAME_INTRO) game_state = GAME_PLAYING;
             keypress=0;
         }
 

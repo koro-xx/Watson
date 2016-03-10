@@ -1,7 +1,7 @@
 #ifndef __freesherlock__sound__
 #define __freesherlock__sound__
 
-#include <stdio.h>
+#include <stdlib.h>
 #include "macros.h"
 
 #define RESERVED_SAMPLES 64

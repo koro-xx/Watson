@@ -5,7 +5,7 @@ project(Watson VERSION 0.78.3 LANGUAGES CXX C)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Alleg REQUIRED)
 
-SET(LINK_LIBRARIES ${LINK_LIBRARIES} 
+set(LINK_LIBRARIES ${LINK_LIBRARIES}
  	  Alleg::Allegro
 	  Alleg::Audio
 	  Alleg::Image
@@ -19,7 +19,7 @@ SET(LINK_LIBRARIES ${LINK_LIBRARIES}
    )
 
 if (UNIX)
-	SET(LINK_LIBRARIES ${LINK_LIBRARIES} "m")
+	set(LINK_LIBRARIES ${LINK_LIBRARIES} "m")
 endif(UNIX)
 
 ## to do: add target and copy resources postbuild for windows/linux
@@ -29,7 +29,7 @@ endif(WIN32)
 
 
 if (APPLE)
-	OPTION(WATSON_APP_BUNDLE "Build application bundle" ON)
+	option(WATSON_APP_BUNDLE "Build application bundle" ON)
 	find_package(FreeType REQUIRED)
 	find_package(ZLIB REQUIRED)
 	find_library(OPENGL_FRAMEWORK OpenGL)
@@ -39,7 +39,7 @@ if (APPLE)
 	find_library(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
 	find_library(APPKIT_FRAMEWORK AppKit)
 	find_library(APPLICATIONSERVICES_FRAMEWORK ApplicationServices)
-	SET(LINK_LIBRARIES ${LINK_LIBRARIES}
+	set(LINK_LIBRARIES ${LINK_LIBRARIES}
   			  ${APPLICATIONSERVICES_FRAMEWORK}
 			  ${APPKIT_FRAMEWORK}
 			  ${OPENAL_FRAMEWORK}
@@ -77,5 +77,8 @@ add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCE
 target_link_libraries(watson ${LINK_LIBRARIES})
 
 IF(APPLE)
-	SET_SOURCE_FILES_PROPERTIES(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+	set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 ENDIF(APPLE)
+if (WIN32)
+	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
+endif(WIN32)
