@@ -30,7 +30,7 @@ Note: The tile set is rendered from TTF fonts, but there is also an option to lo
 
 ##Build instructions:
 
-You need Allegro 5 (>= 5.1.9) and cmake.
+You need Allegro 5 (>= 5.1.13) and cmake.
 
 For Mac OS X (tested with Xcode 5):
 
@@ -45,8 +45,8 @@ For windows (tested in Visual Studio 2015)
 	cd watson
 	mkdir build
 	cd build
-	cmake -G "Visual Studio 14 2015" -DAlleg_ROOT="\path\to\allegro\libs" 
-	path\to\msbuild.exe watson.vcxproj /p:Configuration=Release
+	cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DAlleg_ROOT="\path\to\allegro\libs" 
+	nmake
 
 or open the project in Visual Studio and compile for release. After that we need to copy the resources found in the "watson" folder (fonts, icons and sounds) to the application folder, together with all the required dll's (that is, allegro dll's + runtime). 
 
