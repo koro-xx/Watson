@@ -45,7 +45,7 @@ For windows (tested in Visual Studio 2015)
 	cd watson
 	mkdir build
 	cd build
-	cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DAlleg_ROOT="\path\to\allegro\libs" 
+	cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DAlleg_ROOT="\path\to\allegro\libs" .. 
 	nmake
 
 or open the project in Visual Studio and compile for release. After that we need to copy the resources found in the "watson" folder (fonts, icons and sounds) to the application folder, together with all the required dll's (that is, allegro dll's + runtime). 
