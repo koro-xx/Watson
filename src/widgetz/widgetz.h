@@ -486,7 +486,7 @@ WZ_SCROLL* wz_create_scroll(WZ_WIDGET* parent, float x, float y, float w, float 
 WZ_EDITBOX* wz_create_editbox(WZ_WIDGET* parent, float x, float y, float w, float h, ALLEGRO_USTR* text, int own, int id);
 WZ_WIDGET* wz_create_layout_stop(WZ_WIDGET* parent, int id);
 WZ_IMAGE_BUTTON* wz_create_image_button(WZ_WIDGET* parent, float x, float y, float w, float h, ALLEGRO_BITMAP* normal, ALLEGRO_BITMAP* down, ALLEGRO_BITMAP* focused, ALLEGRO_BITMAP* disabled, int id);
-
+    
 void wz_draw_multiline_text(float x, float y, float w, float h, int halign, int valign, ALLEGRO_COLOR color, ALLEGRO_FONT* font, ALLEGRO_USTR* text);
 void wz_draw_single_text(float x, float y, float w, float h, int halign, int valign, ALLEGRO_COLOR color, ALLEGRO_FONT* font, ALLEGRO_USTR* text);
 

@@ -56,7 +56,7 @@ if (APPLE)
 	set(MACOSX_BUNDLE_ICON_FILE app_icon.icns)
 
 	# And this part tells CMake where to find and install the file itself
-	set(APP_ICON ${CMAKE_SOURCE_DIR}/src/app_icon.icns)
+	set(APP_ICON ${CMAKE_SOURCE_DIR}/assets/app_icon.icns)
 endif (APPLE)
 
 file(GLOB_RECURSE SOURCES "src/*.c")
