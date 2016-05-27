@@ -52,9 +52,15 @@ or open the project in Visual Studio and compile for release. After that we need
 
 For Linux: 
 
-	It should work similarly, just remember to copy the /fonts and /sounds folders to the app dir.
+	cd watson && mkdir build && cd build
+	cmake ..
+	make
 
-For Android: The game now works on Android devices as well. Compile instructions will come later.
+the binary "watson" in the build dir should work.
+	
+For Android: 
+
+The game now works on Android devices as well. Compile instructions will come later.
 
 ## TODO
 
