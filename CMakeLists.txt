@@ -82,3 +82,7 @@ ENDIF(APPLE)
 if (WIN32)
 	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
 endif(WIN32)
+
+if(UNIX)
+	file(COPY ${RESOURCES} DESTINATION .)
+endif(UNIX)
