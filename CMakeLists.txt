@@ -76,10 +76,14 @@ add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCE
 
 target_link_libraries(watson ${LINK_LIBRARIES})
 
+
 if(APPLE)
 	set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-elseif(WIN32)
-	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
-elseif(UNIX)
+else(APPLE)
 	file(COPY ${RESOURCES} DESTINATION .)
 endif(APPLE)
+
+if(WIN32)
+	set_target_properties(gess PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
+endif(WIN32)
+
