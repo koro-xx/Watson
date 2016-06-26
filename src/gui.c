@@ -150,6 +150,14 @@ void show_about(Board *b, ALLEGRO_EVENT_QUEUE *queue){
     draw_center_textbox_wait(ABOUT_TEXT, min(0.96,max(0.6, 800.0/b->xsize)), b, queue);
 }
 
+WZ_WIDGET* create_fill_layout(WZ_WIDGET* parent, float x, float y, float w, float h, float hspace, float vspace, int halign, int valign, int id)
+{
+    WZ_WIDGET *wgt = wz_create_fill_layout(parent, x, y, w, h, hspace, vspace, halign, valign, id);
+    wgt->flags |= WZ_STATE_HIDDEN;
+
+    return wgt;
+}
+
 int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
 {
     // Initialize Allegro 5 and the font routines
@@ -204,12 +212,17 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     gui = wz_create_widget(0, b->all.x + (b->xsize-size*gui_w)/2, b->all.y + (b->ysize-size*470)/2, -1);
     wz_set_theme(gui, (WZ_THEME*)&skin_theme);
     
+    wgt = wz_create_box(gui, 0, 0, gui_w*size, 470*size, -1);
+    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+    
     // about button
-    wz_create_fill_layout(gui, 0, 0, gui_w * size, 50 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 0, gui_w * size, 50 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    
     wz_create_button(gui, 0, 0, 200 * size, 40 * size, al_ustr_new("About Watson"), 1, BUTTON_ABOUT);
     
     // number of rows multitoggle
-    wz_create_fill_layout(gui, 0, 50 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_LEFT, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 50 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_LEFT, WZ_ALIGN_LEFT, -1);
+
     wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Rows:"), 1, -1);
     button_rows[0] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 50 * size, 50 * size, al_ustr_new("4"), 1, GROUP_ROWS, 4);
     button_rows[1] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 50 * size, 50 * size, al_ustr_new("5"), 1, GROUP_ROWS, 5);
@@ -218,7 +231,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     button_rows[4] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 50* size, 50 * size, al_ustr_new("8"), 1,  GROUP_ROWS, 8);
 
     // number of columns multitoggle
-    wz_create_fill_layout(gui, 0, 120 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_LEFT, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 120 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_LEFT, WZ_ALIGN_LEFT, -1);
     wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Columns:"), 1, -1);
     button_cols[0] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 50 * size, 50 * size, al_ustr_new("4"), 1, GROUP_COLS, 4);
     button_cols[1] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, 50 * size, 50 * size, al_ustr_new("5"), 1, GROUP_COLS, 5);
@@ -231,7 +244,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     ((WZ_BUTTON*)button_rows[set->n-4])->down=1;
     
     // Sound + Advanced buttons
-    wz_create_fill_layout(gui, 0, 190 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 190 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
     wgt = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, 80 * size, 50 * size, al_ustr_new("zoom"), 1, -1, BUTTON_ZOOM);
     ((WZ_BUTTON*) wgt)->down = set->fat_fingers;
     
@@ -244,7 +257,7 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
 
     
     // Save + Load buttons
-    wz_create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 260 * size, gui_w * size, 70 * size, 10 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
 //    wz_create_textbox(gui, 0, 0, 100 * size, 50 * size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Sound:"), 1, -1);
     wz_create_button(gui, 0, 0, 50 * size, 50 * size, al_ustr_new("tune"), 1, BUTTON_PARAMS);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Save game"), 1, BUTTON_SAVE);
@@ -253,14 +266,14 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     ((WZ_BUTTON*) wgt)->down = !set->saved;
 
     // restart/exit/switch tiles buttons
-    wz_create_fill_layout(gui, 0, 330 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 330 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("New game"), 1, BUTTON_RESTART);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Exit game"), 1, BUTTON_EXIT);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Switch tiles"), 1, BUTTON_TILES);
 
     
     // ok/cancel buttons
-    wz_create_fill_layout(gui, 0, 400 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
+    create_fill_layout(gui, 0, 400 * size, gui_w * size, 70 * size, 30 * size, 20 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
     wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("OK"), 1, BUTTON_OK);
     wgt = (WZ_WIDGET*) wz_create_button(gui, 0, 0, 120 * size, 50 * size, al_ustr_new("Cancel"), 1, BUTTON_CANCEL);
     // escape key cancels and exits
