@@ -47,6 +47,8 @@ const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle
 float GUI_XFACTOR = MOBILE ? 0.9 : 0.5;
 float GUI_YFACTOR = MOBILE ? 0.9 : 0.5;
 
+WZ_SKIN_THEME skin_theme;
+
 enum {
     BUTTON_ROWS_4 = 1,
     BUTTON_ROWS_5,
@@ -141,6 +143,33 @@ void draw_center_textbox_wait(const char *text, float width_factor, Board *b, AL
 //#endif
 }
 
+void init_theme(Board *b)
+{
+    int size = b->ysize/30;
+    
+    memset(&skin_theme, 0, sizeof(skin_theme));
+    memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
+    skin_theme.theme.font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -size) ;
+    skin_theme.theme.color1 = GUI_BG_COLOR;
+    skin_theme.theme.color2 = GUI_TEXT_COLOR;
+    skin_theme.button_up_bitmap = al_load_bitmap("data/button_up.png");
+    skin_theme.button_down_bitmap =al_load_bitmap("data/button_down.png");
+    skin_theme.box_bitmap = al_load_bitmap("data/box.png");
+    skin_theme.editbox_bitmap = al_load_bitmap("data/editbox.png");
+    skin_theme.scroll_track_bitmap = al_load_bitmap("data/scroll_track.png");
+    skin_theme.slider_bitmap = al_load_bitmap("data/slider.png");
+    wz_init_skin_theme(&skin_theme);
+}
+
+void destroy_theme()
+{
+    ndestroy_bitmap(skin_theme.button_up_bitmap);
+    ndestroy_bitmap(skin_theme.button_down_bitmap);
+    ndestroy_bitmap(skin_theme.box_bitmap);
+    ndestroy_bitmap(skin_theme.editbox_bitmap);
+    ndestroy_bitmap(skin_theme.scroll_track_bitmap);
+    ndestroy_bitmap(skin_theme.slider_bitmap);
+}
 
 void show_help(Board *b, ALLEGRO_EVENT_QUEUE *queue){
     draw_center_textbox_wait(HELP_TEXT, min(0.96,max(0.6, 800.0/b->xsize)), b, queue);
@@ -152,15 +181,203 @@ void show_about(Board *b, ALLEGRO_EVENT_QUEUE *queue){
 
 WZ_WIDGET* create_fill_layout(WZ_WIDGET* parent, float x, float y, float w, float h, float hspace, float vspace, int halign, int valign, int id)
 {
-    WZ_WIDGET *wgt = wz_create_fill_layout(parent, x, y, w, h, hspace, vspace, halign, valign, id);
+    WZ_WIDGET *wgt = (WZ_WIDGET *)wz_create_fill_layout(parent, x, y, w, h, hspace, vspace, halign, valign, id);
     wgt->flags |= WZ_STATE_HIDDEN;
 
     return wgt;
 }
 
+WZ_WIDGET *create_settings_gui(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
+{
+    WZ_WIDGET *gui, *wgt;
+    int fh = al_get_font_line_height(skin_theme.theme.font);
+    int rh = 2*fh; // row height
+    int rn = 0; // current row
+    int gui_w = fh*20;
+    int rows = 7;
+    int gui_h = rows*rh;
+    WZ_WIDGET * button_rows[5];
+    WZ_WIDGET * button_cols[5];
+    WZ_WIDGET *button_advanced;
+    WZ_WIDGET *button_mute;
+    int but_w = 30;
+    int but_sw = 15;
+    int but_h;
+    int sep = 10;
+    
+    but_w = max(al_get_text_width(skin_theme.theme.font, "Save game"), but_w);
+    but_w = max(al_get_text_width(skin_theme.theme.font, "Load game"), but_w);
+    but_w = max(al_get_text_width(skin_theme.theme.font, "Switch tiles"), but_w);
+    but_w = max(al_get_text_width(skin_theme.theme.font, "About Watson"), but_w);
+    but_h = fh*1.5;
+    
+    but_sw = max(al_get_text_width(skin_theme.theme.font, "zoom"), but_sw);
+    but_sw += fh;
+    but_w += fh;
+    
+    gui_w = max(gui_w, 3*(but_w+sep) + sep*3);
+    
+    //temp
+    int refresh_rate;
+    double fixed_dt;
+    double old_time;
+    double game_time;
+    double start_time;
+    int done;
+    ALLEGRO_EVENT event;
+    
+    refresh_rate = 60;
+    fixed_dt = 1.0f / refresh_rate;
+    old_time = al_current_time();
+    game_time = al_current_time();
+    
+    // main gui
+    gui = wz_create_widget(0, b->all.x + (b->xsize-gui_w)/2, b->all.y + (b->ysize-rows*rh)/2, -1);
+    wz_set_theme(gui, (WZ_THEME*)&skin_theme);
+    
+    wgt = wz_create_box(gui, 0, 0, gui_w, gui_h+sep, -1);
+    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+    
+    // about button
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_TOP, -1);
+    wz_create_textbox(gui, 0, 0, al_get_text_width(skin_theme.theme.font, "Settings"), but_h, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_new("Settings"), 1, -1);
+
+
+    // xxx todo: move "advanced" to tune pane.  Make sound on/off a single button, same for advanced.
+//    wz_create_textbox(gui, 0, 0, al_get_text_width(skin_theme.theme.font, "Advanced: "), but_h, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Advanced:"), 1, -1);
+//    button_advanced = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_sw, but_h, set->advanced ? al_ustr_new("on") : al_ustr_new("off"), 1, -1, BUTTON_ADVANCED);
+//    ((WZ_BUTTON*) button_advanced)->down = set->advanced;
+
+    
+    // number of rows multitoggle
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+    
+    wz_create_textbox(gui, 0, 0, al_get_text_width(skin_theme.theme.font, "Columns: "), but_h, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Rows:"), 1, -1);
+    button_rows[0] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("4"), 1, GROUP_ROWS, 4);
+    button_rows[1] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("5"), 1, GROUP_ROWS, 5);
+    button_rows[2] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("6"), 1, GROUP_ROWS, 6);
+    button_rows[3] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("7"), 1,  GROUP_ROWS, 7);
+    button_rows[4] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("8"), 1,  GROUP_ROWS, 8);
+    
+    // number of columns multitoggle
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+    wz_create_textbox(gui, 0, 0, al_get_text_width(skin_theme.theme.font, "Columns: "), but_h, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Columns:"), 1, -1);
+    button_cols[0] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("4"), 1, GROUP_COLS, 4);
+    button_cols[1] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("5"), 1, GROUP_COLS, 5);
+    button_cols[2] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("6"), 1, GROUP_COLS, 6);
+    button_cols[3] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("7"), 1, GROUP_COLS, 7);
+    button_cols[4] = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_new("8"), 1, GROUP_COLS, 8);
+    
+    // start with the current row/col setting
+    ((WZ_BUTTON*)button_cols[set->h-4])->down=1;
+    ((WZ_BUTTON*)button_rows[set->n-4])->down=1;
+    
+    
+    // sound + swtich tiles + zoom
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+    wgt = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, but_w, but_h, al_ustr_new("Zoom"), 1, -1, BUTTON_ZOOM);
+    ((WZ_BUTTON*) wgt)->down = set->fat_fingers;
+    
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("Switch tiles"), 1, BUTTON_TILES);
+    button_mute = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, but_w, but_h, set->sound_mute ? al_ustr_new("Sound: off") : al_ustr_new("Sound"), 1, -1, BUTTON_SOUND);
+    ((WZ_BUTTON*) button_mute)->down = !set->sound_mute;
+
+    
+    // advanced + save + load buttons
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("Advanced"), 1, BUTTON_PARAMS);
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("Save game"), 1, BUTTON_SAVE);
+    wgt = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_w, but_h, al_ustr_new("Load game"), 1, -1, BUTTON_LOAD);
+    ((WZ_BUTTON*) wgt)->down = !set->saved;
+    
+    // restart/exit/switch tiles buttons
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("New game"), 1, BUTTON_RESTART);
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("Exit game"), 1, BUTTON_EXIT);
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("About Watson"), 1, BUTTON_ABOUT);
+    
+    // ok/cancel buttons
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, but_w/3, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+
+    wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("OK"), 1, BUTTON_OK);
+    wgt = (WZ_WIDGET*) wz_create_button(gui, 0, 0, but_w, but_h, al_ustr_new("Cancel"), 1, BUTTON_CANCEL);
+    // escape key cancels and exits
+    wz_set_shortcut(wgt, ALLEGRO_KEY_ESCAPE, 0);
+    
+// temp
+    
+    wz_register_sources(gui, queue);
+    register_gui(b, gui);
+    
+    al_flush_event_queue(queue);
+    while(!done)
+    {
+        double dt = al_current_time() - old_time;
+        al_rest(fixed_dt - dt); //rest at least fixed_dt
+        dt = al_current_time() - old_time;
+        old_time = al_current_time();
+        
+        if(old_time - game_time > dt)    //eliminate excess overflow
+        {
+            game_time += fixed_dt * floor((old_time - game_time) / fixed_dt);
+        }
+        
+        start_time = al_current_time();
+        
+        while(old_time - game_time >= 0)
+        {
+            game_time += fixed_dt;
+            wz_update(gui, fixed_dt);
+            
+            while(!done && al_peek_next_event(queue, &event))
+            {
+                if((event.type == ALLEGRO_EVENT_DISPLAY_RESIZE) || (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) || (event.type == ALLEGRO_EVENT_DISPLAY_HALT_DRAWING)){ // any other values that require returning?
+                    done=1;
+                    break;
+                }
+                al_drop_next_event(queue);
+                /*
+                 Give the gui the event, in case it wants it
+                 */
+                wz_send_event(gui, &event);
+                
+                switch(event.type)
+                {
+                        
+                    case WZ_BUTTON_PRESSED:
+                    {
+                        switch((int)event.user.data1)
+                        {
+                            case BUTTON_CANCEL:
+                                done = true;
+                                break;
+                                // xxx todo:               case BUTTON_DEFAULTS:  (restore defaults)
+                        }
+                    }
+                }
+            }
+            
+            if(al_current_time() - start_time > fixed_dt) //break if we start taking too long
+                break;
+        }
+        
+        //al_clear_to_color(al_map_rgba_f(0.5, 0.5, 0.7, 1));
+        /*
+         Draw the gui
+         */
+        if(!done){
+            draw_stuff(b);
+            al_wait_for_vsync();
+            al_flip_display();
+        }
+    }
+    
+    
+    return gui;
+}
+
 int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
 {
-    // Initialize Allegro 5 and the font routines
     int refresh_rate;
     float size = 1.5;
     int font_size = 18;
@@ -186,6 +403,9 @@ int show_settings(Settings *set, Board *b, ALLEGRO_EVENT_QUEUE *queue)
     al_android_set_apk_file_interface();
 #endif
     
+    init_theme(b);
+    create_settings_gui(set, b, queue);
+    return 0;
 
     //xxx todo: change this factor depending on dpi???
     size = min(max(1,GUI_XFACTOR*(float)b->xsize/gui_w), max(1,GUI_YFACTOR*(float)b->ysize/470.0));
