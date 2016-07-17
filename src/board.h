@@ -51,8 +51,6 @@ typedef struct Board {
     ALLEGRO_BITMAP *time_bmp;
     ALLEGRO_BITMAP *info_text_bmp;
     ALLEGRO_FONT *text_font;
-    WZ_WIDGET *gui[10]; // max 10 gui windows
-    int gui_n;
 } Board;
 
 

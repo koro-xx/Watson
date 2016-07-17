@@ -45,8 +45,13 @@ typedef struct Settings{
     int saved; // is there a saved game?
 } Settings;
 
+extern Settings set;
+
 void emit_event(int event_type);
 void draw_stuff(Board *b);
 void get_highscores(Game *g, char (*name)[64], double *score);
 void save_highscores(Game *g, char (*name)[64], double *score);
+void add_gui(WZ_WIDGET *base, WZ_WIDGET *gui);
+void remove_gui(WZ_WIDGET *base);
+
 #endif
