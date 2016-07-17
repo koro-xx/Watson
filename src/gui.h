@@ -26,6 +26,7 @@ void confirm_load(void);
 void show_settings(void);
 void show_help(void);
 void show_about(void);
+void draw_text_gui(ALLEGRO_USTR *text);
 
 void update_base_gui(float dt);
 

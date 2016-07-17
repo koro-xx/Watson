@@ -287,20 +287,19 @@ void animate_win(Board *b) {
     }
 }
 
-//void draw_generating_puzzle(Game *g, Board *b) {
-//    char msg[1000];
-//    int w = al_get_display_width(al_get_current_display());
-//    int h = al_get_display_height(al_get_current_display());
-//    if(game_state == GAME_INTRO) return;
-//    
-//    if(!g->advanced)
-//        snprintf(msg, 999, "Generating %d x %d puzzle, please wait...", g->n, g->h);
-//    else
-//        snprintf(msg, 999, "Generating %d x %d advanced puzzle, please wait (this could take a while)...", g->n, g->h);
-//    al_clear_to_color(BLACK_COLOR);
-//    draw_multiline_wz_box(msg, w/2, h/2, 0.4*w, 0.2*w);
-//    al_flip_display();
-//}
+void draw_generating_puzzle(Game *g, Board *b) {
+    ALLEGRO_USTR *msg;
+    if(game_state == GAME_INTRO) return;
+    
+    if(!g->advanced)
+        msg = al_ustr_newf("Generating %d x %d puzzle, please wait...", g->n, g->h);
+    else
+        msg = al_ustr_newf("Generating %d x %d advanced puzzle, please wait (this could take a while)...", g->n, g->h);
+    
+    al_clear_to_color(BLACK_COLOR);
+    draw_text_gui(msg);
+    al_flip_display();
+}
 
 int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
     // cycle through tyle types (font, bitmap, classic)
@@ -369,7 +368,7 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
         return 0;
     }
     
-    init_fonts(); // do this after creating display OK
+//    init_fonts(); // do this after creating display OK
     
     SWITCH(fullscreen);
     destroy_board(b);
@@ -468,7 +467,8 @@ int main(int argc, char **argv){
 //    wait_for_input(NULL);
     restart=0;
     game_state = GAME_INTRO;
-
+    
+    init_guis(0,0, al_get_display_width(display), al_get_display_height(display));
     
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
@@ -498,8 +498,7 @@ RESTART:
         g.n = b.n = set.n;
         g.h = b.h = set.h;
         g.time = 0;
-// xxx todo: add this again
-//        draw_generating_puzzle(&g, &b);
+        draw_generating_puzzle(&g, &b);
         create_game_with_clues(&g);
     } else { // b should be updated only after destroying the board
         set.n = b.n = g.n;
@@ -523,7 +522,7 @@ RESTART:
     
 	al_convert_bitmaps(); // turn bitmaps to memory bitmaps after resize (bug in allegro doesn't autoconvert)
 
-    init_guis(b.all.x, b.all.y, b.xsize, b.ysize);
+    update_guis(b.all.x, b.all.y, b.xsize, b.ysize);
     
     event_queue = al_create_event_queue();
     if(!event_queue) {

@@ -11,7 +11,7 @@
 #include "text.h"
 #include "game.h"
 
-#define GUI_BG_COLOR al_map_rgb(120, 120, 120) //al_map_rgb(108, 122, 137);//(0.1, 0.6, 0.8, 1)
+#define GUI_BG_COLOR al_map_rgb(100, 100, 100) //al_map_rgb(108, 122, 137);//(0.1, 0.6, 0.8, 1)
 #define GUI_TEXT_COLOR al_map_rgb(255, 255, 255)
 
 const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
@@ -55,16 +55,6 @@ WZ_WIDGET *base_gui = NULL;
 Settings nset;
 
 enum {
-    BUTTON_ROWS_4 = 1,
-    BUTTON_ROWS_5,
-    BUTTON_ROWS_6,
-    BUTTON_ROWS_7,
-    BUTTON_ROWS_8,
-    BUTTON_COLS_4,
-    BUTTON_COLS_5,
-    BUTTON_COLS_6,
-    BUTTON_COLS_7,
-    BUTTON_COLS_8,
     BUTTON_ROWS,
     BUTTON_COLS,
     BUTTON_OK,
@@ -193,6 +183,15 @@ WZ_WIDGET* new_widget(int id, int x, int y){
     wgt=wz_create_widget(0, x, y, id);
     wz_set_theme(wgt, (WZ_THEME*) &skin_theme);
     return wgt;
+}
+
+void update_guis(int x, int y, int w, int h){
+    gui_font_h = h/35;
+    al_destroy_font(gui_font);
+    gui_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -gui_font_h);
+    base_gui->w = w;
+    base_gui->h = h;
+    skin_theme.theme.font = gui_font;
 }
 
 void init_guis(int x, int y, int w, int h){
@@ -754,30 +753,59 @@ void gui_send_event(ALLEGRO_EVENT *event)
 
 
 
+
+WZ_WIDGET *create_text_gui(ALLEGRO_USTR *text)
+{
+    int w = base_gui->w/3;
+    int h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(text));
+    int i;
+    WZ_WIDGET *wgt, *gui;
+    
+    for(i=0; i<3; i++)
+    {
+        if(h + gui_font_h*2 > base_gui->h)
+        {
+            w += base_gui->w/6;
+            h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(text));
+        }
+        else
+        {
+            break;
+        }
+    }
+    
+    gui = new_widget(-1, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - 2*gui_font_h)/2);
+    
+    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, w + 2*gui_font_h, h + 2*gui_font_h, -1);
+    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+    
+    wz_create_textbox(gui, gui_font_h, gui_font_h, w, h, WZ_ALIGN_LEFT, WZ_ALIGN_TOP, text, 1, -1);
+    
+    wz_update(gui, 0);
+    return gui;
+}
+
+void draw_text_gui(ALLEGRO_USTR *text)
+{
+    WZ_WIDGET *gui = create_text_gui(text);
+    
+    wz_update(gui,0);
+    wz_draw(gui);
+    wz_destroy(gui);
+}
+
 // width is preferred, max_height is enforced
 //void draw_multiline_wz_box(const char *text, int cx, int cy, int width, int max_height)
 //{
 //    // Initialize Allegro 5 and the font routines
-//    int font_size = 30;
 //    WZ_WIDGET *gui, *wgt;
-//    WZ_SKIN_THEME skin_theme;
-//    ALLEGRO_FONT *font;
 //    int text_h, text_w = width - 40;
 //    int len, lines;
-//    int MAX_FONT_SIZE = 60;
 //    
-//#ifdef ALLEGRO_ANDROID 
-//    al_android_set_apk_file_interface();
-//#endif
-//    
-//    // rough estimate of text size using 0.5 aspect ratio, assuming 80% text per line and attempting height around max_height/2: (strlen*0.5*font_height/0.8) < width * 0.5*max_height/font_height
 //    len = strlen(text);
-//    font_size = -sqrt(max_height*text_w*0.8/len); // negative for load_font = height in pixels
-//    if(font_size > MAX_FONT_SIZE) font_size = MAX_FONT_SIZE;
-//    font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
-//    lines = 1+get_multiline_text_lines(font, text_w, text);
+//    lines = 1+get_multiline_text_lines(gui_font, text_w, text);
 //    
-//    if(-font_size * lines > max_height){
+//    if(gui_font_h * lines > max_height){
 //        // new estimate
 //        font_size = -sqrt(-((float)max_height*font_size)/lines);
 //        al_destroy_font(font);

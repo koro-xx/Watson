@@ -52,20 +52,16 @@ int wz_button_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 			{
 				ret = 0;
 			}
-			else if(wgt->flags & WZ_STATE_DISABLED)
-			{
-				wgt->theme->draw_button(wgt->theme, wgt->local_x, wgt->local_y, wgt->w, wgt->h, but->text, WZ_STYLE_DISABLED);
-			}
-			else
-			{
-				int flags = 0;
-
-				if(but->down)
-					flags |= WZ_STYLE_DOWN;
-
-				if(wgt->flags & WZ_STATE_HAS_FOCUS)
-					flags |= WZ_STYLE_FOCUSED;
-
+            else
+            {
+                int flags = 0;
+                if(wgt->flags & WZ_STATE_DISABLED)
+                    flags |= WZ_STYLE_DISABLED;
+                else if (wgt->flags & WZ_STATE_HAS_FOCUS)
+                    flags |= WZ_STYLE_FOCUSED;
+                
+                if(but->down) flags |= WZ_STYLE_DOWN;
+                
 				wgt->theme->draw_button(wgt->theme, wgt->local_x, wgt->local_y, wgt->w, wgt->h, but->text, flags);
 			}
 
