@@ -210,6 +210,7 @@ WZ_WIDGET* create_msg_gui(int id, ALLEGRO_USTR *msg)
     int i;
     int but_w = 6*gui_font_h;
     int but_h = gui_font_h*1.5;
+    WZ_WIDGET *wgt, *gui;
     
     for(i=0; i<3; i++)
     {
@@ -223,11 +224,11 @@ WZ_WIDGET* create_msg_gui(int id, ALLEGRO_USTR *msg)
             break;
         }
     }
-    WZ_WIDGET *wgt, *gui = new_widget(id, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - (4*gui_font_h + h))/2);
+    
+    gui = new_widget(id, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - (4*gui_font_h + h))/2);
     
     wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, w + 2*gui_font_h, h + 4*gui_font_h, -1);
     wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-    wgt->flags &= !WZ_STYLE_FOCUSED;
     
     wz_create_textbox(gui, gui_font_h, gui_font_h, w, h, WZ_ALIGN_LEFT, WZ_ALIGN_TOP, msg, 1, -1);
     wgt = (WZ_WIDGET*) wz_create_button(gui, gui_font_h + (w-but_w*1.5), h+gui_font_h*2, but_w, but_h, al_ustr_new("OK"), 1, BUTTON_CLOSE);
@@ -247,7 +248,6 @@ WZ_WIDGET* create_yesno_gui(int id, int button_ok_id, int button_cancel_id, ALLE
     
     wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, w + 2*gui_font_h, h + 3*gui_font_h + but_h, -1);
     wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-    wgt->flags &= !WZ_STYLE_FOCUSED;
     
     //    wz_create_fill_layout(gui, 0, 0, w+2*b->tsize, h+2*b->tsize, b->tsize, b->tsize, WZ_ALIGN_CENTRE, WZ_ALIGN_TOP, -1);
     wz_create_textbox(gui, gui_font_h, gui_font_h, w, h, WZ_ALIGN_CENTRE, WZ_ALIGN_TOP, msg, 1, -1);
@@ -816,7 +816,6 @@ void gui_send_event(ALLEGRO_EVENT *event)
 //    
 //    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, width, text_h+40, -1);
 //    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-//    wgt->flags &= !WZ_STYLE_FOCUSED;
 //    wz_update(gui, 1);
 //
 //    wz_draw(gui);
