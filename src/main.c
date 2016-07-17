@@ -183,7 +183,6 @@ void remove_gui(WZ_WIDGET* wgt){
     emit_event(EVENT_REDRAW);
 }
 
-
 void draw_stuff(Board *b){
     int x, y;
     
@@ -345,6 +344,8 @@ void destroy_everything(Board *b){
     destroy_board(b);
     destroy_sound();
     destroy_undo();
+    remove_all_guis();
+    destroy_base_gui();
 }
 
 int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
@@ -485,6 +486,7 @@ RESTART:
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
+        remove_all_guis();
         al_set_target_backbuffer(display);
     }
     
@@ -612,6 +614,7 @@ RESTART:
                     
                 case EVENT_RESTART:
                     restart=1;
+                    set = nset;
                     goto RESTART;
                     
                 case EVENT_EXIT:
@@ -743,7 +746,7 @@ RESTART:
                             show_settings();
                             break;
                         case ALLEGRO_KEY_R:
-                            confirm_restart();
+                            confirm_restart(&nset);
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
                             if(game_state != GAME_PLAYING) break;

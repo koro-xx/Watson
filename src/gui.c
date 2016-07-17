@@ -52,7 +52,7 @@ ALLEGRO_FONT *gui_font = NULL;
 int gui_font_h;
 WZ_WIDGET *base_gui = NULL;
 
-Settings nset;
+Settings nset = {0};
 
 enum {
     BUTTON_ROWS,
@@ -202,6 +202,19 @@ void init_guis(int x, int y, int w, int h){
     base_gui->h = h;
 }
 
+void remove_all_guis(void)
+{
+    while(base_gui->last_child)
+        remove_gui(base_gui->last_child);
+}
+
+void destroy_base_gui()
+{
+    remove_all_guis();
+    wz_destroy(base_gui);
+    destroy_theme();
+}
+
 WZ_WIDGET* create_msg_gui(int id, ALLEGRO_USTR *msg)
 {
     int w = base_gui->w/2;
@@ -238,10 +251,10 @@ WZ_WIDGET* create_msg_gui(int id, ALLEGRO_USTR *msg)
 
 
 WZ_WIDGET* create_yesno_gui(int id, int button_ok_id, int button_cancel_id, ALLEGRO_USTR *msg){
-    int w = base_gui->w/3;
-    int h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(msg));
     int but_w = 6*gui_font_h;
     int but_h = gui_font_h*1.5;
+    int w = max(base_gui->w/3, 2*but_w + 3*gui_font_h);
+    int h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(msg));
     
     WZ_WIDGET *wgt, *gui = new_widget(id, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - (3*gui_font_h + but_h + h))/2);
     
@@ -311,7 +324,7 @@ WZ_WIDGET *create_settings_gui(void)
     for(i=0; i<5; i++)
     {
         wgt = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_newf("%c", '4'+i), 1, GROUP_ROWS, BUTTON_ROWS);
-        if(4+i == set.n) ((WZ_BUTTON *)wgt)->down = 1;
+        if(4+i == set.h) ((WZ_BUTTON *)wgt)->down = 1;
     }
 
     // number of columns multitoggle
@@ -320,7 +333,7 @@ WZ_WIDGET *create_settings_gui(void)
     for(i=0; i<5; i++)
     {
         wgt = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_h, but_h, al_ustr_newf("%c", '4'+i), 1, GROUP_COLS, BUTTON_COLS);
-        if(4+i == set.h) ((WZ_BUTTON *)wgt)->down = 1;
+        if(4+i == set.n) ((WZ_BUTTON *)wgt)->down = 1;
     }
     
     // sound + swtich tiles + zoom
@@ -357,9 +370,10 @@ WZ_WIDGET *create_settings_gui(void)
     return gui;
 }
 
-void confirm_restart(void)
+void confirm_restart(Settings *new_set)
 {
-    add_gui(base_gui, create_yesno_gui(-1, BUTTON_EXIT_NOW, BUTTON_CLOSE, al_ustr_newf("Start new %dx%d%s game?", nset.n, nset.h, nset.advanced ? " advanced" : "")));
+    nset = *new_set;
+    add_gui(base_gui, create_yesno_gui(-1, BUTTON_RESTART_NOW, BUTTON_CLOSE, al_ustr_newf("Start new %dx%d%s game?", nset.n, nset.h, nset.advanced ? " advanced" : "")));
 }
 
 void confirm_exit(void)
@@ -470,17 +484,17 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                 case BUTTON_OK:
                     if( (nset.n != set.n) || (nset.h != set.h) || (nset.advanced != set.advanced) )
                     {
-                        confirm_restart();
+                        confirm_restart(&nset);
                     }
                     else
                     {
-                        set = nset;
+                        nset = set;
                         remove_gui(gui);
                     }
                     break;
                     
                 case BUTTON_RESTART:
-                    confirm_restart();
+                    confirm_restart(&nset);
                     break;
                     
                 case BUTTON_TILES:
@@ -552,6 +566,7 @@ void gui_send_event(ALLEGRO_EVENT *event)
         handle_gui_event(event);
     }
 }
+
 
 //
 //
@@ -794,66 +809,7 @@ void draw_text_gui(ALLEGRO_USTR *text)
     wz_destroy(gui);
 }
 
-// width is preferred, max_height is enforced
-//void draw_multiline_wz_box(const char *text, int cx, int cy, int width, int max_height)
-//{
-//    // Initialize Allegro 5 and the font routines
-//    WZ_WIDGET *gui, *wgt;
-//    int text_h, text_w = width - 40;
-//    int len, lines;
-//    
-//    len = strlen(text);
-//    lines = 1+get_multiline_text_lines(gui_font, text_w, text);
-//    
-//    if(gui_font_h * lines > max_height){
-//        // new estimate
-//        font_size = -sqrt(-((float)max_height*font_size)/lines);
-//        al_destroy_font(font);
-//        font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
-//        lines = 1+get_multiline_text_lines(font, text_w, text);
-//    
-//        if(-font_size * lines > max_height){//this time be drastic
-//            font_size/=2;
-//            al_destroy_font(font);
-//            font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
-//            lines = 1+get_multiline_text_lines(font, text_w, text);
-//            if(-font_size * lines > max_height){
-//                // if this still doesn't work, use a fixed font size and let it overflow
-//                font_size = 15;
-//                al_destroy_font(font);
-//                font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size);
-//                lines = 1+get_multiline_text_lines(font, text_w, text);
-//            }
-//        }
-//    }
-//    
-//    text_h = -font_size*lines;
-//            
-//    memset(&skin_theme, 0, sizeof(skin_theme));
-//    memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
-//    skin_theme.theme.font = font;
-//    skin_theme.theme.color1 = GUI_BG_COLOR;
-//    skin_theme.theme.color2 = GUI_TEXT_COLOR;
-//    skin_theme.box_bitmap = al_load_bitmap("data/box.png");
-//
-//    if(!skin_theme.box_bitmap) errlog("Error loading skin bitmap");
-//    wz_init_skin_theme(&skin_theme);
-//    
-//    gui = wz_create_widget(0, cx - width/2, cy-(text_h+40)/2, -1);
-//    wz_set_theme(gui, (WZ_THEME*)&skin_theme);
-//    
-//    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, width, text_h+40, -1);
-//    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-//    wz_update(gui, 1);
-//
-//    wz_draw(gui);
-//    al_draw_multiline_text(font, WHITE_COLOR, cx-width/2 + 20, cy-text_h/2, width-40, -font_size, ALLEGRO_ALIGN_LEFT, text);
-//    
-//    al_destroy_bitmap(skin_theme.box_bitmap);
-//    wz_destroy_skin_theme(&skin_theme);
-//    wz_destroy(gui);
-//    al_destroy_font(font);
-//}
+
 
 //void params_gui(Board *b, ALLEGRO_EVENT_QUEUE *queue)
 //{

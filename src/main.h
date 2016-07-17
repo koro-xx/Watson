@@ -46,6 +46,7 @@ typedef struct Settings{
 } Settings;
 
 extern Settings set;
+extern Settings nset; // settings for new game
 
 void emit_event(int event_type);
 void draw_stuff(Board *b);
