@@ -805,6 +805,7 @@ RESTART:
 			b.max_xsize = al_get_display_width(display);
 			b.max_ysize = al_get_display_height(display);
             create_board(&g, &b, 0);
+            update_guis(b.all.x, b.all.y, b.xsize, b.ysize);
             al_set_target_backbuffer(display);
             update_board(&g, &b);
 			al_convert_bitmaps(); // turn bitmaps to video bitmaps

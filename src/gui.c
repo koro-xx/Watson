@@ -176,7 +176,6 @@ WZ_WIDGET* create_fill_layout(WZ_WIDGET* parent, float x, float y, float w, floa
     return wgt;
 }
 
-
 WZ_WIDGET* new_widget(int id, int x, int y){
     
     WZ_WIDGET *wgt;
@@ -189,9 +188,15 @@ void update_guis(int x, int y, int w, int h){
     gui_font_h = h/35;
     al_destroy_font(gui_font);
     gui_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -gui_font_h);
+    wz_resize(base_gui, (float)h/base_gui->h);
+    base_gui->x = x;
+    base_gui->y = y;
     base_gui->w = w;
     base_gui->h = h;
+    
     skin_theme.theme.font = gui_font;
+    wz_update(base_gui, 0);
+    emit_event(EVENT_REDRAW);
 }
 
 void init_guis(int x, int y, int w, int h){
@@ -296,7 +301,7 @@ WZ_WIDGET *create_settings_gui(void)
     
     but_sw = max(al_get_text_width(skin_theme.theme.font, "zoom"), but_sw);
     but_sw += fh;
-    but_w += fh;
+    but_w += 2*fh;
     
     gui_w = max(gui_w, 3*(but_w+sep) + sep*3);
     

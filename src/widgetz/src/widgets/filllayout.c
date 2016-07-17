@@ -59,6 +59,19 @@ int wz_fill_layout_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 			ret = 0;
 			break;
 		}
+        case WZ_RESIZE:
+        {
+            float factor = *(float *)&event->user.data3;
+            wgt->x *= factor;
+            wgt->y *= factor;
+            wgt->w *= factor;
+            wgt->h *= factor;
+            wgt->local_x *= factor;
+            wgt->local_y *= factor;
+            box->h_spacing *= factor;
+            box->v_spacing *= factor;
+            break;
+        }
 		case WZ_UPDATE:
 		{
 			float total_width = box->h_spacing;

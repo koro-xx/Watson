@@ -127,17 +127,17 @@ void wz_skin_draw_box(struct WZ_THEME* theme, float x, float y, float w, float h
 	WZ_DEF_THEME* def = (WZ_DEF_THEME*)theme;
 	ALLEGRO_COLOR col;
 
-	if(skin->box_patch)
-	{
-		if(style & WZ_STYLE_FOCUSED)
-			col = wz_scale_color(def->color1, 1.5);
-		else if (style & WZ_STYLE_DISABLED)
+    if(skin->box_patch)
+    {
+        if(style & WZ_STYLE_FOCUSED)
+            col = wz_scale_color(def->color1, 1.5);
+        else if (style & WZ_STYLE_DISABLED)
             col = wz_scale_color(def->color1, 0.5);
         else
-			col = def->color1;
-
-		draw_tinted_patch(skin->box_patch, col, x, y, w, h);
-	}
+            col = def->color1;
+        
+        draw_tinted_patch(skin->box_patch, col, x, y, w, h);
+    }
 }
 
 void wz_skin_draw_button(WZ_THEME* theme, float x, float y, float w, float h, ALLEGRO_USTR* text, int style)

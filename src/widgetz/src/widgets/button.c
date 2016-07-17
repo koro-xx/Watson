@@ -48,10 +48,10 @@ int wz_button_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 		}
 		case WZ_DRAW:
 		{
-			if(wgt->flags & WZ_STATE_HIDDEN)
-			{
-				ret = 0;
-			}
+            if(wgt->flags & WZ_STATE_HIDDEN)
+            {
+                ret = 0;
+            }
             else
             {
                 int flags = 0;
@@ -62,11 +62,11 @@ int wz_button_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
                 
                 if(but->down) flags |= WZ_STYLE_DOWN;
                 
-				wgt->theme->draw_button(wgt->theme, wgt->local_x, wgt->local_y, wgt->w, wgt->h, but->text, flags);
-			}
-
-			break;
-		}
+                wgt->theme->draw_button(wgt->theme, wgt->local_x, wgt->local_y, wgt->w, wgt->h, but->text, flags);
+            }
+            
+            break;
+        }
 #if (ALLEGRO_SUB_VERSION > 0)
 		case ALLEGRO_EVENT_TOUCH_MOVE:
 			x = event->touch.x;
