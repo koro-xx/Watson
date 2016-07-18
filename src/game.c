@@ -24,7 +24,7 @@ char *clue_description[NUMBER_OF_RELATIONS] = {
     [REVEAL] = "First on given column"
 };
 
-int REL_PERCENT[NUMBER_OF_RELATIONS] = {
+int DEFAULT_REL_PERCENT[NUMBER_OF_RELATIONS] = {
     [NEXT_TO] = 20,
     [NOT_NEXT_TO] = 5,
     [ONE_SIDE] = 2,
@@ -38,6 +38,9 @@ int REL_PERCENT[NUMBER_OF_RELATIONS] = {
     [REVEAL] = 1
 };
 
+int REL_PERCENT[NUMBER_OF_RELATIONS] = {[NEXT_TO] = -1};
+
+//xxx todo: fix rel_percent_max when rel_percent changes!!!
 int REL_PERCENT_MAX;
 
 // Prototypes
@@ -767,16 +770,7 @@ int get_random_tile(Game *g, int i, int *j, int *k){ // random item in column i
 int random_relation(void){
     int m, s, i;
     int rel;
-    static int firstcall=1;
-    
-    if(firstcall){ // initialize probabilities
-        firstcall=0;
-        REL_PERCENT_MAX=0;
-        for(i=0;i<NUMBER_OF_RELATIONS; i++){
-            REL_PERCENT_MAX += REL_PERCENT[i];
-        }
-    }
-    
+
     rel=-1;
     m = rand_int(REL_PERCENT_MAX);
     s=0;
@@ -936,8 +930,24 @@ void get_clue(Game *g, int i, int j, int rel, Clue *clue){
 };
 
 
+void reset_rel_params(void)
+{
+    int i;
+
+    for(i=0;i<NUMBER_OF_RELATIONS; i++) REL_PERCENT[i] = DEFAULT_REL_PERCENT[i];
+}
+
 void init_game(Game *g){
     int i,j,k;
+    
+    // if REL_PERCENT is not set, use defaults
+    if(REL_PERCENT[NEXT_TO] == -1) reset_rel_params();
+    
+    // initialize REL_PERCENT_MAX (total sum) for random relation creation
+    REL_PERCENT_MAX=0;
+    for(i=0;i<NUMBER_OF_RELATIONS; i++){
+        REL_PERCENT_MAX += REL_PERCENT[i];
+    }
     
     for(i=0;i<g->n;i++){
         for(j=0;j<g->h;j++){
