@@ -779,9 +779,10 @@ RESTART:
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_SPACE:
+                            // tests:
                             //params_gui(&g, &b, event_queue);
-                            g.time = 10.0;
-                            show_win_gui(g.time);
+                            //g.time = 10.0;
+                            //show_win_gui(g.time);
                             break;
                     }
                     break;
@@ -874,8 +875,7 @@ RESTART:
         }
         
         if((game_state == GAME_OVER) && noexit){
-            // xxx todo: add back
-            // win_gui(&g, &b, event_queue);
+            show_win_gui(g.time);
         }
         
         if(redraw) {

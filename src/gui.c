@@ -133,6 +133,17 @@ void draw_guis(void)
     }
 }
 
+// unused
+void init_theme_noskin(void)
+{
+    memset(&skin_theme, 0, sizeof(skin_theme));
+    memcpy(&skin_theme, &wz_def_theme, sizeof(wz_def_theme));
+    gui_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -gui_font_h);
+    skin_theme.theme.font = gui_font;
+    skin_theme.theme.color1 = al_map_rgb(150, 150, 150);
+    skin_theme.theme.color2 = WHITE_COLOR;
+}
+
 void init_theme(void)
 {
     memset(&skin_theme, 0, sizeof(skin_theme));
@@ -714,7 +725,7 @@ void update_base_gui(float dt)
 
 void gui_send_event(ALLEGRO_EVENT *event)
 {
-    if(wz_send_event(base_gui, event))  emit_event(EVENT_REDRAW);
+    if(wz_send_event(base_gui->last_child, event))  emit_event(EVENT_REDRAW);
     
     if(event->type == WZ_BUTTON_PRESSED || event->type == WZ_TEXT_CHANGED)
     {
