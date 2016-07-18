@@ -54,6 +54,10 @@ WZ_WIDGET *base_gui = NULL;
 
 Settings nset = {0};
 
+char hi_name[10][64];
+double hi_score[10];
+int hi_pos = -1;
+
 enum {
     BUTTON_ROWS,
     BUTTON_COLS,
@@ -78,6 +82,7 @@ enum {
     BUTTON_LOAD_NOW,
     BUTTON_RESTART_NOW,
     GUI_SETTINGS,
+    EDITBOX_HISCORE,
 };
 
 // even if wgt->own = 1, the original function duplicates the string
@@ -375,6 +380,126 @@ WZ_WIDGET *create_settings_gui(void)
     return gui;
 }
 
+WZ_WIDGET *create_win_gui(double time)
+{
+    // Initialize Allegro 5 and the font routines
+    WZ_WIDGET* gui;
+    WZ_WIDGET* wgt;
+    int gui_w, gui_h, but_w, lh;
+    int i,j;
+    
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
+    
+    lh = 1.2*gui_font_h;
+    gui_w = al_get_text_width(gui_font, "You solved the puzzle in 000:000:000") + 4*lh + 2;
+    but_w = 2*lh + max(al_get_text_width(gui_font, "Settings"), al_get_text_width(gui_font, "New game"));
+    
+    // 13 lines of text + 1.5 for button + 2 for margin = lh*16 (+17 * vspace?)
+    gui_h = 16.5*lh+2;
+    
+    gui = new_widget(-1, (base_gui->w - gui_w)/2, (base_gui->h - gui_h)/2);
+    wz_create_fill_layout(gui, 0, 0, gui_w, gui_h, lh, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_TOP, -1);
+    wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+
+    get_highscores(set.n, set.h, set.advanced, hi_name, (double *)hi_score);
+    if(time > 0)
+    {
+        for(i=0; i<10; i++)
+        {
+            if(hi_score[i]>time) break;
+        }
+    }
+    else
+    {
+        i = 10;
+    }
+
+    if(time > 0)
+        wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)time/ 3600, (int)time/60, (int)time %60 ), 1, -1);
+
+    wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("Best times for %d x %d board:", set.n, set.h), 1, -1);
+    
+    if(!(time > 0))
+        wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+    
+    for(j=0;j<i;j++)
+    {
+        wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1);
+        wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/5, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+        wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)hi_score[j]/3600, ((int)hi_score[j]/60)%60, (int)hi_score[j] % 60), 1, -1);
+    }
+    
+    if (i>=10)
+    {
+        hi_pos = -1;
+    }
+    else
+    {
+        hi_pos = i;
+#ifdef ALLEGRO_ANDROID
+        wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_new("You"), 1, -1); // get_highscores(g);
+#else
+        wgt = (WZ_WIDGET*)wz_create_editbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, al_ustr_new("your name"), 1, EDITBOX_HISCORE);
+#endif
+        wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/5, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+        wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int) time/3600, ((int)time/60)%60, (int)time % 60), 1, -1);
+        
+        for(j=i;j<9;j++)
+        {
+            wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1);
+            wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/5, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+            wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)hi_score[j]/3600, ((int)hi_score[j]/60)%60, (int)hi_score[j] % 60), 1, -1);
+            
+        }
+        memcpy(&hi_name[i+1], &hi_name[i], 64*sizeof(char)*(9-i));
+        memcpy(&hi_score[i+1], &hi_score[i], sizeof(double)*(9-i));
+        hi_score[i] = time;
+        hi_name[i][0] = '\0';
+    }
+    
+    wz_create_textbox(gui, 0, 0, gui_w*0.9, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
+    
+    wz_create_button(gui, 0, 0, but_w, 1.5*lh, al_ustr_new("New Game"), 1, BUTTON_RESTART_NOW);
+    wz_create_button(gui, 0, 0, but_w, 1.5*lh, al_ustr_new("Settings"), 1, BUTTON_SETTINGS);
+    
+    return gui;
+}
+
+
+WZ_WIDGET *create_text_gui(ALLEGRO_USTR *text)
+{
+    int w = base_gui->w/3;
+    int h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(text));
+    int i;
+    WZ_WIDGET *wgt, *gui;
+    
+    for(i=0; i<3; i++)
+    {
+        if(h + gui_font_h*2 > base_gui->h)
+        {
+            w += base_gui->w/6;
+            h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(text));
+        }
+        else
+        {
+            break;
+        }
+    }
+    
+    gui = new_widget(-1, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - 2*gui_font_h)/2);
+    
+    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, w + 2*gui_font_h, h + 2*gui_font_h, -1);
+    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+    
+    wz_create_textbox(gui, gui_font_h, gui_font_h, w, h, WZ_ALIGN_LEFT, WZ_ALIGN_TOP, text, 1, -1);
+    
+    wz_update(gui, 0);
+    return gui;
+}
+
+
 void confirm_restart(Settings *new_set)
 {
     nset = *new_set;
@@ -407,6 +532,11 @@ void confirm_load(void)
 void show_settings(void)
 {
     add_gui(base_gui, create_settings_gui());
+}
+
+void show_win_gui(double time)
+{
+    add_gui(base_gui, create_win_gui(time));
 }
 
 //
@@ -442,6 +572,21 @@ int handle_gui_event(ALLEGRO_EVENT *event)
     }
     
     
+    // hiscore
+    
+    if(event->type == WZ_TEXT_CHANGED)
+    {
+        if(wgt->id == EDITBOX_HISCORE)
+        {
+            strncpy(hi_name[hi_pos], al_cstr(((WZ_TEXTBOX *) wgt)->text), 63);
+            wgt->flags &= ~WZ_STATE_HAS_FOCUS;
+            wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
+            save_highscores(set.n, set.h, set.advanced, hi_name, hi_score);
+            remove_gui(wgt);
+            add_gui(base_gui, create_win_gui(-1));
+        }
+    }
+    
     // general buttons
     if(event->type == WZ_BUTTON_PRESSED)
     {
@@ -467,6 +612,9 @@ int handle_gui_event(ALLEGRO_EVENT *event)
             case BUTTON_LOAD_NOW:
                 emit_event(EVENT_LOAD);
                 remove_gui(gui);
+                break;
+            case BUTTON_SETTINGS:
+                add_gui(base_gui, create_settings_gui());
                 break;
         }
     }
@@ -507,7 +655,8 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                     break;
                     
                 case BUTTON_ZOOM:
-                    SWITCH(nset.fat_fingers);
+                    SWITCH(set.fat_fingers);
+                    nset.fat_fingers = set.fat_fingers;
                     break;
                     
                 case BUTTON_ABOUT:
@@ -515,12 +664,13 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                     break;
                     
                 case BUTTON_SOUND:
-                    SWITCH(nset.sound_mute);
-                    if(nset.sound_mute){
+                    SWITCH(set.sound_mute);
+                    if(set.sound_mute){
                         wz_set_text_own((WZ_WIDGET*) event->user.data2, al_ustr_new("Sound: off"));
                     } else {
                         wz_set_text_own((WZ_WIDGET*) event->user.data2, al_ustr_new("Sound: on"));
                     }
+                    nset.sound_mute = set.sound_mute;
                     break;
                     
                 case BUTTON_PARAMS:
@@ -566,244 +716,13 @@ void gui_send_event(ALLEGRO_EVENT *event)
 {
     if(wz_send_event(base_gui, event))  emit_event(EVENT_REDRAW);
     
-    if(event->type == WZ_BUTTON_PRESSED)
+    if(event->type == WZ_BUTTON_PRESSED || event->type == WZ_TEXT_CHANGED)
     {
         handle_gui_event(event);
     }
 }
 
 
-//
-//
-//void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue)
-//{
-//    // Initialize Allegro 5 and the font routines
-//    int refresh_rate;
-//    float size = 2.0;
-//    int font_size = 25;
-//    double fixed_dt;
-//    double old_time;
-//    double game_time;
-//    double start_time;
-//    WZ_WIDGET* gui;
-//    WZ_SKIN_THEME skin_theme;
-//    WZ_WIDGET* wgt;
-//    bool done = false;
-//    ALLEGRO_FONT *font;
-//    int gui_w = 600;
-//    int gui_h = 600;
-//    ALLEGRO_EVENT event;
-//    int cx = b->xsize/2 + b->all.x;
-//    int cy = b->ysize/2 + b->all.y;
-//    char hi_name[10][64];
-//    double hi_score[10];
-//    int i,j, hi_pos;
-//    
-//#ifdef ALLEGRO_ANDROID
-//    al_android_set_apk_file_interface();
-//#endif
-//    
-//    size = (float)b->xsize*0.5/gui_w;
-//    
-//    font = load_font_mem(text_font_mem, TEXT_FONT_FILE, font_size * size);
-//  
-//    refresh_rate = 60;
-//    fixed_dt = 1.0f / refresh_rate;
-//    old_time = al_current_time();
-//    game_time = al_current_time();
-//    
-//    memset(&skin_theme, 0, sizeof(skin_theme));
-//    memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
-//    skin_theme.theme.font = font;
-//    skin_theme.theme.color1 = GUI_BG_COLOR;
-//    skin_theme.theme.color2 = GUI_TEXT_COLOR;
-//    skin_theme.button_up_bitmap = al_load_bitmap("data/button_up.png");
-//    skin_theme.button_down_bitmap =al_load_bitmap("data/button_down.png");
-//    skin_theme.box_bitmap = al_load_bitmap("data/box.png");
-//    skin_theme.editbox_bitmap = al_load_bitmap("data/editbox.png");
-//    wz_init_skin_theme(&skin_theme);
-//    
-//    gui = wz_create_widget(0, cx-size*gui_w/2, cy-size*gui_h/2, -1);
-//    wz_set_theme(gui, (WZ_THEME*)&skin_theme);
-//    
-////    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, gui_w * size, 200 * size, -1);
-////    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-//    wgt = (WZ_WIDGET *) wz_create_fill_layout(gui, 0, 0, gui_w * size, gui_h * size, 40*size, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_LEFT, -1);
-//
-//    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size* 1.5 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)g->time/ 3600, (int)g->time/60, (int)g->time %60 ), 1, -1);
-////    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size* 1.5 * size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("Type your name below:"), 1, -1);
-//
-//    
-//    
-//    //xxx work in progress. check types?
-//    get_highscores(g, hi_name, (double *)hi_score);
-//    for(i=0; i<10; i++)
-//    {
-//        if(hi_score[i]>g->time) break;
-//    }
-//    
-////    if(i<10){
-////        wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size*size*1.5, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new("You got a best time!"), 1, -1);
-////    }
-//    
-//    wz_create_textbox(gui, 0, 0, gui_w*0.9 * size, font_size*size*1.5, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("Best times for %d x %d board:", b->n, b->h), 1, -1);
-//    
-//    for(j=0;j<i;j++)
-//    {
-//        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1); // get_highscores(g);
-//        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)hi_score[j]/3600, ((int)hi_score[j]/60)%60, (int)hi_score[j] % 60), 1, -1);
-//    }
-//
-//    if(i<10){
-//        hi_pos = i;
-//#ifdef ALLEGRO_ANDROID
-//        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Android user"), 1, -1); // get_highscores(g);
-//        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)g->time/3600, ((int)g->time/60)%60, (int)g->time % 60), 1, -1);
-//#else
-//        wgt = (WZ_WIDGET*)wz_create_editbox(gui, 0, 0, gui_w*0.3*size, font_size * size*1.2, al_ustr_new("your name"), 1, -1);
-//        wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)g->time/3600, ((int)g->time/60)%60, (int)g->time % 60), 1, -1);
-//#endif
-//        for(j=i;j<9;j++)
-//        {
-//            wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new(hi_name[j]), 1, -1); // get_highscores(g);
-//            wz_create_textbox(gui, 0, 0, gui_w*0.3*size, font_size*1.2* size, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_newf("%02d:%02d:%02d", (int)hi_score[j]/3600, ((int)hi_score[j]/60)%60, (int)hi_score[j] % 60), 1, -1);
-//        }
-//        memcpy(&hi_name[i+1], &hi_name[i], 64*sizeof(char)*(9-i));
-//        memcpy(&hi_score[i+1], &hi_score[i], sizeof(double)*(9-i));
-//        hi_score[i] = g->time;
-//        hi_name[i][0] = '\0';
-//    }
-//    
-//    wz_create_textbox(gui, 0, 0, gui_w*0.9*size, font_size*1.2* size, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
-//    
-//    wz_create_button(gui, 0, 0, 150 * size, 80 * size, al_ustr_new("New Game"), 1, BUTTON_RESTART);
-//    wz_create_button(gui, 0, 0, 150 * size, 80 * size, al_ustr_new("Settings"), 1, BUTTON_SETTINGS);
-//    
-//    wz_register_sources(gui, queue);
-//    register_gui(b, gui);
-//    
-//    al_flush_event_queue(queue);
-//    while(!done)
-//    {
-//        double dt = al_current_time() - old_time;
-//        al_rest(fixed_dt - dt); //rest at least fixed_dt
-//        dt = al_current_time() - old_time;
-//        old_time = al_current_time();
-//        
-//        if(old_time - game_time > dt)    //eliminate excess overflow
-//        {
-//            game_time += fixed_dt * floor((old_time - game_time) / fixed_dt);
-//        }
-//        
-//        start_time = al_current_time();
-//        
-//        while(old_time - game_time >= 0)
-//        {
-//            game_time += fixed_dt;
-//            wz_update(gui, fixed_dt);
-//            
-//            while(!done && al_peek_next_event(queue, &event))
-//            {
-//                if((event.type == ALLEGRO_EVENT_DISPLAY_RESIZE) || (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) || (event.type == ALLEGRO_EVENT_DISPLAY_HALT_DRAWING)){ // any other values that require returning?
-//                    done=1;
-//                    break;
-//                }
-//                al_drop_next_event(queue);
-//                /*
-//                 Give the gui the event, in case it wants it
-//                 */
-//                wz_send_event(gui, &event);
-//                
-//                switch(event.type)
-//                {
-//#ifndef ALLEGRO_ANDROID
-//                    case WZ_TEXT_CHANGED: // hiscore name entered
-//                    {
-//                        strncpy(hi_name[hi_pos], al_cstr(((WZ_TEXTBOX *) wgt)->text), 63);
-//                        wgt->flags &= ~WZ_STATE_HAS_FOCUS;
-//                        wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-//                        save_highscores(g, hi_name, hi_score);
-//                        // can i destroy a widget on the fly?
-//                    }
-//#endif
-//                    case WZ_BUTTON_PRESSED:
-//                    {
-//                        switch((int)event.user.data1)
-//                        {
-//                            case BUTTON_SETTINGS:
-//                            {
-//                                done = true;
-//                                emit_event(EVENT_SETTINGS);
-//                                break;
-//                            }
-//                                
-//                            case BUTTON_RESTART:
-//                                done = true;
-//                                emit_event(EVENT_RESTART);
-//                                break;
-//                        }
-//                    }
-//                }
-//            }
-//            
-//            if(al_current_time() - start_time > fixed_dt) //break if we start taking too long
-//                break;
-//        }
-//        
-//        //al_clear_to_color(al_map_rgba_f(0.5, 0.5, 0.7, 1));
-//        /*
-//         Draw the gui
-//         */
-//        if(!done){
-//            draw_stuff(b);
-//            al_wait_for_vsync();
-//            al_flip_display();
-//        }
-//    }
-//    
-//    al_destroy_bitmap(skin_theme.box_bitmap);
-//    al_destroy_bitmap(skin_theme.button_up_bitmap);
-//    al_destroy_bitmap(skin_theme.button_down_bitmap);
-//    al_destroy_bitmap(skin_theme.editbox_bitmap);
-//    wz_destroy_skin_theme(&skin_theme);
-//    unregister_gui(b, gui);
-//    wz_destroy(gui);
-//    al_destroy_font(font);
-//}
-
-
-
-
-WZ_WIDGET *create_text_gui(ALLEGRO_USTR *text)
-{
-    int w = base_gui->w/3;
-    int h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(text));
-    int i;
-    WZ_WIDGET *wgt, *gui;
-    
-    for(i=0; i<3; i++)
-    {
-        if(h + gui_font_h*2 > base_gui->h)
-        {
-            w += base_gui->w/6;
-            h = gui_font_h*get_multiline_text_lines(gui_font, w, al_cstr(text));
-        }
-        else
-        {
-            break;
-        }
-    }
-    
-    gui = new_widget(-1, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - 2*gui_font_h)/2);
-    
-    wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, w + 2*gui_font_h, h + 2*gui_font_h, -1);
-    wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
-    
-    wz_create_textbox(gui, gui_font_h, gui_font_h, w, h, WZ_ALIGN_LEFT, WZ_ALIGN_TOP, text, 1, -1);
-    
-    wz_update(gui, 0);
-    return gui;
-}
 
 void draw_text_gui(ALLEGRO_USTR *text)
 {

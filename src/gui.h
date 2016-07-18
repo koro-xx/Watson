@@ -28,11 +28,11 @@ void confirm_load(void);
 void show_settings(void);
 void show_help(void);
 void show_about(void);
+void show_win_gui(double time);
 void draw_text_gui(ALLEGRO_USTR *text);
 
 void update_base_gui(float dt);
 
-void win_gui(Game *g, Board *b, ALLEGRO_EVENT_QUEUE *queue);
 void params_gui(Board *b, ALLEGRO_EVENT_QUEUE *queue);
 // wrapper for WidgetZ gui to use cstr instead of ustr
 

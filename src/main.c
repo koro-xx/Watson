@@ -780,7 +780,8 @@ RESTART:
                             break;
                         case ALLEGRO_KEY_SPACE:
                             //params_gui(&g, &b, event_queue);
-                            //win_gui(&g, &b, event_queue);
+                            g.time = 10.0;
+                            show_win_gui(g.time);
                             break;
                     }
                     break;
@@ -1312,7 +1313,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 
 // work in progress
 // actually highscores must include string + int. Maybe do one file for each mode.
-void get_highscores(Game *g, char (*name)[64], double *score){
+void get_highscores(int n, int h, int advanced, char (*name)[64], double *score){
     ALLEGRO_PATH *path;
     ALLEGRO_FILE *fp;
     char filename[100];
@@ -1323,7 +1324,7 @@ void get_highscores(Game *g, char (*name)[64], double *score){
 #endif
 
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
-    snprintf(filename, 99, "Watson%dx%d-%d.hi", g->n, g->h, g->advanced);
+    snprintf(filename, 99, "Watson%dx%d-%d.hi", n, h, advanced);
     al_set_path_filename(path,filename);
     
     fp = al_fopen(al_path_cstr(path, '/'), "rb");
@@ -1342,7 +1343,7 @@ void get_highscores(Game *g, char (*name)[64], double *score){
     al_destroy_path(path);
 }
                                  
-void save_highscores(Game *g, char (*name)[64], double *score){
+void save_highscores(int n, int h, int advanced, char (*name)[64], double *score){
     ALLEGRO_PATH *path;
     ALLEGRO_FILE *fp;
     char filename[100];
@@ -1358,7 +1359,7 @@ void save_highscores(Game *g, char (*name)[64], double *score){
         return;
     }
     
-    snprintf(filename, 99, "Watson%dx%d-%d.hi", g->n, g->h, g->advanced);
+    snprintf(filename, 99, "Watson%dx%d-%d.hi", n, h, advanced);
     al_set_path_filename(path, filename);
     fp = al_fopen(al_path_cstr(path, '/'), "wb");
     if(!fp){
