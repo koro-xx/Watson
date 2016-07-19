@@ -1351,6 +1351,8 @@ void save_highscores(int n, int h, int advanced, char (*name)[64], double *score
 #endif
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    deblog("ALLEGRO_USER_DATA_PATH = %s", al_path_cstr(path, '/'));
+    
     if(!al_make_directory(al_path_cstr(path, '/'))){
         errlog("could not open or create path %s.\n", al_path_cstr(path, '/'));
         al_destroy_path(path);
