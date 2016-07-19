@@ -809,7 +809,9 @@ int handle_gui_event(ALLEGRO_EVENT *event)
             {
                 wgt = gui->first_child;
                 reset_rel_params();
+                nset.advanced = set.advanced = 0;
                 
+                // update sliders
                 while(wgt)
                 {
                     if(wgt->id >= 1024) // is slider

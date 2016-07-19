@@ -7,10 +7,11 @@
  by Koro (1/2016)
 
  Todo
+ - fix game saving in linux (and possibly android?)
  - add android keyboard input to highscore table
  - finish tutorial
- - change wait_for_input to return key pressed or event type
  - add additional clue type
+
  
  NOTE: in android, to draw text to a bitmap without issues we need the bitmap to be created detached from the screen.
  so we set a null target bitmap before creating them and then we use al_convert_bitmaps
@@ -463,9 +464,6 @@ int main(int argc, char **argv){
 
     if(!load_game_f(&g,&b)) set.saved=1;
     
-//    draw_title();
-//    al_flip_display();
-//    wait_for_input(NULL);
     restart=0;
     game_state = GAME_INTRO;
     
