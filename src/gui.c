@@ -811,13 +811,19 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                 reset_rel_params();
                 nset.advanced = set.advanced = 0;
                 
-                // update sliders
+                // update sliders and button
                 while(wgt)
                 {
                     if(wgt->id >= 1024) // is slider
                     {
                         ((WZ_SCROLL*)wgt)->cur_pos = REL_PERCENT[wgt->id-1024];
                     }
+                    else if(wgt->id == BUTTON_EXTRA_HARD)
+                    {
+                        ((WZ_BUTTON*)wgt)->down = 0;
+                    }
+                    
+                    
                     wgt = wgt->next_sib;
                 }
             }
