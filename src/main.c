@@ -7,7 +7,9 @@
  by Koro (1/2016)
 
  Todo
- - fix game saving in linux (and possibly android?)
+ - thicker arrows in bitmaps
+ - bigger gui fonts for mobile
+ - fix game/score saving in linux and android
  - add android keyboard input to highscore table
  - finish tutorial
  - add additional clue type

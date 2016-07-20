@@ -149,6 +149,10 @@ void init_theme_noskin(void)
 
 void init_theme(void)
 {
+#ifdef ALLEGRO_ANDROID
+    al_android_set_apk_file_interface();
+#endif
+    
     memset(&skin_theme, 0, sizeof(skin_theme));
     memcpy(&skin_theme, &wz_skin_theme, sizeof(skin_theme));
     gui_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -gui_font_h);
@@ -204,7 +208,7 @@ WZ_WIDGET* new_widget(int id, int x, int y){
 }
 
 void update_guis(int x, int y, int w, int h){
-    gui_font_h = h/35;
+    gui_font_h = h/30;
     al_destroy_font(gui_font);
     gui_font = load_font_mem(text_font_mem, TEXT_FONT_FILE, -gui_font_h);
     wz_resize(base_gui, (float)h/base_gui->h);
@@ -401,10 +405,6 @@ WZ_WIDGET *create_win_gui(double time)
     WZ_WIDGET* wgt;
     int gui_w, gui_h, but_w, lh;
     int i,j;
-    
-#ifdef ALLEGRO_ANDROID
-    al_android_set_apk_file_interface();
-#endif
     
     lh = 1.2*gui_font_h;
     gui_w = al_get_text_width(gui_font, "You solved the puzzle in 000:000:000") + 4*lh + 2;
