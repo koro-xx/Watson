@@ -1060,6 +1060,11 @@ void unguess_tile(Game *g,  int i, int j){
     }
 };
 
+int is_vclue(RELATION rel){
+    return((rel == TOGETHER_2) || (rel == TOGETHER_3) || (rel == NOT_TOGETHER) || (rel == TOGETHER_NOT_MIDDLE) || (rel == TOGETHER_FIRST_WITH_ONLY_ONE));
+}
+
+// only for debug puprposes:
 int is_clue_valid(Game *g, Clue *clue){
     int ret=0;
     int i0, i1, i2, j0, k0, j1, k1, j2, k2;
@@ -1128,6 +1133,3 @@ int is_clue_valid(Game *g, Clue *clue){
     return ret;
 };
 
-int is_vclue(RELATION rel){
-    return((rel == TOGETHER_2) || (rel == TOGETHER_3) || (rel == NOT_TOGETHER) || (rel == TOGETHER_NOT_MIDDLE) || (rel == TOGETHER_FIRST_WITH_ONLY_ONE));
-}

@@ -1,7 +1,3 @@
-// Based in example.c
-// from the WidgetZ GUI library by Pavel Sountsov
-
-
 #include "gui.h"
 #include <stdio.h>
 #include <math.h>
@@ -94,32 +90,6 @@ void wz_set_text_own(WZ_WIDGET* wgt, ALLEGRO_USTR* text){
     wz_set_text(wgt, text);
     al_ustr_free(text);
 }
-
-//void register_gui(Board *b, WZ_WIDGET *gui){
-//        b->gui[b->gui_n] = gui;
-//        b->gui_n++;
-//}
-//
-//
-//
-//void unregister_gui(Board *b, WZ_WIDGET *gui){
-//    int i,j;
-//    
-//    // find gui index
-//    for(i=b->gui_n-1; b>=0; i--)
-//        if(b->gui[i] == gui)
-//            break;
-//    
-//    // in case not found
-//    if(i < 0)
-//        return;
-//    
-//    // shift remaining guis
-//    b->gui_n--;
-//    for(j=i; j<b->gui_n; j++)
-//        b->gui[j] = b->gui[j+1];
-//}
-
 
 void draw_guis(void)
 {
@@ -330,7 +300,6 @@ WZ_WIDGET *create_settings_gui(void)
     
     // main gui
     gui = new_widget(GUI_SETTINGS, (base_gui->w - gui_w)/2, (base_gui->h-rows*rh)/2);
-//    wz_set_theme(gui, (WZ_THEME*)&skin_theme);
     
     wgt = wz_create_box(gui, 0, 0, gui_w, gui_h+sep, -1);
     wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
@@ -338,13 +307,6 @@ WZ_WIDGET *create_settings_gui(void)
     // about button
     create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_TOP, -1);
     wz_create_textbox(gui, 0, 0, al_get_text_width(skin_theme.theme.font, "Settings"), but_h, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_new("Settings"), 1, -1);
-    
-    
-    // xxx todo: move "advanced" to tune pane.  Make sound on/off a single button, same for advanced.
-    //    wz_create_textbox(gui, 0, 0, al_get_text_width(skin_theme.theme.font, "Advanced: "), but_h, WZ_ALIGN_RIGHT, WZ_ALIGN_CENTRE, al_ustr_new("Advanced:"), 1, -1);
-    //    button_advanced = (WZ_WIDGET*)wz_create_toggle_button(gui, 0, 0, but_sw, but_h, set->advanced ? al_ustr_new("on") : al_ustr_new("off"), 1, -1, BUTTON_ADVANCED);
-    //    ((WZ_BUTTON*) button_advanced)->down = set->advanced;
-    
     
     // number of rows multitoggle
     create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
@@ -620,26 +582,6 @@ void show_params(void)
 {
     add_gui(base_gui, create_params_gui());
 }
-
-//
-//void draw_center_textbox_wait(const char *text, float width_factor, Board *b, ALLEGRO_EVENT_QUEUE *queue){
-////#ifndef ALLEGRO_ANDROID
-////    ALLEGRO_BITMAP *keep = screenshot();
-////#else
-////    al_clear_to_color(BLACK_COLOR);
-////#endif
-//    draw_stuff(b);
-//    draw_multiline_wz_box(text, b->all.x+b->xsize/2, b->all.y + b->ysize/2, width_factor*b->xsize, b->max_ysize);
-//    al_wait_for_vsync();
-//    al_flip_display();
-//    wait_for_input(queue);
-////#ifndef ALLEGRO_ANDROID
-////    al_draw_bitmap(keep,0,0,0);
-////    al_destroy_bitmap(keep);
-////#else
-////    al_clear_to_color(BLACK_COLOR);
-////#endif
-//}
 
 
 int handle_gui_event(ALLEGRO_EVENT *event)
