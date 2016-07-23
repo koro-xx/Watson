@@ -746,7 +746,7 @@ RESTART:
                             show_settings();
                             break;
                         case ALLEGRO_KEY_R:
-                            confirm_restart(&nset);
+                            confirm_restart(&set);
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
                             if(game_state != GAME_PLAYING) break;
@@ -1074,6 +1074,9 @@ void explain_clue(Board *b, Clue *clue)
         case TOGETHER_NOT_MIDDLE:
             show_info_text(b, al_ustr_newf("%s and %s are on the same column, and %s is NOT in that column.", b0, b2, b1));
             break;
+        case TOGETHER_FIRST_WITH_ONLY_ONE:
+            show_info_text(b, al_ustr_newf("%s is on the same column of either %s or %s, but NOT BOTH.", b0, b1, b2));
+            break;
         default:
             break;
     }
@@ -1131,6 +1134,10 @@ void show_hint(Game *g, Board *b){
         case TOGETHER_NOT_MIDDLE:
             show_info_text(b, al_ustr_newf("%s and %s are on the same column, and %s is NOT in that column, so we can rule out %s from here.", b0, b2, b1, b3));
             break;
+        case TOGETHER_FIRST_WITH_ONLY_ONE:
+            show_info_text(b, al_ustr_newf("%s is on the same column of either %s or %s, but NOT BOTH, so we can rule out %s from here.", b0, b1,b2, b3));
+            break;
+
         default:
             break;
     }

@@ -461,7 +461,7 @@ WZ_WIDGET *create_params_gui()
     rel[6] = al_ustr_new("TOGETHER_3");
     rel[7] = al_ustr_new("NOT_TOGETHER");
     rel[8] = al_ustr_new("TOGETHER_NOT_MIDDLE");
-    rel[9] = al_ustr_new("TFWOO (disabled)");
+    rel[9] = al_ustr_new("TFWOO");
     rel[10] = al_ustr_new("REVEAL");
     
     but_w = al_get_text_width(gui_font, "Extra hard") + 2*gui_font_h;

@@ -1,10 +1,8 @@
 #include "game.h"
+//xxx todo: in clue creation - check that the clue includes one non-guessed block
 //xxx todo: add TOGETHER_FIRST_WITH_ONLY_ONE logic
 //xxx todo: improve composite clue checking (or what-ifs up to a given level)
 //xxx todo: check for difficulty counting the number of positive clue checks (even for repeated clues)
-//xxx todo: add composite board checking (check if there are only 2 of each item remaining on 2 columns only and clean accordingly)
-//xxx todo: add bound on reveal clues
-//xxx todo: tune probabilities for each clue type
 //xxx todo: pass to binary and bitwise operations
 
 char *clue_description[NUMBER_OF_RELATIONS] = {
@@ -34,7 +32,7 @@ int DEFAULT_REL_PERCENT[NUMBER_OF_RELATIONS] = {
     [TOGETHER_3] = 5,
     [NOT_TOGETHER] = 5,
     [TOGETHER_NOT_MIDDLE] = 5,
-    [TOGETHER_FIRST_WITH_ONLY_ONE]=0,
+    [TOGETHER_FIRST_WITH_ONLY_ONE]=5,
     [REVEAL] = 1
 };
 
@@ -244,7 +242,7 @@ int check_this_clue(Game *g, Clue *clue){
                 }
                 if(i>0){
                     if((g->guess[i][j0] == k0) && g->tile[i-1][j1][k1]){
-                        hide_tile_and_check(g, i-1, j1, k1); ret=1| k1<<1 | 10<<4 | (i-1)<<7;;
+                        hide_tile_and_check(g, i-1, j1, k1); ret=1| k1<<1 | j1<<4 | (i-1)<<7;;
                     }
                     
                     if((g->guess[i][j1] == k1) && g->tile[i-1][j0][k0]){
@@ -339,6 +337,28 @@ int check_this_clue(Game *g, Clue *clue){
             }
             break;
         case TOGETHER_FIRST_WITH_ONLY_ONE:
+            //xxx todo: check this
+            for(i=0; i<g->n; i++)
+            {
+                if(!g->tile[i][j1][k1] && !g->tile[i][j2][k2]){
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j0, k0);
+                        ret = 1 | k0<<1 | j0<<4 | i<<7;
+                    }
+                }
+                else if(g->guess[i][j1] == k1){
+                    if(g->tile[i][j2][k2]){
+                        hide_tile_and_check(g, i, j2, k2);
+                        ret = 1 | k2<<1 | j2<<4 | i<<7;
+                    }
+                }
+                else if(g->guess[i][j2] == k2){
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j1, k1);
+                        ret = 1 | k1<<1 | j1<<4 | i<<7;
+                    }
+                }
+            }
             break;
         default:
             break;
@@ -591,6 +611,12 @@ int is_clue_compatible(Game *g, Clue *clue){
             }
             break;
         case TOGETHER_FIRST_WITH_ONLY_ONE:
+            //xxx todo: check this:
+            for(i=0; i<g->n; i++){
+                if( g->tile[i][j0][k0] && (g->tile[i][j1][k1] || g->tile[i][j2][k2]) && !( (g->guess[i][j1] == k1) && (g->guess[i][j2] == k2)) )
+                    ret = 1;
+            }
+            
             break;
         default:
             break;
@@ -784,12 +810,14 @@ int random_relation(void){
     return rel;
 };
 
-void get_random_item_col(Game *g, int i, int *j, int *k){ // get a new solved item at column ii
+// get a new solved item at column ii
+void get_random_item_col(Game *g, int i, int *j, int *k){
     *j = rand_int(g->h);
     *k = g->puzzle[i][*j];
 };
 
-void get_random_item_col_except(Game *g, int i, int *j, int *k, int ej1, int ej2){ // get a new solved item
+// get a new solved item not in rows ej1 or ej2
+void get_random_item_col_except(Game *g, int i, int *j, int *k, int ej1, int ej2){
     int m = (ej1 == ej2) ? 1 : 2;
     *j = rand_int(g->h-m);
 
@@ -806,7 +834,7 @@ void get_clue(Game *g, int i, int j, int rel, Clue *clue){
     if(rel<0){
         do{ // to avoid problem when g->n is too small in the NOT_MIDDLE case
             rel = random_relation();
-        } while( ((rel == NOT_MIDDLE) && (i<2) && (i>g->n-3)) || (rel == TOGETHER_FIRST_WITH_ONLY_ONE) );
+        } while((rel == NOT_MIDDLE) && (i<2) && (i>g->n-3));
     }
     clue->rel = rel;
     
@@ -925,6 +953,21 @@ void get_clue(Game *g, int i, int j, int rel, Clue *clue){
             for(m=0; m<3;m++) {clue->i[m] = ii; clue->j[m] = jj; clue->k[m] = kk; }
             break;
         case TOGETHER_FIRST_WITH_ONLY_ONE:
+            // xxx todo: check this
+            get_random_item_col_except(g, i, &jj, &kk, j, j); // except row j (and j)
+            get_random_item_col_except(g, i, &jjj, &kkk, j, jj); // except row j and jj
+            clue->i[0] = i; clue->j[0] = j; clue->k[0] = k;
+            // same as together_not_middle but sorted (so we don't know which is middle)
+            if(jj < jjj)
+            {
+                clue->i[1] = i; clue->j[1] = jj; clue->k[1] = (kk + 1+ rand_int(g->n-1))%g->n;
+                clue->i[2] = i; clue->j[2] = jjj; clue->k[2] = kkk;
+            }
+            else
+            {
+                clue->i[1] = i; clue->j[1] = jjj; clue->k[1] = kkk;
+                clue->i[2] = i; clue->j[2] = jj; clue->k[2] = (kk + 1+ rand_int(g->n-1))%g->n;
+            }
             break;
     }
 };
@@ -1064,7 +1107,7 @@ int is_vclue(RELATION rel){
     return((rel == TOGETHER_2) || (rel == TOGETHER_3) || (rel == NOT_TOGETHER) || (rel == TOGETHER_NOT_MIDDLE) || (rel == TOGETHER_FIRST_WITH_ONLY_ONE));
 }
 
-// only for debug puprposes:
+// only for debug puprposes. Check if clue is compatible with solution
 int is_clue_valid(Game *g, Clue *clue){
     int ret=0;
     int i0, i1, i2, j0, k0, j1, k1, j2, k2;
@@ -1126,6 +1169,8 @@ int is_clue_valid(Game *g, Clue *clue){
             break;
         
         case TOGETHER_FIRST_WITH_ONLY_ONE:
+            if((g->where[j0][k0] == g->where[j1][k1]) == (g->where[j0][k0] == g->where[j2][k2]))
+               ret = 0;
             break;
         default:
             break;
