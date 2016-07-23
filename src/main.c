@@ -1397,6 +1397,8 @@ int save_game_f(Game *g, Board *b){
 #endif
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    deblog("ALLEGRO_USER_DATA_PATH = %s", al_path_cstr(path, '/'));
+    
     if(!al_make_directory(al_path_cstr(path, '/'))){
         errlog("could not open or create path %s.\n", al_path_cstr(path, '/'));
         return -1;

@@ -368,6 +368,8 @@ WZ_WIDGET *create_win_gui(double time)
     int gui_w, gui_h, but_w, lh;
     int i,j;
     
+    nset = set;
+    
     lh = 1.2*gui_font_h;
     gui_w = al_get_text_width(gui_font, "You solved the puzzle in 000:000:000") + 4*lh + 2;
     but_w = 2*lh + max(al_get_text_width(gui_font, "Settings"), al_get_text_width(gui_font, "New game"));
@@ -414,7 +416,7 @@ WZ_WIDGET *create_win_gui(double time)
     else
     {
         hi_pos = i;
-#ifdef ALLEGRO_ANDROID
+#ifdef ALLEGRO_ANDROID //xxx todo: user input for typing name on android
         wz_create_textbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, WZ_ALIGN_LEFT, WZ_ALIGN_CENTRE, al_ustr_new("You"), 1, -1); // get_highscores(g);
 #else
         wgt = (WZ_WIDGET*)wz_create_editbox(gui, 0, 0, (gui_w-4*lh-2)/2.5, lh, al_ustr_new("your name"), 1, EDITBOX_HISCORE);
@@ -433,6 +435,10 @@ WZ_WIDGET *create_win_gui(double time)
         memcpy(&hi_score[i+1], &hi_score[i], sizeof(double)*(9-i));
         hi_score[i] = time;
         hi_name[i][0] = '\0';
+        
+#ifdef ALLEGRO_ANDROID // since we're just using "you" as username, save high score already
+        save_highscores(set.n, set.h, set.advanced, hi_name, hi_score);
+#endif
     }
     
     wz_create_textbox(gui, 0, 0, gui_w*0.9, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
@@ -699,7 +705,10 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                     break;
                     
                 case BUTTON_SAVE:
-                    if(set.saved) confirm_save();
+                    if(set.saved)
+                        confirm_save();
+                    else
+                        emit_event(EVENT_SAVE);
                     break;
                     
                 case BUTTON_LOAD:
