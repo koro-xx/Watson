@@ -48,7 +48,7 @@ int wz_fill_layout_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 			}
 			else
 			{
-				wgt->theme->draw_box(wgt->theme, wgt->local_x, wgt->local_y, wgt->w, wgt->h, 0);
+                wgt->theme->draw_box(wgt->theme, wgt->local_x, wgt->local_y, wgt->w, wgt->h, wgt->flags & WZ_STATE_DISABLED ? WZ_STYLE_DISABLED : 0);
 			}
 
 			break;
@@ -59,6 +59,19 @@ int wz_fill_layout_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 			ret = 0;
 			break;
 		}
+        case WZ_RESIZE:
+        {
+            float factor = *(float *)&event->user.data3;
+            wgt->x *= factor;
+            wgt->y *= factor;
+            wgt->w *= factor;
+            wgt->h *= factor;
+            wgt->local_x *= factor;
+            wgt->local_y *= factor;
+            box->h_spacing *= factor;
+            box->v_spacing *= factor;
+            break;
+        }
 		case WZ_UPDATE:
 		{
 			float total_width = box->h_spacing;

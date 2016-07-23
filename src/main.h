@@ -3,7 +3,7 @@
 
 #include "board.h"
 
-#define PRE_VERSION "0.8"
+#define PRE_VERSION "0.8.1"
 #define PRE_DATE "2016-02-21"
 
 #ifdef ALLEGRO_ANDROID
@@ -20,7 +20,7 @@
 #endif
 
 
-#define DEFAULT_FONT_FILE "fonts/fixed_font.tga"
+#define DEFAULT_FONT_FILE "fonts/text_font_fixed.ttf"
 
 #define BASE_USER_EVENT_TYPE ALLEGRO_GET_EVENT_TYPE('c','c','c','c')
 #define EVENT_REDRAW (BASE_USER_EVENT_TYPE + 1)
@@ -45,8 +45,14 @@ typedef struct Settings{
     int saved; // is there a saved game?
 } Settings;
 
+extern Settings set;
+extern Settings nset; // settings for new game
+
 void emit_event(int event_type);
 void draw_stuff(Board *b);
-void get_highscores(Game *g, char (*name)[64], double *score);
-void save_highscores(Game *g, char (*name)[64], double *score);
+void get_highscores(int n, int h, int advanced, char (*name)[64], double *score);
+void save_highscores(int n, int h, int advanced, char (*name)[64], double *score);
+void add_gui(WZ_WIDGET *base, WZ_WIDGET *gui);
+void remove_gui(WZ_WIDGET *base);
+
 #endif

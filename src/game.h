@@ -82,6 +82,7 @@ void unguess_tile(Game *g,  int i, int j);
 int is_guessed(Game *g, int j, int k); // is the value k on row j guessed?
 void get_clue(Game *g, int i, int j, int rel, Clue *clue);
 int is_vclue(RELATION rel); // is this relation a vertical clue?
+void reset_rel_params(void);
 
 // debug
 int is_clue_valid(Game *g, Clue *clue);

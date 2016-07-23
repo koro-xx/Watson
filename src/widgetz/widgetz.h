@@ -422,6 +422,7 @@ enum
 	WZ_SCROLL_POS_CHANGED,//3rd pos is the new scroll position
 	WZ_TOGGLE_GROUP,//3rd pos is the group number
 	WZ_SET_CURSOR_POS,//sets the new cursor position
+    WZ_RESIZE, // data1 should be resize factor (float)
 	WZ_EVENT_COUNT
 };
 
@@ -463,6 +464,7 @@ void wz_update(WZ_WIDGET* wgt, double dt);
 void wz_draw(WZ_WIDGET* wgt);
 void wz_destroy(WZ_WIDGET* wgt);
 void wz_trigger(WZ_WIDGET* wgt);
+void wz_resize(WZ_WIDGET* wgt, float factor);
 
 void wz_set_text(WZ_WIDGET* wgt, ALLEGRO_USTR* text);
 void wz_set_scroll_pos(WZ_WIDGET* wgt, int pos, int max);

@@ -19,6 +19,7 @@ misrepresented as being the original software.
 
 3. This notice may not be removed or altered from any source
 distribution.
+
 */
 
 #include "../widgetz_internal.h"
@@ -377,6 +378,21 @@ void wz_destroy(WZ_WIDGET* wgt)
 	wz_detach(wgt);
 	wz_craft_event(&event, WZ_DESTROY, 0, 0);
 	wz_broadcast_event(wgt, &event);
+}
+
+/*
+ Function: wz_resize
+ 
+ Resizes the widget tree. 
+ 
+ Parameters:
+ factor: scaling factor
+ */
+void wz_resize(WZ_WIDGET* wgt, float factor)
+{
+    ALLEGRO_EVENT event;
+    wz_craft_event(&event, WZ_RESIZE, 0, *(intptr_t*)&factor);
+    wz_broadcast_event(wgt, &event);
 }
 
 /*

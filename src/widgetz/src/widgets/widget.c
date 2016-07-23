@@ -126,6 +126,18 @@ int wz_widget_proc(WZ_WIDGET* wgt, const ALLEGRO_EVENT* event)
 
 			break;
 		}
+        case WZ_RESIZE:
+        {
+            float factor = *(float *)&event->user.data3;
+            wgt->x *= factor;
+            wgt->y *= factor;
+            wgt->w *= factor;
+            wgt->h *= factor;
+            wgt->local_x *= factor;
+            wgt->local_y *= factor;
+            break;
+        }
+
 		/* Switch through elements on Touch:
 		case ALLEGRO_EVENT_TOUCH_BEGIN:
 		{

@@ -7,10 +7,13 @@
  by Koro (1/2016)
 
  Todo
+ - thicker arrows in bitmaps
+ - bigger gui fonts for mobile
+ - fix game/score saving in linux and android
  - add android keyboard input to highscore table
  - finish tutorial
- - change wait_for_input to return key pressed or event type
  - add additional clue type
+
  
  NOTE: in android, to draw text to a bitmap without issues we need the bitmap to be created detached from the screen.
  so we set a null target bitmap before creating them and then we use al_convert_bitmaps
@@ -60,6 +63,8 @@ Settings set = {
 ALLEGRO_EVENT_SOURCE user_event_src;
 
 ALLEGRO_EVENT_QUEUE *event_queue = NULL;
+WZ_WIDGET *guis[10];
+int gui_n = 0;
 
 float fixed_dt = 1.0/FPS;
 float RESIZE_DELAY = 0.04;
@@ -158,9 +163,31 @@ void emit_event(int event_type){
 }
 
 
+void add_gui(WZ_WIDGET *base, WZ_WIDGET *gui){
+    wz_register_sources(gui, event_queue);
+    if(base){
+        if(base->last_child) wz_enable(base->last_child, 0);
+        wz_attach(gui, base);
+        wz_update(base, 0);
+        gui_n++;
+    }
+    else
+    {
+        wz_update(gui, 0);
+    }
+
+    emit_event(EVENT_REDRAW);
+}
+
+void remove_gui(WZ_WIDGET* wgt){
+    if(wgt->prev_sib) wz_enable(wgt->prev_sib,1);
+    wz_destroy(wgt);
+    gui_n--;
+    emit_event(EVENT_REDRAW);
+}
+
 void draw_stuff(Board *b){
     int x, y;
-    int i;
     
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     
@@ -190,11 +217,35 @@ void draw_stuff(Board *b){
         al_use_transform(&b->identity_transform);
     }
 
-    for(i=0; i<b->gui_n; i++){
-        wz_draw(b->gui[i]);
-    }
+    draw_guis();
     
 };
+
+//void add_gui(WZ_WIDGET *gui){
+//    guis[gui_n] = gui;
+//    gui_n++;
+//    wz_register_sources(gui, event_queue);
+//    wz_update(gui, fixed_dt);
+//}
+
+//void remove_gui(WZ_WIDGET *gui){
+//    int i = gui_n-1, j=0;
+//    
+//    while( (i >= 0) && guis[i] != gui) i++;
+//    
+//    if(guis[i] == gui)
+//    {
+//        wz_destroy(gui);
+//        gui_n--;
+//        // shift remaining guis
+//        for(j=i; j<gui_n; j++)
+//            gui[j] = gui[j+1];
+//    }
+//    else
+//    {
+//        deblog("remove_gui() didn't find the requested gui.");
+//    }
+//}
 
 void animate_win(Board *b) {
 	int k, ii, jj, kk=0;
@@ -239,17 +290,16 @@ void animate_win(Board *b) {
 }
 
 void draw_generating_puzzle(Game *g, Board *b) {
-    char msg[1000];
-    int w = al_get_display_width(al_get_current_display());
-    int h = al_get_display_height(al_get_current_display());
+    ALLEGRO_USTR *msg;
     if(game_state == GAME_INTRO) return;
     
     if(!g->advanced)
-        snprintf(msg, 999, "Generating %d x %d puzzle, please wait...", g->n, g->h);
+        msg = al_ustr_newf("Generating %d x %d puzzle, please wait...", g->n, g->h);
     else
-        snprintf(msg, 999, "Generating %d x %d advanced puzzle, please wait (this could take a while)...", g->n, g->h);
+        msg = al_ustr_newf("Generating %d x %d advanced puzzle, please wait (this could take a while)...", g->n, g->h);
+    
     al_clear_to_color(BLACK_COLOR);
-    draw_multiline_wz_box(msg, w/2, h/2, 0.4*w, 0.2*w);
+    draw_text_gui(msg);
     al_flip_display();
 }
 
@@ -297,6 +347,8 @@ void destroy_everything(Board *b){
     destroy_board(b);
     destroy_sound();
     destroy_undo();
+    remove_all_guis();
+    destroy_base_gui();
 }
 
 int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
@@ -320,7 +372,7 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
         return 0;
     }
     
-    init_fonts(); // do this after creating display OK
+//    init_fonts(); // do this after creating display OK
     
     SWITCH(fullscreen);
     destroy_board(b);
@@ -346,6 +398,7 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
     al_convert_bitmaps();
     return 1;
 }
+
 
 int main(int argc, char **argv){
     Game g = {0};
@@ -413,12 +466,10 @@ int main(int argc, char **argv){
 
     if(!load_game_f(&g,&b)) set.saved=1;
     
-//    draw_title();
-//    al_flip_display();
-//    wait_for_input(NULL);
     restart=0;
     game_state = GAME_INTRO;
-
+    
+    init_guis(0,0, al_get_display_width(display), al_get_display_height(display));
     
 RESTART:
     b.type_of_tiles = set.type_of_tiles; // use font tiles by default
@@ -435,6 +486,7 @@ RESTART:
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
+        remove_all_guis();
         al_set_target_backbuffer(display);
     }
     
@@ -472,6 +524,7 @@ RESTART:
     
 	al_convert_bitmaps(); // turn bitmaps to memory bitmaps after resize (bug in allegro doesn't autoconvert)
 
+    update_guis(b.all.x, b.all.y, b.xsize, b.ysize);
     
     event_queue = al_create_event_queue();
     if(!event_queue) {
@@ -479,7 +532,6 @@ RESTART:
         al_destroy_display(display);
         return -1;
     }
-
 
     al_register_event_source(event_queue, al_get_display_event_source(display));
     if(al_is_keyboard_installed())
@@ -524,16 +576,45 @@ RESTART:
         dt = al_get_time() - old_time;
         if(game_state == GAME_PLAYING) g.time += dt;
         old_time = al_get_time();
-       // al_wait_for_event(event_queue, &ev);
+        // al_wait_for_event(event_queue, &ev);
+        
+        update_base_gui(dt);
+
         while(al_get_next_event(event_queue, &ev)){ // empty out the event queue
+            if(ev.type == ALLEGRO_EVENT_DISPLAY_HALT_DRAWING)
+            {
+                deblog("RECEIVED HALT");
+                halt(event_queue);
+                resize_update=1;
+            }
+            
+            if(gui_n) gui_send_event(&ev);
+            
             switch(ev.type){
-                case ALLEGRO_EVENT_DISPLAY_HALT_DRAWING:
-                    deblog("RECEIVED HALT");
-                    halt(event_queue);
-                    resize_update=1;
+                case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                    emit_event(EVENT_EXIT);
                     break;
+                    
+                case ALLEGRO_EVENT_DISPLAY_RESIZE:
+                    if(b.dragging) mouse_drop(&b, -1,-1);
+                    if (fullscreen) break;
+                    al_acknowledge_resize(display);
+                    resizing=1; resize_time=al_get_time();
+                    break;
+                    
+                case EVENT_REDRAW:
+                    redraw=1;
+                    break;
+
+                case EVENT_SWITCH_TILES:
+                    switch_tiles(&g, &b, display);
+                    al_flush_event_queue(event_queue);
+                    redraw=1;
+                    break;
+                    
                 case EVENT_RESTART:
                     restart=1;
+                    set = nset;
                     goto RESTART;
                     
                 case EVENT_EXIT:
@@ -549,6 +630,7 @@ RESTART:
                         show_info_text(&b, al_ustr_new("Error: game could not be saved."));
                     }
                     break;
+                    
                 case EVENT_LOAD:
                     if(load_game_f(&g, &b)){
                         show_info_text(&b, al_ustr_new("Error game could not be loaded."));
@@ -557,16 +639,19 @@ RESTART:
                         goto RESTART;
                     }
                     break;
+                    
                 case EVENT_SETTINGS:
-                    show_settings(&set, &b, event_queue);
+                    show_settings();
                     emit_event(EVENT_REDRAW);
                     break;
-                    
+                                        
                 case ALLEGRO_EVENT_TOUCH_BEGIN:
+                    if(gui_n) break;
                     ev.mouse.x = ev.touch.x;
                     ev.mouse.y = ev.touch.y;
                     ev.mouse.button = 1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                    if(gui_n) break;
                     if(mouse_button_down) break;
                     mouse_down_time = ev.any.timestamp;
                     mbdown_x = ev.mouse.x; mbdown_y = ev.mouse.y;
@@ -625,12 +710,14 @@ RESTART:
                     break;
                     
                 case ALLEGRO_EVENT_TOUCH_MOVE:
+                    if(gui_n) break;
                     if(!ev.touch.primary) break;
                     ev.mouse.x = ev.touch.x;
                     ev.mouse.y = ev.touch.y;
 //                    ev.mouse.dx = ev.touch.dx;
 //                    ev.mouse.dy = ev.touch.dy;
                 case ALLEGRO_EVENT_MOUSE_AXES:
+                    if(gui_n) break;
                     if(b.dragging){
                         b.dragging->x = ev.mouse.x + b.dragging_cx;
                         b.dragging->y = ev.mouse.y + b.dragging_cy;
@@ -647,29 +734,19 @@ RESTART:
                             }
                     break;
                     
-                case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                    emit_event(EVENT_EXIT);
-                    break;
                     
                 case ALLEGRO_EVENT_KEY_CHAR:
+                    if(gui_n) break;
                     keypress=1;
                     switch(ev.keyboard.keycode){
                         case ALLEGRO_KEY_ESCAPE:
-                            if(confirm_exit(&b, event_queue))
-                                noexit=0;
-                            else
-                                redraw=1;
+                            confirm_exit();
                             break;
                         case ALLEGRO_KEY_BACK: // android: back key
-                            show_settings(&set, &b, event_queue);
-                            emit_event(EVENT_REDRAW);
+                            show_settings();
                             break;
                         case ALLEGRO_KEY_R:
-                            if(confirm_restart(&b, &set, event_queue)){
-                                restart=1;
-                                goto RESTART;
-                            }
-                            redraw=1;
+                            confirm_restart(&set);
                             break;
                         case ALLEGRO_KEY_S: // debug: show solution
                             if(game_state != GAME_PLAYING) break;
@@ -680,8 +757,7 @@ RESTART:
                             emit_event(EVENT_SWITCH_TILES);
                             break;
                         case ALLEGRO_KEY_H:
-                            show_help(&b, event_queue);
-                            redraw=1;
+                            show_help();
                             break;
                         case ALLEGRO_KEY_C:
                             show_hint(&g, &b);
@@ -698,29 +774,19 @@ RESTART:
                             if(game_state != GAME_PLAYING) break;
                             execute_undo(&g);
                             update_board(&g, &b);
+                            // why flush?
                             al_flush_event_queue(event_queue);
                             redraw=1;
                             break;
                         case ALLEGRO_KEY_SPACE:
+                            // tests:
                             //params_gui(&g, &b, event_queue);
-                            //win_gui(&g, &b, event_queue);
+                            //g.time = 10.0;
+                            //show_win_gui(g.time);
                             break;
                     }
                     break;
-                case ALLEGRO_EVENT_DISPLAY_RESIZE:
-                    if(b.dragging) mouse_drop(&b, -1,-1);
-                    if (fullscreen) break;
-                    al_acknowledge_resize(display);
-                    resizing=1; resize_time=al_get_time();
-                    break;
-                case EVENT_REDRAW:
-                    redraw=1;
-                    break;
-                case EVENT_SWITCH_TILES:
-                    switch_tiles(&g, &b, display);
-                    al_flush_event_queue(event_queue);
-                    redraw=1;
-                    break;
+     
             }
         }// while(al_get_next_event(event_queue, &ev));
 	
@@ -741,6 +807,7 @@ RESTART:
 			b.max_xsize = al_get_display_width(display);
 			b.max_ysize = al_get_display_height(display);
             create_board(&g, &b, 0);
+            update_guis(b.all.x, b.all.y, b.xsize, b.ysize);
             al_set_target_backbuffer(display);
             update_board(&g, &b);
 			al_convert_bitmaps(); // turn bitmaps to video bitmaps
@@ -808,7 +875,7 @@ RESTART:
         }
         
         if((game_state == GAME_OVER) && noexit){
-            win_gui(&g, &b, event_queue);
+            show_win_gui(g.time);
         }
         
         if(redraw) {
@@ -1007,6 +1074,9 @@ void explain_clue(Board *b, Clue *clue)
         case TOGETHER_NOT_MIDDLE:
             show_info_text(b, al_ustr_newf("%s and %s are on the same column, and %s is NOT in that column.", b0, b2, b1));
             break;
+        case TOGETHER_FIRST_WITH_ONLY_ONE:
+            show_info_text(b, al_ustr_newf("%s is on the same column of either %s or %s, but NOT BOTH.", b0, b1, b2));
+            break;
         default:
             break;
     }
@@ -1064,6 +1134,10 @@ void show_hint(Game *g, Board *b){
         case TOGETHER_NOT_MIDDLE:
             show_info_text(b, al_ustr_newf("%s and %s are on the same column, and %s is NOT in that column, so we can rule out %s from here.", b0, b2, b1, b3));
             break;
+        case TOGETHER_FIRST_WITH_ONLY_ONE:
+            show_info_text(b, al_ustr_newf("%s is on the same column of either %s or %s, but NOT BOTH, so we can rule out %s from here.", b0, b1,b2, b3));
+            break;
+
         default:
             break;
     }
@@ -1222,14 +1296,12 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
             break;
         case TB_BUTTON_SETTINGS:
             if(!set.sound_mute) play_sound(SOUND_CLICK);
-            show_settings(&set, b, event_queue);
-            emit_event(EVENT_REDRAW);
+            show_settings();
             break;
     
         case TB_BUTTON_HELP:
             if(!set.sound_mute) play_sound(SOUND_CLICK);
-            show_help(b, event_queue);
-            emit_event(EVENT_REDRAW);
+            show_help();
             break;
 
         case TB_BUTTON_UNDO:
@@ -1248,7 +1320,7 @@ void handle_mouse_click(Game *g, Board *b, TiledBlock *t, int mx, int my, int mc
 
 // work in progress
 // actually highscores must include string + int. Maybe do one file for each mode.
-void get_highscores(Game *g, char (*name)[64], double *score){
+void get_highscores(int n, int h, int advanced, char (*name)[64], double *score){
     ALLEGRO_PATH *path;
     ALLEGRO_FILE *fp;
     char filename[100];
@@ -1259,7 +1331,7 @@ void get_highscores(Game *g, char (*name)[64], double *score){
 #endif
 
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
-    snprintf(filename, 99, "Watson%dx%d-%d.hi", g->n, g->h, g->advanced);
+    snprintf(filename, 99, "Watson%dx%d-%d.hi", n, h, advanced);
     al_set_path_filename(path,filename);
     
     fp = al_fopen(al_path_cstr(path, '/'), "rb");
@@ -1278,7 +1350,7 @@ void get_highscores(Game *g, char (*name)[64], double *score){
     al_destroy_path(path);
 }
                                  
-void save_highscores(Game *g, char (*name)[64], double *score){
+void save_highscores(int n, int h, int advanced, char (*name)[64], double *score){
     ALLEGRO_PATH *path;
     ALLEGRO_FILE *fp;
     char filename[100];
@@ -1288,13 +1360,15 @@ void save_highscores(Game *g, char (*name)[64], double *score){
 #endif
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    deblog("ALLEGRO_USER_DATA_PATH = %s", al_path_cstr(path, '/'));
+    
     if(!al_make_directory(al_path_cstr(path, '/'))){
         errlog("could not open or create path %s.\n", al_path_cstr(path, '/'));
         al_destroy_path(path);
         return;
     }
     
-    snprintf(filename, 99, "Watson%dx%d-%d.hi", g->n, g->h, g->advanced);
+    snprintf(filename, 99, "Watson%dx%d-%d.hi", n, h, advanced);
     al_set_path_filename(path, filename);
     fp = al_fopen(al_path_cstr(path, '/'), "wb");
     if(!fp){
@@ -1323,6 +1397,8 @@ int save_game_f(Game *g, Board *b){
 #endif
     
     path = al_get_standard_path(ALLEGRO_USER_DATA_PATH);
+    deblog("ALLEGRO_USER_DATA_PATH = %s", al_path_cstr(path, '/'));
+    
     if(!al_make_directory(al_path_cstr(path, '/'))){
         errlog("could not open or create path %s.\n", al_path_cstr(path, '/'));
         return -1;
