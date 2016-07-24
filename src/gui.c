@@ -21,7 +21,7 @@ const char ABOUT_TEXT[] = "Watson v" PRE_VERSION " - " PRE_DATE ", by Koro.\n"
 "Watson is licensed under the GPLv3 (this does not include the artwork cited above). The source code and some binary releases can be found at https://github.com/koro-xx/Watson"
 "\n"
 "\n"
-"Note: the \"advanced\" mode generates (much) harder puzzles, which require indirect logic and hasn't been properly tested.\n";
+"Note: the \"extra hard\" mode generates (much) harder puzzles, which require indirect logic and hasn't been properly tested.\n";
 
 const char HELP_TEXT[]="Watson is a puzzle similar to the classic \"Zebra puzzle\" or \"Einstein's Riddle\". The goal is to figure out which item goes where on the board.\n"
 "The main panel has a number of columns, each dividided into blocks of same-type items. Each item in a block is secretly assigned to a different column, without repetition. Some of these assignments may be partially revealed at the beginning. Use the clues provided (right and bottom panels) to deduce which item goes where. \n"
@@ -533,7 +533,7 @@ WZ_WIDGET *create_text_gui(ALLEGRO_USTR *text)
         }
     }
     
-    gui = new_widget(-1, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - 2*gui_font_h)/2);
+    gui = new_widget(-1, (base_gui->w - w - 2*gui_font_h)/2, (base_gui->h - h - 2*gui_font_h)/2);
     
     wgt = (WZ_WIDGET*) wz_create_box(gui, 0, 0, w + 2*gui_font_h, h + 2*gui_font_h, -1);
     wgt->flags |= WZ_STATE_NOTWANT_FOCUS;

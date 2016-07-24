@@ -191,61 +191,41 @@ void draw_stuff(Board *b){
     
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
     
-    if(game_state == GAME_INTRO) draw_title();
-    else draw_TiledBlock(&b->all,0,0);
-    
-    if(b->rule_out){
-        if(b->blink){
-            highlight_TiledBlock(b->rule_out);
-            highlight_TiledBlock(b->highlight);
+    if(game_state == GAME_INTRO)
+    {
+        draw_title();
+    }
+    else
+    {
+        draw_TiledBlock(&b->all,0,0);
+        
+        if(b->rule_out){
+            if(b->blink){
+                highlight_TiledBlock(b->rule_out);
+                highlight_TiledBlock(b->highlight);
+            }
+        } else {
+            if(b->highlight) highlight_TiledBlock(b->highlight);
         }
-    } else {
-        if(b->highlight) highlight_TiledBlock(b->highlight);
+        
+        if(b->dragging){ // redraw tile to get it on top
+            get_TiledBlock_offset(b->dragging->parent, &x, &y);
+            draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
+        }
+        
+        if(b->zoom){
+            al_draw_filled_rectangle(0,0,b->max_xsize, b->max_ysize, al_premul_rgba(0,0,0,150));
+            al_use_transform(&b->zoom_transform);
+            // draw dark background in case of transparent elements
+            al_draw_filled_rectangle(b->zoom->x,b->zoom->y, b->zoom->x + b->zoom->w, b->zoom->y + b->zoom->h, b->zoom->parent->bg_color);
+            draw_TiledBlock(b->zoom,0,0);
+            al_use_transform(&b->identity_transform);
+        }
     }
     
-    if(b->dragging){ // redraw tile to get it on top
-        get_TiledBlock_offset(b->dragging->parent, &x, &y);
-        draw_TiledBlock(b->dragging, x,y); //b->dragging->parent->x, b->dragging->parent->y);
-    }
-    
-    if(b->zoom){
-        al_draw_filled_rectangle(0,0,b->max_xsize, b->max_ysize, al_premul_rgba(0,0,0,150));
-        al_use_transform(&b->zoom_transform);
-        // draw dark background in case of transparent elements
-        al_draw_filled_rectangle(b->zoom->x,b->zoom->y, b->zoom->x + b->zoom->w, b->zoom->y + b->zoom->h, b->zoom->parent->bg_color);
-        draw_TiledBlock(b->zoom,0,0);
-        al_use_transform(&b->identity_transform);
-    }
-
     draw_guis();
     
 };
-
-//void add_gui(WZ_WIDGET *gui){
-//    guis[gui_n] = gui;
-//    gui_n++;
-//    wz_register_sources(gui, event_queue);
-//    wz_update(gui, fixed_dt);
-//}
-
-//void remove_gui(WZ_WIDGET *gui){
-//    int i = gui_n-1, j=0;
-//    
-//    while( (i >= 0) && guis[i] != gui) i++;
-//    
-//    if(guis[i] == gui)
-//    {
-//        wz_destroy(gui);
-//        gui_n--;
-//        // shift remaining guis
-//        for(j=i; j<gui_n; j++)
-//            gui[j] = gui[j+1];
-//    }
-//    else
-//    {
-//        deblog("remove_gui() didn't find the requested gui.");
-//    }
-//}
 
 void animate_win(Board *b) {
 	int k, ii, jj, kk=0;
@@ -289,18 +269,16 @@ void animate_win(Board *b) {
     }
 }
 
-void draw_generating_puzzle(Game *g, Board *b) {
+void draw_generating_puzzle(Settings *s, Board *b) {
     ALLEGRO_USTR *msg;
     if(game_state == GAME_INTRO) return;
     
-    if(!g->advanced)
-        msg = al_ustr_newf("Generating %d x %d puzzle, please wait...", g->n, g->h);
+    if(!s->advanced)
+        msg = al_ustr_newf("Generating %d x %d puzzle, please wait...", s->n, s->h);
     else
-        msg = al_ustr_newf("Generating %d x %d advanced puzzle, please wait (this could take a while)...", g->n, g->h);
+        msg = al_ustr_newf("Generating %d x %d advanced puzzle, please wait (this could take a while)...", s->n, s->h);
     
-    al_clear_to_color(BLACK_COLOR);
     draw_text_gui(msg);
-    al_flip_display();
 }
 
 int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
@@ -472,10 +450,27 @@ int main(int argc, char **argv){
     init_guis(0,0, al_get_display_width(display), al_get_display_height(display));
     
 RESTART:
-    b.type_of_tiles = set.type_of_tiles; // use font tiles by default
-    get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
-    
+
+    if(restart) remove_all_guis();
+
+    if(restart != 2){ // 2 is for loaded game
+        g.advanced = set.advanced; // use "what if" depth 1?
+        g.n = set.n;
+        g.h = set.h;
+        g.time = 0;
+        draw_stuff(&b);
+        draw_generating_puzzle(&set, &b);
+        al_flip_display();
+        create_game_with_clues(&g);
+    } else { // b should be updated only after destroying the board
+        set.advanced = g.advanced;
+        set.n = g.n;
+        set.h = g.h;
+    }
+
     if(restart == 1) g.time = 0; // new game, otherwise it's a load game
+
+    get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
     
 	if (!fullscreen && !MOBILE) {
         max_display_factor = 0.9;
@@ -486,28 +481,16 @@ RESTART:
         al_set_target_backbuffer(display);
         destroy_board(&b);
         destroy_undo();
-        remove_all_guis();
         al_set_target_backbuffer(display);
     }
+
+    restart = 0;
     
     b.max_xsize = desktop_xsize*max_display_factor;
     b.max_ysize = desktop_ysize*max_display_factor; // change this later to something adequate
-
-    g.advanced = set.advanced; // use "what if" depth 1?
     b.type_of_tiles = set.type_of_tiles;
-    
-    if(restart != 2){ // 2 is for loaded game
-        g.n = b.n = set.n;
-        g.h = b.h = set.h;
-        g.time = 0;
-        draw_generating_puzzle(&g, &b);
-        create_game_with_clues(&g);
-    } else { // b should be updated only after destroying the board
-        set.n = b.n = g.n;
-        set.h = b.h = g.h;
-    }
-    
-    restart = 0;
+    b.n = g.n;
+    b.h = g.h;
     
     if(create_board(&g, &b, 1)){
         fprintf(stderr, "Failed to create game board.\n");
@@ -526,23 +509,26 @@ RESTART:
 
     update_guis(b.all.x, b.all.y, b.xsize, b.ysize);
     
-    event_queue = al_create_event_queue();
-    if(!event_queue) {
-        fprintf(stderr, "failed to create event_queue!\n");
-        al_destroy_display(display);
-        return -1;
+    if(!event_queue)
+    {
+        event_queue = al_create_event_queue();
+        if(!event_queue) {
+            fprintf(stderr, "failed to create event_queue!\n");
+            al_destroy_display(display);
+            return -1;
+        }
+        
+        al_register_event_source(event_queue, al_get_display_event_source(display));
+        if(al_is_keyboard_installed())
+            al_register_event_source(event_queue, al_get_keyboard_event_source());
+        if(al_is_mouse_installed())
+            al_register_event_source(event_queue, al_get_mouse_event_source());
+        if(al_is_touch_input_installed())
+            al_register_event_source(event_queue, al_get_touch_input_event_source());
+        
+        al_register_event_source(event_queue , &user_event_src);
     }
-
-    al_register_event_source(event_queue, al_get_display_event_source(display));
-    if(al_is_keyboard_installed())
-        al_register_event_source(event_queue, al_get_keyboard_event_source());
-    if(al_is_mouse_installed())
-        al_register_event_source(event_queue, al_get_mouse_event_source());
-    if(al_is_touch_input_installed())
-        al_register_event_source(event_queue, al_get_touch_input_event_source());
-
-    al_register_event_source(event_queue , &user_event_src);
-
+    
     update_board(&g,&b);
     al_set_target_backbuffer(display);
 
@@ -856,6 +842,7 @@ RESTART:
         }
 
         if( old_time - play_time > 1 ){ // runs every second
+            if(game_state == GAME_INTRO) game_state = GAME_PLAYING;
             if ( game_state == GAME_PLAYING ){
                 play_time = al_get_time();
                 update_timer((int) g.time, &b); // this draws on a timer bitmap
