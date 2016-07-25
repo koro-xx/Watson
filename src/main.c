@@ -385,7 +385,7 @@ int main(int argc, char **argv){
     ALLEGRO_DISPLAY *display = NULL;
     double resize_time, old_time;
     double blink_time = 0, play_time = 0;
-    int noexit, mouse_click,redraw, mouse_move,keypress, resizing, resize_update, mouse_button_down, restart;
+    int noexit, mouse_click,redraw, mouse_move,keypress, resizing, resize_update, mouse_button_down, restart, win_gui;
     float max_display_factor;
     TiledBlock  *tb_down = NULL, *tb_up = NULL;
     double mouse_up_time = 0, mouse_down_time = 0;
@@ -546,6 +546,7 @@ RESTART:
     mbdown_x = 0;
     mbdown_y = 0;
     tb_down = tb_up = NULL;
+    win_gui = 0;
     
     show_info_text(&b, al_ustr_newf("Click on clue for info. Click %s for help, %s for settings, or %s for a hint at any time.", symbol_char[b.h][1], symbol_char[b.h][2], symbol_char[b.h][0]));
     
@@ -574,7 +575,7 @@ RESTART:
                 resize_update=1;
             }
             
-            if(gui_n) gui_send_event(&ev);
+            if(gui_n && gui_send_event(&ev)) continue;
             
             switch(ev.type){
                 case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -767,7 +768,7 @@ RESTART:
                         case ALLEGRO_KEY_SPACE:
                             // tests:
                             //params_gui(&g, &b, event_queue);
-                            //g.time = 10.0;
+                            // g.time = 1;
                             //show_win_gui(g.time);
                             break;
                     }
@@ -861,8 +862,9 @@ RESTART:
             redraw=1;
         }
         
-        if((game_state == GAME_OVER) && noexit){
+        if((game_state == GAME_OVER) && noexit && !win_gui){
             show_win_gui(g.time);
+            win_gui=1;
         }
         
         if(redraw) {

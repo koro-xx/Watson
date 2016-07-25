@@ -15,7 +15,7 @@
 
 void draw_guis(void);
 int handle_gui_event(ALLEGRO_EVENT *event);
-void gui_send_event(ALLEGRO_EVENT *event);
+int gui_send_event(ALLEGRO_EVENT *event);
 void init_theme(void);
 void init_guis(int x, int y, int w, int h);
 void destroy_base_gui(void);

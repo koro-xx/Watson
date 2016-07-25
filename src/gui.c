@@ -434,17 +434,23 @@ WZ_WIDGET *create_win_gui(double time)
         memcpy(&hi_name[i+1], &hi_name[i], 64*sizeof(char)*(9-i));
         memcpy(&hi_score[i+1], &hi_score[i], sizeof(double)*(9-i));
         hi_score[i] = time;
-        hi_name[i][0] = '\0';
-        
+
 #ifdef ALLEGRO_ANDROID // since we're just using "you" as username, save high score already
+        strcpy(hi_name[i], "You");
         save_highscores(set.n, set.h, set.advanced, hi_name, hi_score);
+#else // otherwise it will be filled in later
+        hi_name[i][0]='\0';
 #endif
     }
     
     wz_create_textbox(gui, 0, 0, gui_w*0.9, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_new(""), 1, -1);
     
     wz_create_button(gui, 0, 0, but_w, 1.5*lh, al_ustr_new("New Game"), 1, BUTTON_RESTART_NOW);
-    wz_create_button(gui, 0, 0, but_w, 1.5*lh, al_ustr_new("Settings"), 1, BUTTON_SETTINGS);
+    wgt = (WZ_WIDGET*) wz_create_button(gui, 0, 0, but_w, 1.5*lh, al_ustr_new("Settings"), 1, BUTTON_SETTINGS);
+
+    // avoid focus on the settings button
+    wz_update(gui, 0);
+    wz_focus(wgt, 0);
     
     return gui;
 }
@@ -609,7 +615,7 @@ int handle_gui_event(ALLEGRO_EVENT *event)
             wgt->flags &= ~WZ_STATE_HAS_FOCUS;
             wgt->flags |= WZ_STATE_NOTWANT_FOCUS;
             save_highscores(set.n, set.h, set.advanced, hi_name, hi_score);
-            remove_gui(wgt);
+            remove_gui(gui);
             add_gui(base_gui, create_win_gui(-1));
         }
     }
@@ -789,14 +795,22 @@ void update_base_gui(float dt)
     wz_update(base_gui, dt);
 }
 
-void gui_send_event(ALLEGRO_EVENT *event)
+int gui_send_event(ALLEGRO_EVENT *event)
 {
-    if(wz_send_event(base_gui->last_child, event))  emit_event(EVENT_REDRAW);
+    int ret = 0;
+    
+    if(wz_send_event(base_gui->last_child, event))
+    {
+        emit_event(EVENT_REDRAW);
+        ret = 1;
+    }
     
     if(event->type == WZ_BUTTON_PRESSED || event->type == WZ_TEXT_CHANGED)
     {
         handle_gui_event(event);
     }
+    
+    return ret;
 }
 
 void draw_text_gui(ALLEGRO_USTR *text)
