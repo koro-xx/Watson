@@ -187,6 +187,9 @@ void remove_gui(WZ_WIDGET* wgt){
 }
 
 void draw_stuff(Board *b){
+    //xxx todo: there's still the issue that the timer and some fonts appear broken in some android devices
+    // ex: samsung galaxy s2
+    // probably has to do with memory->video bitmaps
     int x, y;
     
     al_clear_to_color(BLACK_COLOR); // (b->bg_color);
