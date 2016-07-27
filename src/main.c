@@ -286,6 +286,7 @@ void draw_generating_puzzle(Settings *s, Board *b) {
 
 int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
     // cycle through tyle types (font, bitmap, classic)
+    deblog("Swtiching tiles.");
     al_set_target_backbuffer(display);
     destroy_all_bitmaps(b);
     b->type_of_tiles = (b->type_of_tiles + 1) %3;
@@ -294,7 +295,7 @@ int switch_tiles(Game *g, Board *b, ALLEGRO_DISPLAY *display){
         if(init_bitmaps(b))
             b->type_of_tiles = (b->type_of_tiles + 1) %3;
         if(init_bitmaps(b)){
-            fprintf(stderr, "error switching tiles.\n");
+            errlog("Error switching tiles.");
             exit(-1);
         }
     }
@@ -339,9 +340,11 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
     
     if(!fullscreen){
+        deblog("Entering full screen mode.");
         al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
         display_factor = 1;
     } else {
+        deblog("Exiting full screen mode.");
         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
         display_factor = 0.9;
     }
@@ -401,9 +404,8 @@ int main(int argc, char **argv){
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
    
-    deblog("Watson has started");
+    deblog("Watson v" PRE_VERSION " - " PRE_DATE " has started.");
     if (init_allegro()) return -1;
-    deblog("Allegro initialized");
 
 #ifndef _WIN32
      // use anti-aliasing if available (seems to cause problems in windows)
@@ -434,18 +436,30 @@ int main(int argc, char **argv){
         set.fat_fingers = 1;
     }
     
-    
     if(!display) {
-        fprintf(stderr, "Failed to create display!\n");
+        errlog("Failed to create display!");
         return -1;
     }
+    else
+    {
+        deblog("Display created.");
+    }
+    
     al_set_target_backbuffer(display);
     al_clear_to_color(BLACK_COLOR);
 
     al_set_window_title(display, "Watson");
     al_init_user_event_source(&user_event_src);
 
-    if(!load_game_f(&g,&b)) set.saved=1;
+    if(!load_game_f(&g,&b))
+    {
+        set.saved=1;
+        deblog("Saved game found.");
+    }
+    else
+    {
+        deblog("No saved game found.");
+    }
     
     restart=0;
     game_state = GAME_INTRO;
@@ -454,8 +468,12 @@ int main(int argc, char **argv){
     
 RESTART:
 
-    if(restart) remove_all_guis();
-
+    if(restart)
+    {
+        deblog("Restarting game.");
+        remove_all_guis();
+    }
+    
     if(restart != 2){ // 2 is for loaded game
         g.advanced = set.advanced; // use "what if" depth 1?
         g.n = set.n;
@@ -466,6 +484,7 @@ RESTART:
         al_flip_display();
         create_game_with_clues(&g);
     } else { // b should be updated only after destroying the board
+        deblog("Resuming loaded game.");
         set.advanced = g.advanced;
         set.n = g.n;
         set.h = g.h;
@@ -496,7 +515,7 @@ RESTART:
     b.h = g.h;
     
     if(create_board(&g, &b, 1)){
-        fprintf(stderr, "Failed to create game board.\n");
+        errlog("Failed to create game board.");
         return -1;
     }
     
@@ -516,7 +535,7 @@ RESTART:
     {
         event_queue = al_create_event_queue();
         if(!event_queue) {
-            fprintf(stderr, "failed to create event_queue!\n");
+            errlog("failed to create event queue.");
             al_destroy_display(display);
             return -1;
         }

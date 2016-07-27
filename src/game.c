@@ -485,7 +485,7 @@ void create_game_with_clues(Game *g){
         fprintf(stderr, "ERROR: SOLUTION DOESN'T MATCH CLUES\n");
     
     filter_clues(g);
-    fprintf(stdout, "%d clues\n", g->clue_n);
+    fprintf(stdout, "%dx%d game created with %d clues.\n", g->n, g->h, g->clue_n);
     
     //clean guesses and tiles
     init_game(g);

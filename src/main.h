@@ -3,8 +3,8 @@
 
 #include "board.h"
 
-#define PRE_VERSION "0.8.1"
-#define PRE_DATE "2016-02-21"
+#define PRE_VERSION "0.8.3"
+#define PRE_DATE "2016-07-27"
 
 #ifdef ALLEGRO_ANDROID
     #include <allegro5/allegro_android.h>

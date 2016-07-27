@@ -68,22 +68,22 @@ int init_allegro(void){
     al_destroy_path(path);
 
     if(!al_install_keyboard()) {
-        errlog("failed to initialize the keyboard!\n");
+        deblog("Failed to initialize keyboard!\n");
         //return -1;
     }
     
     if(!al_install_mouse()) {
-        errlog("failed to initialize the mouse.\n");
+        deblog("Failed to initialize mouse.\n");
     } else no_input = 0;
     
     init_sound(); // I don't care if there was an error here.
 
     if(!al_install_touch_input()) {
-        errlog("failed to initialize touch input.\n");
+        deblog("Failed to initialize touch input.\n");
     } else no_input = 0;
     
     if(no_input){
-        errlog("no input found. Exitting.");
+        errlog("No input found. Exitting.");
         return -1;
     }
 
