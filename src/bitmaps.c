@@ -194,7 +194,7 @@ int init_bitmaps(Board *b){
     char pathname[1000];
     ALLEGRO_PATH *path;
     ALLEGRO_BITMAP *dispbuf = al_get_target_bitmap();
-    al_set_target_bitmap(NULL);
+    al_set_target_bitmap(NULL); // this is a workaround for android -- try removing later
     
 #ifdef ALLEGRO_ANDROID
     al_android_set_apk_file_interface();
