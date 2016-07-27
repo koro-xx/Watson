@@ -28,10 +28,10 @@ int DEFAULT_REL_PERCENT[NUMBER_OF_RELATIONS] = {
     [ONE_SIDE] = 2,
     [CONSECUTIVE] = 3,
     [NOT_MIDDLE] = 5,
-    [TOGETHER_2] = 15,
-    [TOGETHER_3] = 5,
-    [NOT_TOGETHER] = 5,
-    [TOGETHER_NOT_MIDDLE] = 5,
+    [TOGETHER_2] = 25,
+    [TOGETHER_3] = 1,
+    [NOT_TOGETHER] = 20,
+    [TOGETHER_NOT_MIDDLE] = 1,
     [TOGETHER_FIRST_WITH_ONLY_ONE]=5,
     [REVEAL] = 1
 };
@@ -689,21 +689,46 @@ int filter_clues(Game *g){
             }
         }
     
+   
     // join clues if possible
+    //xxx todo: check this
     for(i=g->clue_n-1; i>0; i--){
-        if(g->clue[i].rel == TOGETHER_2){
+        if(g->clue[i].rel == TOGETHER_2 || g->clue[i].rel == NOT_TOGETHER){
             for(j=i-1; j>=0; j--){
-                if(g->clue[j].rel == TOGETHER_2){ // check all combinations of 0, 1, 2
+                if((g->clue[j].rel == TOGETHER_2 || g->clue[j].rel == NOT_TOGETHER) && g->clue[i].rel == TOGETHER_2){
                     if( ((g->clue[j].j[0] == g->clue[i].j[0]) && (g->clue[j].k[0] == g->clue[i].k[0])) || ((g->clue[j].j[1] == g->clue[i].j[0]) && (g->clue[j].k[1] == g->clue[i].k[0])) ){
                         g->clue[j].j[2] = g->clue[i].j[1];
                         g->clue[j].k[2] = g->clue[i].k[1];
-                        g->clue[j].rel = TOGETHER_3;
+                        g->clue[j].rel = g->clue[j].rel == TOGETHER_2 ? TOGETHER_3 : TOGETHER_NOT_MIDDLE;
                         remove_clue(g, i);
                         break;
-                    } else if( ((g->clue[j].j[0] == g->clue[i].j[1]) && (g->clue[j].k[0] == g->clue[i].k[1])) || ((g->clue[j].j[1] == g->clue[i].j[1]) && (g->clue[j].k[1] == g->clue[i].k[1])) ){
-                        g->clue[j].j[2] = g->clue[i].j[0];
-                        g->clue[j].k[2] = g->clue[i].k[0];
-                        g->clue[j].rel = TOGETHER_3;
+                    }
+                    else if( g->clue[j].rel == TOGETHER_2)
+                    {
+                        if( ((g->clue[j].j[0] == g->clue[i].j[1]) && (g->clue[j].k[0] == g->clue[i].k[1])) || ((g->clue[j].j[1] == g->clue[i].j[1]) && (g->clue[j].k[1] == g->clue[i].k[1])) ){
+                            g->clue[j].j[2] = g->clue[i].j[0];
+                            g->clue[j].k[2] = g->clue[i].k[0];
+                            g->clue[j].rel = TOGETHER_3;
+                            remove_clue(g, i);
+                            break;
+                        }
+                    }
+                }else if (g->clue[j].rel == TOGETHER_2 && g->clue[i].rel == NOT_TOGETHER)
+                {
+                    if((g->clue[j].j[0] == g->clue[i].j[0]) && (g->clue[j].k[0] == g->clue[i].k[0]))
+                    {
+                        g->clue[i].j[2] = g->clue[j].j[1];
+                        g->clue[i].k[2] = g->clue[j].k[1];
+                        g->clue[i].rel = TOGETHER_NOT_MIDDLE;
+                        g->clue[j] = g->clue[i];
+                        remove_clue(g, i);
+                        break;
+                    } else if ((g->clue[j].j[1] == g->clue[i].j[0]) && (g->clue[j].k[1] == g->clue[i].k[0]))
+                    {
+                        g->clue[i].j[2] = g->clue[j].j[0];
+                        g->clue[i].k[2] = g->clue[j].k[0];
+                        g->clue[i].rel = TOGETHER_NOT_MIDDLE;
+                        g->clue[j] = g->clue[i];
                         remove_clue(g, i);
                         break;
                     }
@@ -711,6 +736,7 @@ int filter_clues(Game *g){
             }
         }
     }
+    
     
     //sort clues
     for(i=0;i<g->clue_n;i++){
