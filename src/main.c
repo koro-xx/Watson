@@ -7,13 +7,12 @@
  by Koro (1/2016)
 
  Todo
+ - fix splash screen in android (don't update until screen position is correct)
+ - fix sound (use multiple samples to avoid delay?)
  - thicker arrows in bitmaps
- - bigger gui fonts for mobile
- - fix game/score saving in linux and android
  - add android keyboard input to highscore table
  - finish tutorial
- - add additional clue type
-
+ 
  
  NOTE: in android, to draw text to a bitmap without issues we need the bitmap to be created detached from the screen.
  so we set a null target bitmap before creating them and then we use al_convert_bitmaps
