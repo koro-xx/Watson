@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Watson VERSION 0.78.3 LANGUAGES CXX C)
 
+## For windows, Alleg_ROOT must contain /lib and /include. If using allegro installed from nuget, this is not the case (/lib is in a /native/x86 or x64 subdir). In that case a workaround is to run cmake twice: once with Alleg_ROOT=dir that contains /lib and a second time with Alleg_ROOT = dir containing /include
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Alleg REQUIRED)
 
