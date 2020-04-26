@@ -72,17 +72,24 @@ set(RESOURCES
 	"assets/app_icon.icns"
 )
 
-# this is for APPLE, what about WIN32 and UNIX?
-add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCES})
-
-target_link_libraries(watson ${LINK_LIBRARIES})
-
 ## I think WIN32 or MACOSX_BUNDLE should be replaced by "EXECUTABLE_TYPE" (defined earlier), and in UNIX case idk what it should be
 
 if(WIN32)
 	add_executable(watson WIN32 ${SOURCES} ${HEADERS})
-	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
 else(WIN32)
 	add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCES})
 endif(WIN32)
+
+target_link_libraries(watson ${LINK_LIBRARIES})
+
+if(APPLE)
+	set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+else(APPLE)
+	file(COPY ${RESOURCES} DESTINATION .)
+endif(APPLE)
+
+if(WIN32)
+	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
+endif(WIN32)
+
 
