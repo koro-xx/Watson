@@ -77,14 +77,12 @@ add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCE
 
 target_link_libraries(watson ${LINK_LIBRARIES})
 
-
-if(APPLE)
-	set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-else(APPLE)
-	file(COPY ${RESOURCES} DESTINATION .)
-endif(APPLE)
+## I think WIN32 or MACOSX_BUNDLE should be replaced by "EXECUTABLE_TYPE" (defined earlier), and in UNIX case idk what it should be
 
 if(WIN32)
+	add_executable(watson WIN32 ${SOURCES} ${HEADERS})
 	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
+else(WIN32)
+	add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCES})
 endif(WIN32)
 
