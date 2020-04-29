@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 
 project(Watson VERSION 0.78.3 LANGUAGES CXX C)
 
-## For windows, Alleg_ROOT must contain /lib and /include. If using allegro installed from nuget, this is not the case (/lib is in a /native/x86 or x64 subdir). In that case a workaround is to run cmake twice: once with Alleg_ROOT=dir that contains /lib and a second time with Alleg_ROOT = dir containing /include
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Alleg REQUIRED)
 
@@ -75,12 +78,13 @@ set(RESOURCES
 ## I think WIN32 or MACOSX_BUNDLE should be replaced by "EXECUTABLE_TYPE" (defined earlier), and in UNIX case idk what it should be
 
 if(WIN32)
-	add_executable(watson WIN32 ${SOURCES} ${HEADERS})
+	add_executable(watson ${EXECUTABLE_TYPE} ${SOURCES} ${HEADERS})
 else(WIN32)
 	add_executable(watson MACOSX_BUNDLE ${APP_ICON} ${SOURCES} ${HEADERS} ${RESOURCES})
 endif(WIN32)
 
 target_link_libraries(watson ${LINK_LIBRARIES})
+
 
 if(APPLE)
 	set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
@@ -91,5 +95,4 @@ endif(APPLE)
 if(WIN32)
 	set_target_properties(watson PROPERTIES COMPILE_DEFINITIONS "_CRT_SECURE_NO_WARNINGS")
 endif(WIN32)
-
 
