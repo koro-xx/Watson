@@ -1,3 +1,4 @@
+#define ALLEGRO_UNSTABLE
 // INTEGRATION WITH ANDROID
 //#define _DEBUG
 
@@ -398,7 +399,7 @@ int main(int argc, char **argv){
     float DELTA_DOUBLE_CLICK = 0.2;
     float DELTA_SHORT_CLICK = 0.1;
     float DELTA_HOLD_CLICK = 0.3;
-    int mbdown_x, mbdown_y;
+    int mbdown_x, mbdown_y, touch_down;
     
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
@@ -545,7 +546,10 @@ RESTART:
         if(al_is_mouse_installed())
             al_register_event_source(event_queue, al_get_mouse_event_source());
         if(al_is_touch_input_installed())
+		{
             al_register_event_source(event_queue, al_get_touch_input_event_source());
+			al_set_mouse_emulation_mode(ALLEGRO_MOUSE_EMULATION_NONE);
+		}
         
         al_register_event_source(event_queue , &user_event_src);
     }
@@ -566,6 +570,7 @@ RESTART:
     b.blink = 0;
     mbdown_x = 0;
     mbdown_y = 0;
+	touch_down = 0;
     tb_down = tb_up = NULL;
     win_gui = 0;
     
@@ -658,10 +663,11 @@ RESTART:
                     ev.mouse.x = ev.touch.x;
                     ev.mouse.y = ev.touch.y;
                     ev.mouse.button = 1;
+					touch_down=1;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                     if(gui_n) break;
                     if(mouse_button_down) break;
-                    mouse_down_time = ev.any.timestamp;
+                    mouse_down_time = al_get_time(); // workaround ev.any.timestamp for touch;
                     mbdown_x = ev.mouse.x; mbdown_y = ev.mouse.y;
                     tb_down = get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y);
                     
@@ -685,6 +691,7 @@ RESTART:
                     ev.mouse.x = ev.touch.x;
                     ev.mouse.y = ev.touch.y;
                     ev.mouse.button = 1;
+					touch_down=0;
                 case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
                     if(wait_for_double_click) wait_for_double_click = 0;
                     
@@ -702,7 +709,7 @@ RESTART:
                    
                     if(!mouse_button_down) break;
                     
-                    mouse_up_time = ev.any.timestamp;
+                    mouse_up_time = al_get_time(); //workaround ev.any.timestamp for touch;
                     tb_up = get_TiledBlock_at(&b, ev.mouse.x, ev.mouse.y);
                     if((tb_up) && (tb_up == tb_down)){
                         if( ((tb_up->type == TB_HCLUE_TILE) || (tb_up->type == TB_VCLUE_TILE)) && (mouse_button_down == 1) ){
@@ -831,21 +838,33 @@ RESTART:
         
         if( wait_for_double_click && (al_get_time() - mouse_up_time > DELTA_DOUBLE_CLICK) ){
                 wait_for_double_click = 0;
-                ALLEGRO_MOUSE_STATE mouse;
-                al_get_mouse_state(&mouse);
-            tb_down=get_TiledBlock_at(&b, mouse.x, mouse.y);
-                handle_mouse_click(&g, &b, tb_down, mouse.x, mouse.y, 1); // single click
+                tb_down=get_TiledBlock_at(&b, mbdown_x, mbdown_y);
+                handle_mouse_click(&g, &b, tb_down, mbdown_x, mbdown_y, 1); // single click
         }
 
         if(mouse_button_down && !hold_click_check && !b.dragging ){
             if (al_get_time() - mouse_down_time > DELTA_HOLD_CLICK){
                 hold_click_check = 1;
                 if(tb_down){
-                    ALLEGRO_MOUSE_STATE mouse;
-                    al_get_mouse_state(&mouse);
-                    tb_up = get_TiledBlock_at(&b, mouse.x, mouse.y);
-                    if(tb_up == tb_down){
-                        handle_mouse_click(&g, &b, tb_up, mouse.x, mouse.y, 4); // hold click
+					int tbdx, tbdy;
+                    if(touch_down)
+					{
+						ALLEGRO_TOUCH_INPUT_STATE touch;
+						al_get_touch_input_state(&touch);
+						tbdx = touch.touches[0].x;
+						tbdy = touch.touches[0].y;
+					}
+					else
+					{
+						ALLEGRO_MOUSE_STATE mouse;
+						al_get_mouse_state(&mouse);
+						tbdx = mouse.x;
+						tbdy = mouse.y;
+					}
+                    tb_up = get_TiledBlock_at(&b,tbdx, tbdy);
+             
+					if(tb_up == tb_down){
+                        handle_mouse_click(&g, &b, tb_up, tbdx, tbdy, 4); // hold click
                         hold_click_check = 2;
                     }
                 }
