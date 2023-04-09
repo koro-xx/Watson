@@ -95,6 +95,279 @@ void remove_clue(Game *g, int i){
 };
 
 
+// Temporary fix for the hint system
+// for non-hints check_this_clue should be replaced by this, and loop through it until it returns 0
+int check_this_clue_hint(Game *g, Clue *clue){
+  int i,m, ret=0, hide_first;
+    int j0, k0, j1, k1, j2, k2;
+    
+    j0 = clue->j[0]; k0 = clue->k[0];
+    j1 = clue->j[1]; k1 = clue->k[1];
+    j2 = clue->j[2]; k2 = clue->k[2];
+    
+    ret=0;
+    hide_first=0;
+    
+    switch(clue->rel){
+        case REVEAL:
+            if(g->guess[clue->i[0]][j0]<0){
+                guess_tile(g, clue->i[0],j0,k0);
+                return 1| k0<<1 | j0<<4 | clue->i[0]<<7 | 1<<10;
+            }
+            break;
+        case ONE_SIDE:
+            for(i=0;i<g->n;i++){
+                if(g->tile[i][j1][k1]){
+                    hide_tile_and_check(g, i, j1, k1);
+                    return 1 | k1<<1 | j1<<4 | i<<7;
+                }
+                if(g->tile[i][j0][k0]) break;
+            }
+            for(i=g->n-1;i>=0;i--){
+                if(g->tile[i][j0][k0]){
+                    hide_tile_and_check(g, i, j0, k0);
+                    ret=1 | k0<<1 | j0<<4 | i<< 7;
+                }
+                if(g->tile[i][j1][k1]) break;
+            }
+            break;
+            
+        case TOGETHER_2:
+            for(i=0;i<g->n;i++){
+                if(!g->tile[i][j0][k0] || !g->tile[i][j1][k1]){
+                    if(g->tile[i][j0][k0]){
+                        hide_tile_and_check(g, i, j0, k0);
+                        return 1 | k0<<1 | j0<<4 | i<<7;
+                    }
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j1, k1);
+                        return 1 | k1<<1 | j1<<4 | i<<7;;
+                    }
+                }
+            }
+            break;
+        case TOGETHER_3:
+            for(i=0;i<g->n;i++){
+                if(!g->tile[i][j0][k0] || !g->tile[i][j1][k1] || !g->tile[i][j2][k2]){// if one exists but one doesn't
+                    if(g->tile[i][j0][k0]){
+                        hide_tile_and_check(g, i, j0, k0); return 1| k0<<1 | j0<<4 | i<<7;
+                    }
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j1, k1); return 1| k1<<1 | j1<<4 | i<<7;;
+                    }
+                    if(g->tile[i][j2][k2]){
+                        hide_tile_and_check(g, i, j2, k2); return 1| k2<<1 | j2<<4 | i<<7;;
+                    }
+                        
+                }
+            }
+            break;
+            
+        case TOGETHER_NOT_MIDDLE:
+            for(i=0;i<g->n;i++){
+                if( (g->guess[i][j0] == k0) || (g->guess[i][j2] == k2)){
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j1, k1);
+                        return 1| k1<<1 | j1<<4 | i<<7;
+                    }
+                }
+                if( (!g->tile[i][j0][k0]) || (g->guess[i][j1] == k1) || !g->tile[i][j2][k2] ){
+                    if(g->tile[i][j0][k0]){
+                        hide_tile_and_check(g, i, j0, k0);
+                        return 1 | k0<<1 | j0<<4 | i<<7;
+                    }
+                    if(g->tile[i][j2][k2]){
+                        hide_tile_and_check(g, i, j2, k2);
+                        return 1| k2<<1 | j2<<4 | i<<7;;
+                    }
+                }
+            }
+            break;
+            
+        case NOT_TOGETHER:
+            for(i=0;i<g->n;i++){
+                if((g->guess[i][j0]==k0) && g->tile[i][j1][k1]){
+                    hide_tile_and_check(g, i, j1, k1);
+                    ret =1| k1<<1 | j1<<4 | i<<7;
+                }
+                if((g->guess[i][j1]==k1) && g->tile[i][j0][k0]){
+                    hide_tile_and_check(g, i, j0, k0);
+                    return 1 | k0<<1 | j0<<4 | i<<7;;
+                }
+            }
+            break;
+            
+        case NEXT_TO:
+            if(!g->tile[1][j0][k0] && g->tile[0][j1][k1]){
+                hide_tile_and_check(g, 0, j1, k1);
+                return 1 | k1<<1 | j1<<4 | 0 << 7;
+            }
+            if(!g->tile[1][j1][k1] && g->tile[0][j0][k0]){
+                hide_tile_and_check(g, 0, j0, k0);
+                return 1| k0<<1 | j0<<4 | 0<<7;
+            }
+            if(!g->tile[g->n-2][j0][k0] && g->tile[g->n-1][j1][k1]){
+                hide_tile_and_check(g, g->n-1, j1, k1);
+                return 1| k1<<1 | j1<<4 | (g->n-1)<<7;
+            }
+            if(!g->tile[g->n-2][j1][k1] && g->tile[g->n-1][j0][k0]){
+                hide_tile_and_check(g, g->n-1, j0, k0);
+                return 1| k0<<1 | j0<<4 | (g->n-1)<<7;;
+            }
+
+            for(i=1;i<g->n-1;i++){
+                if(!g->tile[i-1][j0][k0] && !g->tile[i+1][j0][k0]){
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j1, k1);
+                        return 1| k1<<1 | j1<<4 | i<<7;;
+                    }
+                }
+                if(!g->tile[i-1][j1][k1] && !g->tile[i+1][j1][k1]){
+                    if(g->tile[i][j0][k0]){
+                        hide_tile_and_check(g, i, j0, k0);
+                        return  1 | k0<<1 | j0<<4 | i<<7;;
+                    }
+                }
+            }
+            break;
+            
+        case NOT_NEXT_TO:
+            for(i=0;i<g->n;i++){
+                if(i<g->n-1){
+                    if((g->guess[i][j0] == k0) && g->tile[i+1][j1][k1]){
+                        hide_tile_and_check(g, i+1, j1, k1); return 1| k1<<1 | j1<<4 | (i+1)<<7;;
+                    }
+                    
+                    if((g->guess[i][j1] == k1) && g->tile[i+1][j0][k0]){
+                        hide_tile_and_check(g, i+1, j0, k0); return 1| k0<<1 | j0<<4 | (i+1)<<7;;
+                    }
+                }
+                if(i>0){
+                    if((g->guess[i][j0] == k0) && g->tile[i-1][j1][k1]){
+                        hide_tile_and_check(g, i-1, j1, k1); return 1| k1<<1 | j1<<4 | (i-1)<<7;;
+                    }
+                    
+                    if((g->guess[i][j1] == k1) && g->tile[i-1][j0][k0]){
+                        hide_tile_and_check(g, i-1, j0, k0); return 1| k0<<1 | j0<<4 | (i-1)<<7;;
+                    }
+                }
+            }
+            break;
+            
+        case CONSECUTIVE:
+            for(i=0;i<g->n;i++){
+                for(m=0; m<2; m++){
+                    if(g->tile[i][j0][k0]){
+                        if((i<g->n-2) && (i<2)){
+                            if((!g->tile[i+1][j1][k1]) || (!g->tile[i+2][j2][k2]) ){
+                                hide_first=1;
+                            }
+                        }
+                        if((i>=2) && (i>=g->n-2)){
+                            if((!g->tile[i-2][j2][k2]) || (!g->tile[i-1][j1][k1]) ){
+                                hide_first=1;
+                            }
+                        }
+                        
+                        if((i>=2) && (i<g->n-2)){
+                            if( ((!g->tile[i+1][j1][k1]) || (!g->tile[i+2][j2][k2])) && ((!g->tile[i-2][j2][k2]) || (!g->tile[i-1][j1][k1])) ) {
+                            hide_first =1;
+                            }
+                        }
+                        if(hide_first){
+                            hide_first = 0;
+                            hide_tile_and_check(g, i, j0, k0);
+                            return 1| k0<<1 | j0<<4 | i<<7;
+                        }
+                    }
+                    SWAP(j0, j2); SWAP(k0, k2);
+                }
+                
+                if(g->tile[i][j1][k1]){
+                    if((i==0)||(i==g->n-1)){
+                         hide_first=1;
+                    } else{
+                        if(((!g->tile[i-1][j0][k0]) && !(g->tile[i+1][j0][k0])) || ((!g->tile[i-1][j2][k2]) && !(g->tile[i+1][j2][k2]))){ // error here! incorrect check!
+                            hide_first=1;
+                        }
+                    }
+                    if(hide_first){
+                        hide_first =0;
+                        hide_tile_and_check(g, i, j1, k1);
+                        return 1| k1<<1 | j1<<4 | i<<7;;
+                    }
+                }
+            }
+            break;
+            
+        case NOT_MIDDLE:
+            for(i=0;i<g->n;i++){ // apply mask
+                for(m=0; m<2; m++){
+                    if(g->tile[i][j0][k0]){
+                        if((i<g->n-2) && (i<2)){
+                            if( (g->guess[i+1][j1]==k1) || (!g->tile[i+2][j2][k2]) ){
+                                hide_first=1;
+                            }
+                        }
+                        if((i>=2) && (i>=g->n-2)){
+                            if( (g->guess[i-1][j1]==k1) || (!g->tile[i-2][j2][k2]) ){
+                                hide_first=1;
+                            }
+                        }
+                        
+                        if((i>=2) && (i<g->n-2)){
+                            if( ((g->guess[i+1][j1]==k1) || (!g->tile[i+2][j2][k2]))  && ((!g->tile[i-2][j2][k2]) || (g->guess[i-1][j1]==k1)) ) {
+                                hide_first =1;
+                            }
+                        }
+                        if(hide_first){
+                            hide_first = 0;
+                            return 1| k0<<1 | j0<<4 | i<<7;;
+                            hide_tile_and_check(g, i, j0, k0);
+                        }
+                    }
+                    SWAP(j0, j2); SWAP(k0, k2);
+                }
+                if( (i>=1) && (i<=g->n-2) ){
+                    if( ((g->guess[i-1][j0]==k0) && (g->guess[i+1][j2]==k2)) || ((g->guess[i-1][j2]==k2) && (g->guess[i+1][j0]==k0))){
+                        if(g->tile[i][j1][k1]) {
+                            hide_tile_and_check(g, i, j1, k1);
+                            return 1| k1<<1 | j1<<4 | i<<7;
+                        }
+                    }
+                }
+            }
+            break;
+        case TOGETHER_FIRST_WITH_ONLY_ONE:
+            //xxx todo: check this
+            for(i=0; i<g->n; i++)
+            {
+                if(!g->tile[i][j1][k1] && !g->tile[i][j2][k2]){
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j0, k0);
+                        ret = 1 | k0<<1 | j0<<4 | i<<7;
+                    }
+                }
+                else if(g->guess[i][j1] == k1){
+                    if(g->tile[i][j2][k2]){
+                        hide_tile_and_check(g, i, j2, k2);
+                        ret = 1 | k2<<1 | j2<<4 | i<<7;
+                    }
+                }
+                else if(g->guess[i][j2] == k2){
+                    if(g->tile[i][j1][k1]){
+                        hide_tile_and_check(g, i, j1, k1);
+                        ret = 1 | k1<<1 | j1<<4 | i<<7;
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
 int check_this_clue(Game *g, Clue *clue){
     int i,m, ret=0, hide_first;
     int j0, k0, j1, k1, j2, k2;
@@ -399,7 +672,7 @@ int get_hint(Game *g){ // still not working properly
     
     switch_game(g, 0); // store game
     for(i=0; i<g->clue_n; i++){
-        if( (tro = check_this_clue(g, &g->clue[i])) ){
+        if( (tro = check_this_clue_hint(g, &g->clue[i])) ){
             ret=i; break;
         }
     }

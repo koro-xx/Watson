@@ -18,7 +18,7 @@
 
 #define al_rewind(x) al_fseek(x,0,ALLEGRO_SEEK_SET)
 
-ALLEGRO_FONT *default_font;
+extern ALLEGRO_FONT *default_font;
 
 
 typedef struct MemFile{
