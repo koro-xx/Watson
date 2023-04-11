@@ -1,4 +1,5 @@
 #include "game.h"
+#include "main.h"
 //xxx todo: in clue creation - check that the clue includes one non-guessed block
 //xxx todo: add TOGETHER_FIRST_WITH_ONLY_ONE logic
 //xxx todo: improve composite clue checking (or what-ifs up to a given level)
@@ -94,9 +95,22 @@ void remove_clue(Game *g, int i){
     g->clue[i] = g->clue[g->clue_n];
 };
 
+void debug_test_clues(Game *g)
+{
+    int i;
+    for(i=0; i<g->clue_n;i++) 
+    {
+        if(!is_clue_valid(g, &g->clue[i])) 
+        { 
+            deblog("ERROR:INVALID CLUE!");
+            exit(1);
+        }
+    }
+    deblog("Testing clues: OK");
+}
 
 // Temporary fix for the hint system
-// for non-hints check_this_clue should be replaced by this, and loop through it until it returns 0
+// for non-hints check_this_clue should be replaced by this, and loop through it until it returns 0?
 int check_this_clue_hint(Game *g, Clue *clue){
   int i,m, ret=0, hide_first;
     int j0, k0, j1, k1, j2, k2;
@@ -749,6 +763,7 @@ void create_game_with_clues(Game *g){
         g->clue_n++;
         do{
             get_clue(g, rand_int(g->n), rand_int(g->h), -1,  &g->clue[g->clue_n-1]);
+
         } while(!check_this_clue(g, &g->clue[g->clue_n-1])); // should be while !check_clues?
         check_clues(g);
         if(g->guessed == g->n*g->h) break;
@@ -759,7 +774,8 @@ void create_game_with_clues(Game *g){
     
     filter_clues(g);
     fprintf(stdout, "%dx%d game created with %d clues.\n", g->n, g->h, g->clue_n);
-    
+    debug_test_clues(g); // debug
+
     //clean guesses and tiles
     init_game(g);
     
@@ -776,7 +792,6 @@ void create_game_with_clues(Game *g){
     for(i=0;i<g->clue_n;i++)
         g->clue[i].hidden = 0;
 }
-
 
 // checks if clue is compatible with current panel (not necessarily with solution)
 int is_clue_compatible(Game *g, Clue *clue){
@@ -951,65 +966,88 @@ int filter_clues(Game *g){
 //        SWAP(g->clue[i], g->clue[g->clue_n-i-1]);
 //    }
 //
-        for(m=0; m<g->clue_n; m++){ // test reduction
-            SWAP(g->clue[g->clue_n-1], g->clue[m]);
-            init_game(g);
-            g->clue_n--;
-            if(check_clues_for_solution(g)) {
-                ret=1;
-            } else{
-                g->clue_n++;
-            }
+    for(m=0; m<g->clue_n; m++){ // test reduction
+        SWAP(g->clue[g->clue_n-1], g->clue[m]);
+        init_game(g);
+        g->clue_n--;
+        if(check_clues_for_solution(g)) {
+            ret=1;
+        } else{
+            g->clue_n++;
         }
+    }
     
    
     // join clues if possible
     //xxx todo: check this
-    for(i=g->clue_n-1; i>0; i--){
-        if(g->clue[i].rel == TOGETHER_2 || g->clue[i].rel == NOT_TOGETHER){
-            for(j=i-1; j>=0; j--){
-                if((g->clue[j].rel == TOGETHER_2 || g->clue[j].rel == NOT_TOGETHER) && g->clue[i].rel == TOGETHER_2){
-                    if( ((g->clue[j].j[0] == g->clue[i].j[0]) && (g->clue[j].k[0] == g->clue[i].k[0])) || ((g->clue[j].j[1] == g->clue[i].j[0]) && (g->clue[j].k[1] == g->clue[i].k[0])) ){
-                        g->clue[j].j[2] = g->clue[i].j[1];
-                        g->clue[j].k[2] = g->clue[i].k[1];
-                        g->clue[j].rel = g->clue[j].rel == TOGETHER_2 ? TOGETHER_3 : TOGETHER_NOT_MIDDLE;
-                        remove_clue(g, i);
-                        break;
-                    }
-                    else if( g->clue[j].rel == TOGETHER_2)
-                    {
-                        if( ((g->clue[j].j[0] == g->clue[i].j[1]) && (g->clue[j].k[0] == g->clue[i].k[1])) || ((g->clue[j].j[1] == g->clue[i].j[1]) && (g->clue[j].k[1] == g->clue[i].k[1])) ){
-                            g->clue[j].j[2] = g->clue[i].j[0];
-                            g->clue[j].k[2] = g->clue[i].k[0];
-                            g->clue[j].rel = TOGETHER_3;
-                            remove_clue(g, i);
-                            break;
-                        }
-                    }
-                }else if (g->clue[j].rel == TOGETHER_2 && g->clue[i].rel == NOT_TOGETHER)
+    for(i=g->clue_n-1; i>0; i--)
+    {
+        for(j=i-1; j>=0; j--)
+        {
+            if(g->clue[j].rel == TOGETHER_2 && g->clue[i].rel == TOGETHER_2)
+            {
+                if( (g->clue[j].j[0] == g->clue[i].j[0] && g->clue[j].k[0] == g->clue[i].k[0])
+                    || (g->clue[j].j[1] == g->clue[i].j[0] && g->clue[j].k[1] == g->clue[i].k[0]) )
                 {
-                    if((g->clue[j].j[0] == g->clue[i].j[0]) && (g->clue[j].k[0] == g->clue[i].k[0]))
-                    {
-                        g->clue[i].j[2] = g->clue[j].j[1];
-                        g->clue[i].k[2] = g->clue[j].k[1];
-                        g->clue[i].rel = TOGETHER_NOT_MIDDLE;
-                        g->clue[j] = g->clue[i];
-                        remove_clue(g, i);
-                        break;
-                    } else if ((g->clue[j].j[1] == g->clue[i].j[0]) && (g->clue[j].k[1] == g->clue[i].k[0]))
-                    {
-                        g->clue[i].j[2] = g->clue[j].j[0];
-                        g->clue[i].k[2] = g->clue[j].k[0];
-                        g->clue[i].rel = TOGETHER_NOT_MIDDLE;
-                        g->clue[j] = g->clue[i];
-                        remove_clue(g, i);
-                        break;
-                    }
+                    g->clue[j].j[2] = g->clue[i].j[1];
+                    g->clue[j].k[2] = g->clue[i].k[1];
+                    g->clue[j].rel = TOGETHER_3;
+                    remove_clue(g, i);
+                    break;
+                }
+                else if( (g->clue[j].j[0] == g->clue[i].j[1] && g->clue[j].k[0] == g->clue[i].k[1])
+                    || (g->clue[j].j[1] == g->clue[i].j[1] && g->clue[j].k[1] == g->clue[i].k[1]) )
+                {
+                    g->clue[j].j[2] = g->clue[i].j[0];
+                    g->clue[j].k[2] = g->clue[i].k[0];
+                    g->clue[j].rel = TOGETHER_3;
+                    remove_clue(g, i);
+                    break;
                 }
             }
+            
+            if (g->clue[j].rel == TOGETHER_2 && g->clue[i].rel == NOT_TOGETHER)
+            {
+                if((g->clue[j].j[0] == g->clue[i].j[0]) && (g->clue[j].k[0] == g->clue[i].k[0]))
+                {
+                    g->clue[i].j[2] = g->clue[j].j[1];
+                    g->clue[i].k[2] = g->clue[j].k[1];
+                    g->clue[i].rel = TOGETHER_NOT_MIDDLE;
+                    g->clue[j] = g->clue[i];
+                    remove_clue(g, i);
+                    break;
+                } else if ((g->clue[j].j[1] == g->clue[i].j[0]) && (g->clue[j].k[1] == g->clue[i].k[0]))
+                {
+                    g->clue[i].j[2] = g->clue[j].j[0];
+                    g->clue[i].k[2] = g->clue[j].k[0];
+                    g->clue[i].rel = TOGETHER_NOT_MIDDLE;
+                    g->clue[j] = g->clue[i];
+                    remove_clue(g, i);
+                    break;
+                }
+            }
+
+            if(g->clue[j].rel == NOT_TOGETHER && g->clue[i].rel == TOGETHER_2)
+            {
+                if((g->clue[j].j[0] == g->clue[i].j[0]) && (g->clue[j].k[0] == g->clue[i].k[0]))
+                {
+                    g->clue[j].j[2] = g->clue[i].j[1];
+                    g->clue[j].k[2] = g->clue[i].k[1];
+                    g->clue[j].rel = TOGETHER_NOT_MIDDLE;
+                    remove_clue(g, i);
+                    break;
+                } 
+                else if ((g->clue[j].j[0] == g->clue[i].j[1]) && (g->clue[j].k[0] == g->clue[i].k[1]))
+                {
+                    g->clue[j].j[2] = g->clue[i].j[0];
+                    g->clue[j].k[2] = g->clue[i].k[0];
+                    g->clue[j].rel = TOGETHER_NOT_MIDDLE;
+                    remove_clue(g, i);
+                    break;
+                }   
+            }
         }
-    }
-    
+    }   
     
     //sort clues
     for(i=0;i<g->clue_n;i++){

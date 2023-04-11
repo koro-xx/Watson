@@ -341,7 +341,7 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
     
     if(!fullscreen){
         deblog("Entering full screen mode.");
-        al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+        al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW | ALLEGRO_OPENGL);
         display_factor = 1;
     } else {
         deblog("Exiting full screen mode.");
@@ -403,7 +403,7 @@ int main(int argc, char **argv){
     
     // seed random number generator. comment out for debug
     srand((unsigned int) time(NULL));
-   
+
     deblog("Watson v" PRE_VERSION " - " PRE_DATE " has started.");
     if (init_allegro()) return -1;
 
@@ -422,7 +422,7 @@ int main(int argc, char **argv){
     
     if(!MOBILE){
         if (fullscreen) {
-            al_set_new_display_flags(ALLEGRO_FULLSCREEN | ALLEGRO_OPENGL);
+            al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW | ALLEGRO_OPENGL);
             display = al_create_display(desktop_xsize, desktop_ysize);
         } else {
             al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
@@ -430,7 +430,6 @@ int main(int argc, char **argv){
         }
     } else {
         al_set_new_display_option(ALLEGRO_SUPPORTED_ORIENTATIONS, ALLEGRO_DISPLAY_ORIENTATION_LANDSCAPE, ALLEGRO_SUGGEST);
-
         al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW);
         display = al_create_display(desktop_xsize, desktop_ysize);
         set.fat_fingers = 1;
@@ -473,7 +472,7 @@ RESTART:
         deblog("Restarting game.");
         remove_all_guis();
     }
-    
+
     if(restart != 2){ // 2 is for loaded game
         g.advanced = set.advanced; // use "what if" depth 1?
         g.n = set.n;
