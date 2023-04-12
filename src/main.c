@@ -405,13 +405,17 @@ int main(int argc, char **argv){
     srand((unsigned int) time(NULL));
 
     deblog("Watson v" PRE_VERSION " - " PRE_DATE " has started.");
-    if (init_allegro()) return -1;
+    if (init_allegro())
+    {
+        deblog("Error initializing allegro."); 
+        return -1;
+    }
 
-#ifndef _WIN32
+//#ifndef _WIN32
      // use anti-aliasing if available (seems to cause problems in windows)
      al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
      al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
-#endif
+//#endif
     
     fullscreen = 0;
     

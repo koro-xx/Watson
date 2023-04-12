@@ -395,7 +395,7 @@ WZ_WIDGET *create_win_gui(double time)
     }
 
     if(time > 0)
-        wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)time/ 3600, (int)time/60, (int)time %60 ), 1, -1);
+        wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("You solved the puzzle in %02d:%02d:%02d", (int)time/ 3600, ((int)time/60) % 60, (int)time %60 ), 1, -1);
 
     wz_create_textbox(gui, 0, 0, gui_w-2*lh-2, lh, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, al_ustr_newf("Best times for %d x %d board:", set.n, set.h), 1, -1);
     

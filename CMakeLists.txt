@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-project(Watson VERSION 0.78.3 LANGUAGES CXX C)
+project(Watson VERSION 0.8.5 LANGUAGES CXX C)
 
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
@@ -27,9 +29,9 @@ if (UNIX)
 endif(UNIX)
 
 ## to do: add target and copy resources postbuild for windows/linux
-if (WIN32)
-	set(EXECUTABLE_TYPE "WIN32")
-endif(WIN32)
+##if (WIN32)
+##	set(EXECUTABLE_TYPE "WIN32")
+##endif(WIN32)
 
 
 if (APPLE)
