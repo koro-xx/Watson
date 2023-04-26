@@ -29,9 +29,10 @@ if (UNIX)
 endif(UNIX)
 
 ## to do: add target and copy resources postbuild for windows/linux
-##if (WIN32)
-##	set(EXECUTABLE_TYPE "WIN32")
-##endif(WIN32)
+if (WIN32)
+	## No terminal
+	set(EXECUTABLE_TYPE "WIN32")
+endif(WIN32)
 
 
 if (APPLE)

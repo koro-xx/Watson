@@ -30,6 +30,8 @@
 #define EVENT_LOAD (BASE_USER_EVENT_TYPE + 5)
 #define EVENT_SAVE (BASE_USER_EVENT_TYPE + 6)
 #define EVENT_SETTINGS (BASE_USER_EVENT_TYPE + 7)
+#define EVENT_SWITCH_FULLSCREEN (BASE_USER_EVENT_TYPE + 8)
+
 
 
 #define BF_CODEPOINT_START 0x0860
@@ -43,6 +45,7 @@ typedef struct Settings{
     int fat_fingers; // todo: implement zoom of tiledblocks for small screens
     int restart;
     int saved; // is there a saved game?
+    int fullscreen;
 } Settings;
 
 extern Settings set;

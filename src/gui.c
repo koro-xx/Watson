@@ -70,6 +70,7 @@ enum {
     BUTTON_SAVE,
     BUTTON_LOAD,
     BUTTON_ZOOM,
+    BUTTON_FULLSCREEN,
     BUTTON_SETTINGS,
     BUTTON_PARAMS,
     BUTTON_CLOSE,
@@ -275,7 +276,7 @@ WZ_WIDGET *create_settings_gui(void)
     int rh = 2.5*fh; // row height
     int rn = 0; // current row
     int gui_w = fh*20;
-    int rows = 7;
+    int rows = 8;
     int gui_h = rows*rh;
     WZ_WIDGET *button_mute;
     int but_w = 30;
@@ -292,7 +293,7 @@ WZ_WIDGET *create_settings_gui(void)
     but_w = max(al_get_text_width(skin_theme.theme.font, "About Watson"), but_w);
     but_h = fh*2;
     
-    but_sw = max(al_get_text_width(skin_theme.theme.font, "zoom"), but_sw);
+    but_sw = max(al_get_text_width(skin_theme.theme.font, "Zoom"), but_sw);
     but_sw += fh;
     but_w += 2*fh;
     
@@ -326,6 +327,11 @@ WZ_WIDGET *create_settings_gui(void)
         if(4+i == set.n) ((WZ_BUTTON *)wgt)->down = 1;
     }
     
+    // fulscreen
+    create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
+    wgt = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, but_w, but_h, al_ustr_new("Fullscreen"), 1, -1, BUTTON_FULLSCREEN);
+    ((WZ_BUTTON*) wgt)->down = set.fullscreen;
+        
     // sound + swtich tiles + zoom
     create_fill_layout(gui, 0, rh*(rn++), gui_w, rh, sep, 0, WZ_ALIGN_CENTRE, WZ_ALIGN_CENTRE, -1);
     wgt = (WZ_WIDGET*) wz_create_toggle_button(gui, 0, 0, but_w, but_h, al_ustr_new("Zoom"), 1, -1, BUTTON_ZOOM);
@@ -646,6 +652,7 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                 emit_event(EVENT_LOAD);
                 remove_gui(gui);
                 break;
+
             case BUTTON_SETTINGS:
                 add_gui(base_gui, create_settings_gui());
                 break;
@@ -690,6 +697,12 @@ int handle_gui_event(ALLEGRO_EVENT *event)
                 case BUTTON_ZOOM:
                     SWITCH(set.fat_fingers);
                     nset.fat_fingers = set.fat_fingers;
+                    break;
+                
+                case BUTTON_FULLSCREEN:
+                    emit_event(EVENT_SWITCH_FULLSCREEN);
+                    SWITCH(set.fullscreen);
+                    nset.fullscreen = set.fullscreen;
                     break;
                     
                 case BUTTON_ABOUT:

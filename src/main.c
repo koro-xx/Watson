@@ -54,7 +54,8 @@ Settings set = {
     0, // type_of_tiles
     0, // fat_fingers
     0,  // restart
-    0 // saved
+    0, // saved
+    1 // fullscreen
 };
 
 // this is mainly for testing, not actually used. use emit_event(EVENT_TYPE) to emit user events.
@@ -380,6 +381,8 @@ int toggle_fullscreen(Game *g, Board *b, ALLEGRO_DISPLAY **display){
     
     update_board(g, b);
     al_convert_bitmaps();
+    update_guis(b->all.x, b->all.y, b->xsize, b->ysize);
+
     return 1;
 }
 
@@ -417,7 +420,8 @@ int main(int argc, char **argv){
      al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
 //#endif
     
-    fullscreen = 0;
+    set.fullscreen = 1;
+    fullscreen = 1;
     
     // use vsync if available
     al_set_new_display_option(ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST);
@@ -425,7 +429,6 @@ int main(int argc, char **argv){
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
     
     #define WINDOW_EXTRA_FLAGS 0
-
     if(!MOBILE){
         if (fullscreen) {
             al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW | WINDOW_EXTRA_FLAGS);
@@ -663,6 +666,11 @@ RESTART:
                     emit_event(EVENT_REDRAW);
                     break;
                                         
+                case EVENT_SWITCH_FULLSCREEN:
+                    toggle_fullscreen(&g, &b, &display);
+                    emit_event(EVENT_REDRAW);
+                    break;
+                    
                 case ALLEGRO_EVENT_TOUCH_BEGIN:
                     if(gui_n) break;
                     ev.mouse.x = ev.touch.x;
