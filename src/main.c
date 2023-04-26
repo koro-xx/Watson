@@ -424,12 +424,14 @@ int main(int argc, char **argv){
 
     get_desktop_resolution(0, &desktop_xsize, &desktop_ysize);
     
+    #define WINDOW_EXTRA_FLAGS 0
+
     if(!MOBILE){
         if (fullscreen) {
-            al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW | ALLEGRO_OPENGL);
+            al_set_new_display_flags(ALLEGRO_FULLSCREEN_WINDOW | WINDOW_EXTRA_FLAGS);
             display = al_create_display(desktop_xsize, desktop_ysize);
         } else {
-            al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | ALLEGRO_OPENGL);
+            al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | WINDOW_EXTRA_FLAGS);
             display = al_create_display(800,600);
         }
     } else {
@@ -517,7 +519,7 @@ RESTART:
     b.n = g.n;
     b.h = g.h;
     
-    if(create_board(&g, &b, 1)){
+    if(create_board(&g, &b, fullscreen ? 2 : 1)){
         errlog("Failed to create game board.");
         return -1;
     }
