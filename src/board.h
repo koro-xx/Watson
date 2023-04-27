@@ -8,9 +8,10 @@
 #include <allegro5/allegro_font.h>
 #include "widgetz/widgetz.h"
 
-//#include "main.h"
+// #include "main.h"
 
-typedef struct Board {
+typedef struct Board
+{
     int n;
     int h;
     int xsize, ysize;
@@ -33,11 +34,11 @@ typedef struct Board {
     int panel_tile_size;
     int clue_unit_size;
     int clue_unit_space;
-    int hclue_n; // number of hclues
-    int vclue_n; // number of vclue
+    int hclue_n;                  // number of hclues
+    int vclue_n;                  // number of vclue
     int dragging_ox, dragging_oy; // initial position of TiledBlock being dragged
     int dragging_cx, dragging_cy; // relative poisition of grabbing point
-    int type_of_tiles; // 0 = use ttf font, 1 = use file bitmaps, 2 = use classic tiles from grid
+    int type_of_tiles;            // 0 = use ttf font, 1 = use file bitmaps, 2 = use classic tiles from grid
     float time_start;
     int restart;
     ALLEGRO_COLOR bg_color;
@@ -53,8 +54,8 @@ typedef struct Board {
     ALLEGRO_FONT *text_font;
 } Board;
 
-
-typedef enum BLOCK_TYPE{
+typedef enum BLOCK_TYPE
+{
     TB_OTHER = 0, // don't change this
     TB_PANEL,
     TB_PANEL_COLUMN,
@@ -73,11 +74,11 @@ typedef enum BLOCK_TYPE{
     TB_ALL,
     TB_BUTTON_UNDO,
     TB_BUTTON_TILES
-}BLOCK_TYPE;
+} BLOCK_TYPE;
 
-//Prototypes
+// Prototypes
 int create_board(Game *g, Board *b, int mode); // mode = 0: update, 1: create
 void destroy_board(Board *b);
 void destroy_board_clue_blocks(Board *b);
-    
+
 #endif /* defined(__freesherlock__board__) */

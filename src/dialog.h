@@ -1,4 +1,4 @@
-#include<allegro5/allegro_font.h>
+#include <allegro5/allegro_font.h>
 
 #ifndef __watson__dialog__
 #define __watson__dialog__
